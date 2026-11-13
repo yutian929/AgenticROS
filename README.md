@@ -13,7 +13,7 @@ No model API key is required to run the simulator or diagnostic scripts.
 ## Architecture
 
 ```text
-Codex / another coding agent
+ROSBody chat → independent Codex agent
     │ body instructions + Python programs + image inspection
     ▼
 rosbody.client.Robot (rclpy)
@@ -24,11 +24,78 @@ ROSBody server — one active action, measured receipts, immutable snapshots
 MuJoCo — position servos, gripper contact and friction
 ```
 
-The agent runtime is external. ROSBody does not contain a second LLM planning loop.
+ROSBody starts its own Codex process through the official Python SDK. Its conversation is
+independent of the developer chat. Codex itself performs planning, tool calls and recovery;
+ROSBody supplies the body, workspace and process lifecycle.
 Robot state remains in the server between programs. Python variables do not persist between
 client processes. Generated helpers can persist as files.
 
-## Quick start (Apple Silicon Mac)
+## Talk to the robot (Apple Silicon Mac)
+
+```bash
+pixi install
+pixi run build
+pixi run doctor
+pixi run chat
+```
+
+The chat command starts its own headless MuJoCo/ROS server and Codex agent. Enter:
+
+```text
+适配一下你的身体
+把红色方块夹取到红色碟子上
+把其他方块也放到对应颜色的碟子上
+/exit
+```
+
+Codex reads the body instructions, observes images, writes programs and calls ROS.
+There is no hard-coded language-to-task mapping. The initial perception tool is a simple
+RGB-D color detector; SAM3/Jev are not included. Commands execute in simulation only.
+Exit or Ctrl+C closes the owned server; failed turns are not automatically retried.
+
+Authentication uses the Codex login on this machine. If `doctor` reports logged out:
+
+```bash
+pixi run rosbody login
+# Alternatively, with OPENAI_API_KEY already set securely in your shell:
+pixi run rosbody login --api-key
+```
+
+ChatGPT login can be used without supplying an API key separately. Model access and usage
+limits depend on that account. Never paste credentials into the robot conversation.
+`--model MODEL` selects a model; otherwise the Codex configuration supplies the default.
+The SDK pins its own Codex runtime, so installing the desktop app is not required.
+
+Each session prints its directory under `runs/chat/`. `workspace/` contains the agent's
+body instructions, generated programs and evidence. `session.json` stores the thread ID,
+not credentials. `events.jsonl` records agent events and may contain your prompts/tool output.
+Resume with `pixi run rosbody chat --session /absolute/path/to/session`.
+The conversation and programs resume, but **the simulation restarts**; the agent is explicitly
+instructed to re-observe rather than replay previous actions. Concurrent use of a session is rejected.
+
+For noninteractive commands, repeat `--prompt`:
+
+```bash
+pixi run rosbody chat --prompt '适配一下你的身体' --prompt '把红色方块放到红色碟子上'
+```
+
+The Codex write sandbox is the session workspace, with network enabled for local ROS DDS.
+It is not a VM/container or a read-isolation boundary. ROS_DOMAIN_ID separates discovery,
+not security. Simulator truth is excluded by agent instructions, not access control.
+Only run this prototype on a trusted simulation machine; it does not attach to hardware.
+
+## Verified autonomous trial
+
+On macOS / ROS 2 Jazzy, the embedded Codex first completed a no-motion body check,
+then resumed the same conversation with a fresh simulation and autonomously moved the
+red block to the red plate. It generated stage programs, inspected initial/lift/final images,
+and checked action receipts. The independent evaluator was read only after the agent finished:
+success=true, block-to-plate XY center distance about 1.7 mm (seed 0).
+This is one successful simulation trial, not a success-rate measurement or hardware validation.
+
+![Embedded Codex trial result](docs/agent-demo-result.png)
+
+## Low-level diagnostics (without a model)
 
 Install [Pixi](https://pixi.sh), then from this repository:
 
@@ -84,7 +151,7 @@ Open this repository in Codex and give a task such as:
 `AGENTS.md` points to the body contract; `.agents/skills/setup-body/SKILL.md` provides a
 reusable skill entry point. Shell/Python access and local image reading suffice; MCP is optional.
 Run commands through `pixi run` so ROS dependencies and generated interfaces are available.
-This repository does not provision model authentication or bypass the agent's permissions.
+For the embedded agent, use `pixi run chat`; it manages Codex authentication checks and its own workspace.
 
 ## Interfaces
 

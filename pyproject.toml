@@ -7,7 +7,7 @@ name = "rosbody"
 version = "0.1.0"
 description = "A ROS-native body interface for coding agents — simulation-first prototype"
 requires-python = ">=3.11"
-dependencies = ["mujoco>=3.3,<4", "numpy", "pillow", "scipy"]
+dependencies = ["mujoco>=3.3,<4", "numpy", "pillow", "scipy", "openai-codex==0.168.0"]
 
 [project.optional-dependencies]
 test = ["pytest"]

@@ -22,6 +22,8 @@ pytest = "*"
 rosbody = { path = ".", editable = true }
 
 [tasks]
+chat = "rosbody chat"
+doctor = "rosbody doctor"
 build = "colcon build --symlink-install --cmake-args -DPython3_FIND_VIRTUALENV=ONLY -DPython_FIND_VIRTUALENV=ONLY"
 server = "bash scripts/server.sh"
 test = "python -m pytest tests -q"

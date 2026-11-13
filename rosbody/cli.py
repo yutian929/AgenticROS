@@ -1,7 +1,6 @@
 """Small command interface for a coding agent, with structured stdout."""
 import argparse
 import json
-from .client import Robot
 
 
 def main():
@@ -18,12 +17,18 @@ def main():
     locate.add_argument("snapshot_json")
     locate.add_argument("--color", choices=["red", "blue", "green"], default="red")
     locate.add_argument("--kind", choices=["block", "plate"], default="block")
+    from .chat import add_chat_commands
+    add_chat_commands(sub)
     args = parser.parse_args()
+    if args.command in {"chat", "login", "doctor"}:
+        from .chat import dispatch
+        return dispatch(args)
     if args.command == "locate":
         from .perception import locate_color
         with open(args.snapshot_json) as f:
             result = locate_color(json.load(f), args.color, args.kind)
     else:
+        from .client import Robot
         with Robot() as robot:
             if args.command == "move":
                 result = robot.move(args.xyz, args.speed)
@@ -35,4 +40,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

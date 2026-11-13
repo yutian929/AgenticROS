@@ -4,6 +4,8 @@ from PIL import Image
 
 
 def locate_color(snapshot, color="red", kind="block"):
+    if kind not in {"block", "plate"}:
+        raise ValueError("kind must be block or plate")
     from scipy.ndimage import label
     rgb = np.asarray(Image.open(snapshot["rgb_path"])).astype(float) / 255
     idx = {"red": 0, "green": 1, "blue": 2}[color]
