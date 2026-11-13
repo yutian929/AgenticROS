@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<robot name="cartesian_gripper">
+  <material name="steel"><color rgba="0.32 0.39 0.47 1"/></material>
+  <material name="finger"><color rgba="0.18 0.24 0.31 1"/></material>
+  <link name="base"/>
+  <link name="x_link"/>
+  <joint name="x" type="prismatic"><parent link="base"/><child link="x_link"/><axis xyz="1 0 0"/><limit lower="-0.38" upper="0.38" effort="100" velocity="0.25"/></joint>
+  <link name="y_link"/>
+  <joint name="y" type="prismatic"><parent link="x_link"/><child link="y_link"/><axis xyz="0 1 0"/><limit lower="-0.26" upper="0.26" effort="100" velocity="0.25"/></joint>
+  <link name="carriage"><visual><origin xyz="0 -0.055 0.065"/><geometry><box size="0.11 0.036 0.03"/></geometry><material name="steel"/></visual></link>
+  <joint name="z" type="prismatic"><origin xyz="0 0 0.2"/><parent link="y_link"/><child link="carriage"/><axis xyz="0 0 1"/><limit lower="-0.175" upper="0.13" effort="100" velocity="0.25"/></joint>
+  <link name="left_finger"><visual><origin xyz="0 0 0.015"/><geometry><box size="0.012 0.036 0.07"/></geometry><material name="finger"/></visual></link>
+  <joint name="left" type="prismatic"><origin xyz="-0.006 0 0"/><parent link="carriage"/><child link="left_finger"/><axis xyz="-1 0 0"/><limit lower="0" upper="0.04" effort="6" velocity="0.1"/></joint>
+  <link name="right_finger"><visual><origin xyz="0 0 0.015"/><geometry><box size="0.012 0.036 0.07"/></geometry><material name="finger"/></visual></link>
+  <joint name="right" type="prismatic"><origin xyz="0.006 0 0"/><parent link="carriage"/><child link="right_finger"/><axis xyz="1 0 0"/><limit lower="0" upper="0.04" effort="6" velocity="0.1"/></joint>
+  <link name="tcp"/>
+  <joint name="tcp_fixed" type="fixed"><parent link="carriage"/><child link="tcp"/></joint>
+</robot>

@@ -34,8 +34,11 @@ class DockerLayout(unittest.TestCase):
         config = json.loads(subprocess.check_output(
             ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'],
             cwd=ROOT, text=True))
-        self.assertEqual(set(config['services']), {'simple_mujoco', 'agenticros'})
+        self.assertEqual(set(config['services']), {'simple_mujoco', 'visualizer', 'agenticros'})
         self.assertEqual(config['services']['simple_mujoco']['profiles'], ['simulation'])
+        self.assertEqual(config['services']['visualizer']['profiles'], ['simulation'])
+        self.assertFalse(config['services']['simple_mujoco'].get('ports'))
+        self.assertFalse(config['services']['visualizer'].get('volumes'))
         self.assertNotIn('depends_on', config['services']['agenticros'])
         self.assertEqual(config['volumes']['workspace']['name'], 'rosbody_workspace')
         self.assertEqual(config['volumes']['codex-home']['name'], 'rosbody_codex-home')

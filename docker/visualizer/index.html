@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AgenticROS · ROS 观察器</title>
+<link rel="stylesheet" href="/style.css">
+<script type="importmap">{"imports":{"three":"/assets/three.module.js"}}</script>
+</head>
+<body>
+<header><div class="brand"><span class="mark">A</span><div><strong>AgenticROS</strong><span class="subtitle">ROS 观察器</span></div></div><div class="connection"><i id="indicator"></i><span id="connection">正在连接 ROS…</span><span class="chip">HUMBLE</span></div></header>
+<main>
+<aside class="layers panel"><div class="section-title">显示层 <span>DISPLAYS</span></div>
+<label class="field-label" for="fixed-frame">固定坐标系</label><select id="fixed-frame"><option value="base">base</option></select>
+<div class="layer-list">
+<label><input id="layer-robot" type="checkbox" checked><span class="layer-icon">◇</span>机器人模型<span class="tag">URDF</span></label>
+<label><input id="layer-cloud" type="checkbox" checked><span class="layer-icon">⠿</span>彩色点云<span class="tag">RGB-D</span></label>
+<label><input id="layer-tf" type="checkbox" checked><span class="layer-icon">⌖</span>坐标轴<span class="tag">TF</span></label>
+<label><input id="layer-grid" type="checkbox" checked><span class="layer-icon">▦</span>网格<span class="tag">0.1 m</span></label>
+</div>
+<div class="section-title separated">数据来源</div><dl class="sources"><dt>模型</dt><dd>/robot_description</dd><dt>姿态</dt><dd>/tf · /tf_static</dd><dt>关节</dt><dd>/driver/joint_states</dd><dt>点云</dt><dd>同步 RGB + 深度 + 标定</dd></dl>
+<div class="note">点云从相机观测重建；只包含相机可见表面。</div>
+<div class="section-title separated">关节位置 <span>m</span></div><div id="joints" class="joints"><span class="muted">等待话题…</span></div>
+<div class="section-title separated">驱动状态</div><div id="driver" class="driver muted">等待 /driver/state…</div>
+</aside>
+<section class="viewport panel"><div class="view-title"><div><span class="live-dot"></span>三维观测 <span class="muted">/ base</span></div><div class="view-actions"><button id="perspective">透视</button><button id="top">俯视</button><button id="reset">复位视角</button></div></div><div id="scene"><div id="scene-error" hidden></div></div><div class="view-footer"><span>左键旋转 · 右键平移 · 滚轮缩放</span><span id="cloud-status">等待同步 RGB-D…</span></div></section>
+<aside class="camera panel"><div class="section-title">RGB 相机 <span id="camera-age">等待数据</span></div><div class="image-wrap"><img id="camera-image" alt="ROS RGB 相机实时观测"></div><div class="camera-caption">/camera/color/image_raw</div><div id="calibration" class="calibration muted">等待 CameraInfo…</div><div class="section-title separated">TF 坐标树</div><div id="frames" class="frames muted">等待 TF…</div></aside>
+<section class="topics panel"><div class="topic-header"><div><strong>ROS 话题</strong><span id="topic-count" class="muted"></span></div><input id="topic-search" type="search" placeholder="筛选话题名称或类型" aria-label="筛选话题"></div><div class="topic-content"><div class="topic-table"><table><thead><tr><th>话题</th><th>消息类型</th><th>接收状态</th></tr></thead><tbody id="topics"></tbody></table></div><div class="inspector"><div id="inspector-topic" class="muted">选择话题查看消息</div><pre id="message">图像显示尺寸与编码；其他支持的话题显示消息内容。</pre></div></div></section>
+</main>
+<footer>独立 ROS 订阅节点 <code>/ros_observer</code><span>观察模式 · 无运动控制接口</span></footer>
+<script type="module" src="/app.js"></script>
+</body></html>

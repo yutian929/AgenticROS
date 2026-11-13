@@ -1,22 +1,24 @@
 """Raw position-servo ROS driver; deliberately no move/grip standard adapter."""
-import io
 import json
 import math
 import os
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
 import numpy as np
-from PIL import Image
+import mujoco
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
 from rclpy.node import Node
-from sensor_msgs.msg import JointState
+from sensor_msgs.msg import JointState, Image, CameraInfo
+from geometry_msgs.msg import TransformStamped
+from std_msgs.msg import String
+from tf2_ros import StaticTransformBroadcaster
+from rclpy.qos import qos_profile_sensor_data
 from std_srvs.srv import Trigger
 from rosbody_driver_interfaces.action import Actuate
 from rosbody_driver_interfaces.srv import Snapshot
@@ -44,7 +46,6 @@ class Driver(Node):
         self.active_goal_id = None
         self.shutting_down = threading.Event()
         self.render = ThreadPoolExecutor(max_workers=1)
-        self.frame = None
         self.pending_frame = None
         group = ReentrantCallbackGroup()
         self.action = ActionServer(self, Actuate, '/driver/actuate', self.execute,
@@ -54,6 +55,12 @@ class Driver(Node):
         self.create_service(Trigger, '/driver/status', self.status, callback_group=group)
         self.create_service(Snapshot, '/driver/observe', self.observe, callback_group=group)
         self.joints = self.create_publisher(JointState, '/driver/joint_states', 10)
+        self.rgb = self.create_publisher(Image, '/camera/color/image_raw', qos_profile_sensor_data)
+        self.depth = self.create_publisher(Image, '/camera/depth/image_raw', qos_profile_sensor_data)
+        self.camera_info = self.create_publisher(CameraInfo, '/camera/camera_info', qos_profile_sensor_data)
+        self.telemetry = self.create_publisher(String, '/driver/state', 10)
+        self.camera_tf = StaticTransformBroadcaster(self)
+        self.camera_tf_sent = False
         self.create_timer(.1, self.publish)
         self.create_timer(.5, self.camera)
 
@@ -149,51 +156,51 @@ class Driver(Node):
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name, msg.position, msg.velocity = state['joint_names'], state['joint_positions'], state['joint_velocities']
         self.joints.publish(msg)
+        with self.gate:
+            telemetry = dict(session_id=self.sim.session, busy=self.busy,
+                             recovery_required=self.recovery_required, state=state)
+        self.telemetry.publish(String(data=json.dumps(telemetry)))
 
     def capture_frame(self):
-        rgb, _, _, _ = self.sim.observe()
-        output = io.BytesIO()
-        Image.fromarray(rgb).save(output, format='JPEG')
-        self.frame = output.getvalue()
+        rgb, depth, calibration, _ = self.sim.observe()
+        stamp = self.get_clock().now().to_msg()
+        for publisher, pixels, encoding, step in (
+                (self.rgb, rgb, 'rgb8', rgb.shape[1] * 3),
+                (self.depth, depth.astype('<f4'), '32FC1', depth.shape[1] * 4)):
+            msg = Image(height=pixels.shape[0], width=pixels.shape[1], encoding=encoding,
+                        is_bigendian=0, step=step, data=pixels.tobytes())
+            msg.header.stamp, msg.header.frame_id = stamp, 'camera_optical_frame'
+            publisher.publish(msg)
+        k = np.asarray(calibration['K']).reshape(3, 3)
+        info = CameraInfo(width=calibration['width'], height=calibration['height'],
+                          distortion_model='plumb_bob', d=[0.] * 5,
+                          k=k.ravel().tolist(), r=np.eye(3).ravel().tolist(),
+                          p=np.column_stack((k, np.zeros(3))).ravel().tolist())
+        info.header.stamp, info.header.frame_id = stamp, 'camera_optical_frame'
+        self.camera_info.publish(info)
+        if not self.camera_tf_sent:
+            transform = TransformStamped()
+            transform.header.stamp, transform.header.frame_id = stamp, 'base'
+            transform.child_frame_id = 'camera_optical_frame'
+            t = calibration['optical_to_base_translation']
+            transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z = t
+            quaternion = np.empty(4)
+            mujoco.mju_mat2Quat(quaternion, np.asarray(calibration['optical_to_base_rotation']).ravel())
+            q = transform.transform.rotation
+            q.w, q.x, q.y, q.z = quaternion.tolist()
+            self.camera_tf.sendTransform(transform)
+            self.camera_tf_sent = True
+        # Health is sensor production, independent of any visualization process.
+        Path('/tmp/body-camera-ready').touch()
 
     def camera(self):
         if self.pending_frame is None or self.pending_frame.done():
             self.pending_frame = self.render.submit(self.capture_frame)
 
 
-def viewer_handler(driver):
-    class Viewer(BaseHTTPRequestHandler):
-        def do_GET(self):
-            if self.path.split('?')[0] == '/frame.jpg':
-                body, kind = driver.frame, 'image/jpeg'
-                if body is None:
-                    self.send_error(503, 'Camera starting')
-                    return
-            elif self.path == '/':
-                body = b'''<!doctype html><meta charset="utf-8"><title>ROSBody camera</title>
-<style>body{background:#15191f;color:#eef;font:18px system-ui;text-align:center}img{width:min(95vw,960px)}</style>
-<h1>ROSBody live camera</h1><p>Read-only observation; control from the Codex terminal.</p>
-<img id="camera"><script>setInterval(()=>{document.getElementById('camera').src='/frame.jpg?t='+Date.now()},500)</script>'''
-                kind = 'text/html; charset=utf-8'
-            else:
-                self.send_error(404)
-                return
-            self.send_response(200)
-            self.send_header('Content-Type', kind)
-            self.send_header('Cache-Control', 'no-store')
-            self.send_header('Content-Length', str(len(body)))
-            self.end_headers()
-            self.wfile.write(body)
-        def log_message(self, *_):
-            pass
-    return Viewer
-
-
 def main():
     rclpy.init()
     driver = Driver()
-    server = ThreadingHTTPServer(('0.0.0.0', int(os.getenv('VIEWER_PORT', '8080'))), viewer_handler(driver))
-    threading.Thread(target=server.serve_forever, daemon=True).start()
     evaluator = start_evaluator(driver)
     executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(driver)
@@ -203,7 +210,6 @@ def main():
         pass
     finally:
         driver.shutting_down.set()
-        server.shutdown()
         evaluator.shutdown()
         evaluator.server_close()
         executor.shutdown()

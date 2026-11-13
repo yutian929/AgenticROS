@@ -10,8 +10,8 @@ case "${1:-}" in
       echo 'To adopt the new service name, first stop control, then explicitly docker stop this container.'
       exit 0
     fi
-    docker compose up -d --build --no-recreate --wait simple_mujoco
-    printf 'simple_mujoco camera: http://localhost:%s\n' "${ROSBODY_VIEWER_PORT:-8080}"
+    docker compose up -d --build --no-recreate --wait simple_mujoco visualizer
+    printf 'ROS observer: http://localhost:%s\n' "${ROSBODY_VIEWER_PORT:-8080}"
     ;;
   real)
     echo 'Real environments are external ROS drivers; no simulator container will be started.'

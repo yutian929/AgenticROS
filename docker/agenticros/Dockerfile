@@ -1,13 +1,13 @@
-FROM ros:jazzy-ros-base-noble
+FROM ros:humble-ros-base-jammy
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv python3-colcon-common-extensions build-essential cmake git ripgrep \
-    ros-jazzy-rosidl-default-generators ros-jazzy-sensor-msgs ros-jazzy-geometry-msgs \
+    ros-humble-rosidl-default-generators ros-humble-sensor-msgs ros-humble-geometry-msgs \
     && rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv --system-site-packages /opt/agent-venv && \
-    /opt/agent-venv/bin/pip install --no-cache-dir openai-codex==0.168.0 numpy==1.26.4 pillow==11.3.0 scipy==1.16.3
+    /opt/agent-venv/bin/pip install --no-cache-dir openai-codex==0.168.0 numpy==1.26.4 pillow==11.3.0 scipy==1.15.3
 COPY docker/interfaces /opt/driver_ws/src/rosbody_driver_interfaces
-RUN source /opt/ros/jazzy/setup.bash && cd /opt/driver_ws && colcon build
+RUN source /opt/ros/humble/setup.bash && cd /opt/driver_ws && colcon build
 COPY docker/agenticros/contract.md docker/agenticros/body.md /opt/rosbody/
 COPY docker/agenticros/skills /opt/rosbody/skills
 COPY docker/agenticros/AGENTS.md /opt/rosbody/AGENTS.md

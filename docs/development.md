@@ -1,6 +1,7 @@
 # 开发与运行说明
 
 - `docker/simple_mujoco/`：私有仿真、原始驱动、评估器。
+- `docker/visualizer/`：独立 ROS 观察节点、公开 URDF 和本地三维网页；不读取仿真私有文件。
 - `docker/agenticros/`：公开身体资料、接口契约、setup-body skill 和 Codex 配置。
 - `docker/interfaces/`：原始 ROS IDL；保留现有 `rosbody_driver_interfaces` 包名以兼容生成的适配器。
 - `scripts/`、`tests/`：启动和验收工具，无预写适配答案。
@@ -10,6 +11,7 @@ docker compose --profile simulation build
 bash scripts/test.sh                      # 单测，不启动驱动
 python3 scripts/audit_agent_image.py       # 镜像内容审计
 python3 scripts/check_docker.py            # 已启动环境的 ROS、观测和隔离验证
+python3 scripts/check_visualizer.py        # 观察节点的 ROS 订阅、TF、RGB-D 与隔离验证（环境空闲时）
 python3 scripts/check_docker.py --motion   # 小幅动作/取消测试，仅在没有任务时运行
 python3 scripts/docker-trial.py            # 新工作区的自主适配与任务试验
 bash scripts/docker-evaluate.sh           # 仿真容器内独立评估
