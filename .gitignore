@@ -1,13 +1,5 @@
-.pixi/
-.venv/
 __pycache__/
 *.pyc
-.pytest_cache/
-build/
-install/
-log/
 runs/
-*.egg-info/
 .DS_Store
-
 MUJOCO_LOG.TXT

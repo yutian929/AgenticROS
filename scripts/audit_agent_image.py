@@ -15,8 +15,9 @@ def main():
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()
     private = list((ROOT / 'docker/body').glob('*.py')) + list((ROOT / 'docker/body').glob('*.xml'))
-    private += list((ROOT / 'rosbody').rglob('*.py')) + list((ROOT / 'examples').rglob('*.py'))
-    forbidden_hashes = {hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT)) for p in private if p.stat().st_size}
+    forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
+    forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
+                             for p in private if p.stat().st_size})
     name = 'rosbody-image-audit-' + uuid.uuid4().hex[:8]
     subprocess.run(['docker', 'create', '--name', name, '--entrypoint', '/bin/true', image_id], check=True, capture_output=True)
     count = 0

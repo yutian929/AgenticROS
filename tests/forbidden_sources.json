@@ -1,0 +1,13 @@
+{
+  "08eb2529173b9f195df83627c2dc3632b3f7a21cc7dca01e6a56fe66d0b5016c": "rosbody/chat.py",
+  "3325d566e064286589ca146e0a3208dedfb6eb28bf84847da936f09ca2a8eaa0": "rosbody/client.py",
+  "374ecb67a84b5f4a77a84d7bd3744307a9ac5c6b89802f794a88b2f6f6abc1fa": "rosbody/sim.py",
+  "41c8a57dab72c4cc31fac918dfd0988d2241407d459b4f3bed4fd4eaf37d4bc2": "rosbody/server.py",
+  "559d49fcbe2fa3a3b0ff02c5fa48f20847499d15aaf69f709f99106ab0de2774": "rosbody/cli.py",
+  "7b83af1d82b6c82a0af8871d17d86a7e76bb311ea5ad4f9611e21922e009e2db": "rosbody/perception.py",
+  "95c2e85046b61a50226464999de09e2e25fc2abcff197e64042dafbe7fbcfe9a": "rosbody/__init__.py",
+  "969dd4791368a0e31992bd4eefe381c1ac797101fbf8ba01d688c77c5abd4c95": "examples/pick_place.py",
+  "96f937298063a2e83df228db64a61f7cc8d82985709cf9084e083839b28d9c00": "examples/verify_ros.py",
+  "cf5d90abece0488087b133df4fbf02874732361e278b3633a9eaa396adf434a8": "rosbody/config.py",
+  "dfc226f3f4d2a577cf0e92422225bf2878dfbbb9043a4a58b26bcffc2cc756c2": "rosbody/agent_workspace.py"
+}

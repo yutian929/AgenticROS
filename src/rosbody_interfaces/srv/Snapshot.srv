@@ -1,4 +1,0 @@
-# RGB, metric depth, calibration and state captured under one simulation lock.
----
-# Absolute local file paths plus immutable snapshot metadata.
-string snapshot_json
