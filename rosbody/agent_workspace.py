@@ -41,16 +41,19 @@ def prepare_workspace(path, domain):
     wrapper += "source " + shlex.quote(str(ROOT / "scripts" / "ros_env.sh")) + "\n"
     wrapper += f"export ROS_DOMAIN_ID={domain} ROS_LOCALHOST_ONLY=1\n"
     wrapper += "export ROS_LOG_DIR=" + shlex.quote(env["ROS_LOG_DIR"]) + "\n"
-    wrapper += "exec " + shlex.quote(sys.executable) + ' -m rosbody.cli "$@"\n'
-    (path / "body").write_text(wrapper)
-    (path / "body").chmod(0o755)
+    # Restore loader paths AFTER entering the shell, before exec replaces it.
+    # macOS system shells strip inherited DYLD_* variables.
+    for name, arguments in (("body", ' -m rosbody.cli'), ("body-python", '')):
+        target = path / name
+        target.write_text(wrapper + "exec " + shlex.quote(sys.executable) + arguments + ' "$@"\n')
+        target.chmod(0o755)
     contract = (ROOT / "setup_body.md").read_text()
     start, discover = contract.index("## Start"), contract.index("## Discover and check")
     contract = contract[:start] + contract[discover:]
     contract = contract.replace("pixi run bash scripts/client.sh", "./body")
     contract = contract.replace("pixi run ros2", "ros2")
     contract = contract.replace("Run programs with `pixi run bash -c 'source scripts/ros_env.sh; python runs/my_stage.py'`.",
-                                "Run programs with the exact Python executable listed below; the environment is already configured. Do not source activation scripts.")
+                                "Run programs with `./body-python runs/my_stage.py`. This launcher restores the ROS environment before starting Python.")
     (path / "setup_body.md").write_text(contract + f'''
 
 ## Embedded agent session overrides
@@ -60,7 +63,10 @@ Do not launch another simulator, nested Codex, or change ROS_DOMAIN_ID. Your sim
 If the server is unavailable, report it; do not connect to a different domain or real hardware.
 Your working directory is {path}. Write stage programs and evidence here.
 Use `./body status`, `./body snapshot`, `./body move X Y Z`, `./body grip WIDTH`.
-The Python environment is ready: run programs with {shlex.quote(sys.executable)}.
+Run Python programs with `./body-python path/to/program.py`, `./body-python -m module`,
+or `./body-python -c '...'`. Do not invoke the bare Python executable for ROS programs:
+macOS system shells strip inherited DYLD_LIBRARY_PATH. The launcher restores it and
+executes Python directly; your program still calls rclpy/Robot directly, without CLI action subprocesses.
 Use `from rosbody.client import Robot` and `from rosbody.perception import locate_color`.
 Image files returned by the snapshot service are outside your writable workspace but readable.
 Use your native image reader to inspect them. Do not read simulator source, task diagnostics,
@@ -71,6 +77,7 @@ Do not reset a task to conceal failure. Ask for a new episode when recovery is i
 
 Read setup_body.md before the first body operation. You are the task-executing agent, not
 an advisor: carry out authorized simulation tasks through ./body or rosbody.client.Robot.
+Run ROS Python programs via ./body-python so dynamic libraries resolve on macOS.
 Use fresh observations, check action receipts, and inspect images before visually dependent
 steps. Generate your own programs. Never read hidden simulator truth or copy diagnostic plans.
 An image path printed by a program is not an inspected image. Use the native image viewer.

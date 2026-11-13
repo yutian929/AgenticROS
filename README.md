@@ -102,6 +102,18 @@ It is not a VM/container or a read-isolation boundary. ROS_DOMAIN_ID separates d
 not security. Simulator truth is excluded by agent instructions, not access control.
 Only run this prototype on a trusted simulation machine; it does not attach to hardware.
 
+## Python programs in an agent workspace
+
+Run generated programs with `./body-python task.py` (also supports `-m`, `-c`, and stdin).
+The program can directly import `rosbody.client.Robot` and use rclpy. This is an environment
+launcher, not a CLI translation of each robot operation. It restores ROS overlay and dynamic
+library paths after entering the shell, then replaces itself with the Pixi Python process.
+On macOS, invoking a bare Python executable through the Codex system shell can lose inherited
+`DYLD_LIBRARY_PATH` and fail to load generated ROS type-support libraries.
+
+New and resumed chats generate this launcher automatically. Already-running chats must be
+exited and resumed to refresh their workspace instructions (the simulation restarts).
+
 ## Configuration
 
 Edit `rosbody.toml` in the repository root, then restart `pixi run chat`:
