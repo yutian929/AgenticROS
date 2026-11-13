@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rosbody"
+version = "0.1.0"
+description = "A ROS-native body interface for coding agents — simulation-first prototype"
+requires-python = ">=3.11"
+dependencies = ["mujoco>=3.3,<4", "numpy", "pillow", "scipy"]
+
+[project.optional-dependencies]
+test = ["pytest"]
+
+[project.scripts]
+rosbody = "rosbody.cli:main"
+rosbody-server = "rosbody.server:main"
+
+[tool.setuptools]
+packages = ["rosbody"]
+
+[tool.setuptools.package-data]
+rosbody = ["assets/*.xml"]

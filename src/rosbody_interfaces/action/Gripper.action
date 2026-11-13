@@ -1,0 +1,6 @@
+# Distance between inner finger faces, metres: [0, 0.08].
+float64 width
+---
+string receipt_json
+---
+float64 actual_width

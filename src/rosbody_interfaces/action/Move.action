@@ -1,0 +1,9 @@
+# Grasp-center position in base frame, metres. Fixed downward orientation.
+float64[3] xyz
+float64 speed
+---
+# JSON receipt: complete/executed/stop_confirmed, measured state and reason.
+string receipt_json
+---
+float64[3] actual_xyz
+float64 remaining_distance

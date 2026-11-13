@@ -1,0 +1,32 @@
+[workspace]
+name = "rosbody"
+version = "0.1.0"
+channels = ["https://prefix.dev/robostack-jazzy", "https://prefix.dev/conda-forge"]
+platforms = [{ name = "macos-arm", platform = "osx-arm64", macos = "14" }, "linux-64"]
+
+[dependencies]
+python = "3.12.*"
+ros-jazzy-ros-base = "*"
+ros-jazzy-sensor-msgs = "*"
+ros-jazzy-geometry-msgs = "*"
+ros-jazzy-tf2-msgs = "*"
+ros-jazzy-rosidl-default-generators = "*"
+colcon-common-extensions = "*"
+cmake = "*"
+ninja = "*"
+compilers = "*"
+pip = "*"
+pytest = "*"
+
+[pypi-dependencies]
+rosbody = { path = ".", editable = true }
+
+[tasks]
+build = "colcon build --symlink-install --cmake-args -DPython3_FIND_VIRTUALENV=ONLY -DPython_FIND_VIRTUALENV=ONLY"
+server = "bash scripts/server.sh"
+test = "python -m pytest tests -q"
+
+[activation.env]
+ROS_DISTRO = "jazzy"
+ROS_VERSION = "2"
+ROS_PYTHON_VERSION = "3"
