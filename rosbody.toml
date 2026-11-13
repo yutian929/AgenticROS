@@ -1,0 +1,18 @@
+# ROSBody 专用配置。修改后在下一次启动 chat 时生效。
+# 优先级：命令行参数 > 本文件 > Codex 默认模型配置。
+# 不要在这里保存 API key；使用 `pixi run rosbody login` 登录。
+
+# 模型须在你的账户中可用；删除此行则使用 Codex 默认模型。
+model = "gpt-6-astra"
+
+# 推理强度须受所选模型支持；删除此行则使用 Codex 默认值。
+reasoning_effort = "medium"
+
+# 打开 MuJoCo 实时窗口。
+viewer = true
+
+# 显示工具完整输出；false 时长输出仅显示末尾 3000 字符。
+verbose = true
+
+# 仿真初始场景随机种子。0 为默认布局。
+seed = 0

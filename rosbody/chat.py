@@ -1,4 +1,5 @@
 """An independent Codex process and a managed, simulation-only ROS body."""
+import argparse
 from contextlib import contextmanager
 import fcntl
 import json
@@ -16,10 +17,13 @@ from .agent_workspace import ROOT, prepare_workspace, save_metadata
 def add_chat_commands(sub):
     chat = sub.add_parser('chat', help='Start an independent Codex robot agent')
     chat.add_argument('--session', help='Resume a session directory (simulation restarts)')
+    from .config import EFFORTS
+    chat.add_argument('--config', help='Use an alternate ROSBody TOML config')
+    chat.add_argument('--reasoning-effort', choices=EFFORTS)
     chat.add_argument('--model', help='Codex model; defaults to your Codex configuration')
-    chat.add_argument('--viewer', action='store_true', help='Show the live MuJoCo window')
-    chat.add_argument('--verbose', action='store_true', help='Print complete command output')
-    chat.add_argument('--seed', type=int, default=0)
+    chat.add_argument('--viewer', action=argparse.BooleanOptionalAction, default=None, help='Show the live MuJoCo window')
+    chat.add_argument('--verbose', action=argparse.BooleanOptionalAction, default=None, help='Print complete command output')
+    chat.add_argument('--seed', type=int)
     chat.add_argument('--prompt', action='append', help='Run text commands in order, then exit')
     for name in ('doctor', 'login'):
         p = sub.add_parser(name)
@@ -125,8 +129,9 @@ def simulation(session, env, seed, viewer=False):
                         process.wait()
 
 
-def run_turn(thread, prompt, session, verbose=False):
-    turn = thread.turn(prompt)
+def run_turn(thread, prompt, session, verbose=False, reasoning_effort=None):
+    options = {'effort': reasoning_effort} if reasoning_effort else {}
+    turn = thread.turn(prompt, **options)
     try:
         with (session / 'events.jsonl').open('a') as log:
             for event in turn.stream():
@@ -170,6 +175,9 @@ def chat(args):
     from openai_codex import Codex, CodexConfig, Sandbox, ApprovalMode
     if not authenticated():
         raise RuntimeError('Codex is not logged in. Run `pixi run rosbody login` first.')
+    from .config import configure
+    args = configure(args)
+    print(f'Config: {args.config_path or "built-in defaults"}\nModel: {args.model or "Codex default"}; effort: {args.reasoning_effort or "Codex default"}; viewer: {args.viewer}; verbose: {args.verbose}', flush=True)
     session = (Path(args.session).expanduser().resolve() if args.session else
                ROOT / 'runs' / 'chat' / (time.strftime('%Y%m%d-%H%M%S') + '-' + secrets.token_hex(3)))
     if args.session and not (session / 'session.json').is_file():
@@ -194,7 +202,9 @@ def chat(args):
                 options['model'] = args.model
             resumed = bool(meta.get('thread_id'))
             thread = (codex.thread_resume(meta['thread_id'], **options) if resumed else codex.thread_start(**options))
-            meta.update(thread_id=thread.id, domain=domain, workspace=str(workspace), seed=args.seed)
+            meta.update(thread_id=thread.id, domain=domain, workspace=str(workspace), seed=args.seed,
+                        settings={key: getattr(args, key) for key in ('model', 'reasoning_effort', 'viewer', 'verbose', 'seed')},
+                        config_path=args.config_path)
             save_metadata(meta_file, meta)
             print(f'Codex thread: {thread.id}\n输入任务；/exit 退出。Ctrl+C 中断并关闭仿真。', flush=True)
             prompts = iter(args.prompt) if args.prompt else None
@@ -211,7 +221,7 @@ def chat(args):
                 if first:
                     prompt = ('[Host notice: the simulator has just been created anew. Previous physical state is NOT restored. Read setup_body.md and obtain fresh observations before acting. Never replay previous goals.]\n' + prompt)
                     first = False
-                run_turn(thread, prompt, session, args.verbose)
+                run_turn(thread, prompt, session, args.verbose, args.reasoning_effort)
     return 0
 
 

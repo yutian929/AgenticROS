@@ -81,7 +81,7 @@ pixi run rosbody login --api-key
 
 ChatGPT login can be used without supplying an API key separately. Model access and usage
 limits depend on that account. Never paste credentials into the robot conversation.
-`--model MODEL` selects a model; otherwise the Codex configuration supplies the default.
+`--model MODEL` overrides `rosbody.toml`; if neither specifies a model, Codex supplies the default.
 The SDK pins its own Codex runtime, so installing the desktop app is not required.
 
 Each session prints its directory under `runs/chat/`. `workspace/` contains the agent's
@@ -101,6 +101,30 @@ The Codex write sandbox is the session workspace, with network enabled for local
 It is not a VM/container or a read-isolation boundary. ROS_DOMAIN_ID separates discovery,
 not security. Simulator truth is excluded by agent instructions, not access control.
 Only run this prototype on a trusted simulation machine; it does not attach to hardware.
+
+## Configuration
+
+Edit `rosbody.toml` in the repository root, then restart `pixi run chat`:
+
+```toml
+model = "gpt-6-astra"
+reasoning_effort = "medium"
+viewer = true
+verbose = true
+seed = 0
+```
+
+The shipped configuration enables the live viewer and full command output. Model names and
+reasoning levels must be supported by your account/model. No credentials belong in this file.
+CLI flags override the file; omit model/effort from the file to inherit Codex defaults.
+The resolved settings are printed at startup and recorded in `session.json`.
+Resuming a conversation also uses the current configuration; edits do not affect running chats.
+
+```bash
+pixi run chat --no-viewer --no-verbose
+pixi run chat --reasoning-effort high
+pixi run chat --config /absolute/path/my-robot.toml
+```
 
 ## Verified autonomous trial
 
