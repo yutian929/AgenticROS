@@ -17,6 +17,8 @@ def add_chat_commands(sub):
     chat = sub.add_parser('chat', help='Start an independent Codex robot agent')
     chat.add_argument('--session', help='Resume a session directory (simulation restarts)')
     chat.add_argument('--model', help='Codex model; defaults to your Codex configuration')
+    chat.add_argument('--viewer', action='store_true', help='Show the live MuJoCo window')
+    chat.add_argument('--verbose', action='store_true', help='Print complete command output')
     chat.add_argument('--seed', type=int, default=0)
     chat.add_argument('--prompt', action='append', help='Run text commands in order, then exit')
     for name in ('doctor', 'login'):
@@ -72,7 +74,7 @@ def domain_lease():
 
 
 @contextmanager
-def simulation(session, env, seed):
+def simulation(session, env, seed, viewer=False):
     # Refuse to attach to an existing body, even if a random domain collides.
     try:
         check = subprocess.run([sys.executable, '-m', 'rosbody.cli', 'status'],
@@ -83,8 +85,15 @@ def simulation(session, env, seed):
         pass
     out = session / ('body-' + time.strftime('%Y%m%d-%H%M%S'))
     with (session / 'server.log').open('a') as log:
-        process = subprocess.Popen([sys.executable, '-m', 'rosbody.server', '--out', str(out),
-                                    '--seed', str(seed)], env=env, stdout=log, stderr=log)
+        # Invoke the trampoline through Python: macOS /bin/sh strips DYLD_*
+        # from the environment, which would break generated ROS type support.
+        interpreter = [sys.executable]
+        if viewer and sys.platform == 'darwin':
+            interpreter.append(str(Path(sys.executable).with_name('mjpython')))
+        command = interpreter + ['-m', 'rosbody.server', '--out', str(out), '--seed', str(seed)]
+        if viewer:
+            command.append('--viewer')
+        process = subprocess.Popen(command, env=env, stdout=log, stderr=log)
         try:
             deadline = time.monotonic() + 45
             while time.monotonic() < deadline:
@@ -116,7 +125,7 @@ def simulation(session, env, seed):
                         process.wait()
 
 
-def run_turn(thread, prompt, session):
+def run_turn(thread, prompt, session, verbose=False):
     turn = thread.turn(prompt)
     try:
         with (session / 'events.jsonl').open('a') as log:
@@ -130,6 +139,23 @@ def run_turn(thread, prompt, session):
                     item = payload.get('item', {})
                     if item.get('type') in ('commandExecution', 'imageView', 'fileChange'):
                         print(f"\n[{item['type']}]", flush=True)
+                        if item['type'] == 'commandExecution':
+                            print(item.get('command', '(command pending)'), flush=True)
+                        elif item['type'] == 'imageView':
+                            print(item.get('path', ''), flush=True)
+                        else:
+                            for change in item.get('changes', []):
+                                print(change.get('path', ''), flush=True)
+                elif event.method == 'item/completed':
+                    item = payload.get('item', {})
+                    if item.get('type') == 'commandExecution':
+                        output = item.get('aggregatedOutput') or ''
+                        if not verbose and len(output) > 3000:
+                            print('[输出较长，仅显示末尾 3000 字符；完整内容见 events.jsonl 或使用 --verbose]')
+                            output = output[-3000:]
+                        if output:
+                            print(output, flush=True)
+                        print(f"[exit={item.get('exitCode')} · {item.get('status', '')}]", flush=True)
                 elif event.method == 'turn/completed':
                     result = payload['turn']
                     if result.get('status') != 'completed':
@@ -159,7 +185,7 @@ def chat(args):
             env.pop(key, None)
         config = CodexConfig(cwd=str(workspace), env=env)
         print(f'ROSBody session: {session}\nStarting a fresh simulation (seed={args.seed}).', flush=True)
-        with simulation(session, env, args.seed), Codex(config) as codex:
+        with simulation(session, env, args.seed, args.viewer), Codex(config) as codex:
             options = dict(cwd=str(workspace), sandbox=Sandbox.workspace_write,
                            approval_mode=ApprovalMode.deny_all,
                            config={'sandbox_workspace_write': {'network_access': True}},
@@ -185,7 +211,7 @@ def chat(args):
                 if first:
                     prompt = ('[Host notice: the simulator has just been created anew. Previous physical state is NOT restored. Read setup_body.md and obtain fresh observations before acting. Never replay previous goals.]\n' + prompt)
                     first = False
-                run_turn(thread, prompt, session)
+                run_turn(thread, prompt, session, args.verbose)
     return 0
 
 

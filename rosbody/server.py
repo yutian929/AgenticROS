@@ -23,9 +23,10 @@ from .sim import Simulation
 
 
 class BodyServer(Node):
-    def __init__(self, root, seed=0):
+    def __init__(self, root, seed=0, viewer=False):
         super().__init__("rosbody_sim")
         self.sim = Simulation(seed)
+        self.feedback_delay = 0.02 if viewer else 0.002
         self.root = Path(root).resolve()
         self.root.mkdir(parents=True, exist_ok=True)
         self.group = ReentrantCallbackGroup()
@@ -90,7 +91,7 @@ class BodyServer(Node):
                     msg = Gripper.Feedback()
                     msg.actual_width = state["gripper_width"]
                 handle.publish_feedback(msg)
-                time.sleep(0.002)  # Yield for cancellation and observation callbacks.
+                time.sleep(self.feedback_delay)  # Visible pacing; release simulation lock before sleeping.
             if kind == "move":
                 receipt = self.sim.move(handle.request.xyz, handle.request.speed,
                                         lambda: handle.is_cancel_requested, feedback)
@@ -207,7 +208,7 @@ def main():
     parser.add_argument("--viewer", action="store_true")
     args = parser.parse_args()
     rclpy.init()
-    node = BodyServer(args.out, args.seed)
+    node = BodyServer(args.out, args.seed, args.viewer)
     executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(node)
     try:
@@ -216,6 +217,10 @@ def main():
             spin = threading.Thread(target=executor.spin, daemon=True)
             spin.start()
             with mujoco.viewer.launch_passive(node.sim.model, node.sim.data) as viewer:
+                viewer.cam.lookat[:] = [0, 0, 0]
+                viewer.cam.distance = 1.15
+                viewer.cam.azimuth = 90
+                viewer.cam.elevation = -65
                 while viewer.is_running() and rclpy.ok():
                     with node.sim.lock:
                         viewer.sync()

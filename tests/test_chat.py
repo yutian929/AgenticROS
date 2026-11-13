@@ -65,3 +65,26 @@ def test_perception_rejects_unknown_kind_before_reading_image():
     from rosbody.perception import locate_color
     with pytest.raises(ValueError, match='kind'):
         locate_color({}, kind='cube')
+
+
+def test_command_details_visible_and_full_output_logged(tmp_path, capsys):
+    class Payload:
+        def __init__(self, data):
+            self.data = data
+        def model_dump(self, **kwargs):
+            return self.data
+    events = [
+        ('item/started', {'item': {'type': 'commandExecution', 'command': './body status'}}),
+        ('item/completed', {'item': {'type': 'commandExecution', 'exitCode': 0,
+                                   'status': 'completed', 'aggregatedOutput': 'START' + 'x'*4000 + 'END'}}),
+        ('turn/completed', {'turn': {'status': 'completed'}}),
+    ]
+    thread = SimpleNamespace(turn=lambda _: SimpleNamespace(stream=lambda: iter(
+        SimpleNamespace(method=method, payload=Payload(data)) for method, data in events)))
+    chat.run_turn(thread, 'inspect', tmp_path)
+    output = capsys.readouterr().out
+    assert './body status' in output and '[exit=0' in output and 'END' in output
+    assert 'START' not in output
+    assert 'START' in (tmp_path / 'events.jsonl').read_text()
+    chat.run_turn(thread, 'inspect', tmp_path, verbose=True)
+    assert 'START' in capsys.readouterr().out

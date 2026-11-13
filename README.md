@@ -39,7 +39,25 @@ pixi run doctor
 pixi run chat
 ```
 
-The chat command starts its own headless MuJoCo/ROS server and Codex agent. Enter:
+To see the robot move in a live 3D window:
+
+```bash
+pixi run chat --viewer
+# Also show complete tool output:
+pixi run chat --viewer --verbose
+```
+
+The terminal shows each command, its output and exit code, plus image paths and edited files.
+By default long command output is truncated to its last 3000 characters; `--verbose` shows it all.
+Complete events are always stored in the session's `events.jsonl`. This exposes executed tools
+and the agent's public progress messages, not private model reasoning.
+The MuJoCo window shows the current body with approximately real-time action pacing. Simulation
+still holds while the agent thinks. On macOS the launcher uses `mjpython` automatically.
+Use the terminal's `/exit` to end a session; closing the viewer also stops the body server.
+An existing headless chat cannot turn into a viewer session in place: exit and relaunch.
+Resuming its session keeps the conversation but creates a fresh simulation.
+
+The chat command starts its own MuJoCo/ROS server and Codex agent. Enter:
 
 ```text
 适配一下你的身体
