@@ -8,13 +8,13 @@ RUN python3 -m venv --system-site-packages /opt/agent-venv && \
     /opt/agent-venv/bin/pip install --no-cache-dir openai-codex==0.168.0 numpy==1.26.4 pillow==11.3.0 scipy==1.16.3
 COPY docker/interfaces /opt/driver_ws/src/rosbody_driver_interfaces
 RUN source /opt/ros/jazzy/setup.bash && cd /opt/driver_ws && colcon build
-COPY docker/agent/contract.md docker/agent/body.md /opt/rosbody/
-COPY docker/agent/skills /opt/rosbody/skills
-COPY docker/agent/AGENTS.md /opt/rosbody/AGENTS.md
+COPY docker/agenticros/contract.md docker/agenticros/body.md /opt/rosbody/
+COPY docker/agenticros/skills /opt/rosbody/skills
+COPY docker/agenticros/AGENTS.md /opt/rosbody/AGENTS.md
 COPY docker/shared/fastdds.xml /etc/rosbody/fastdds.xml
-COPY docker/agent/entrypoint.sh /usr/local/bin/agent-entrypoint
-COPY docker/agent/codex.sh /usr/local/bin/codex
-COPY docker/agent/environment.sh /etc/profile.d/rosbody.sh
+COPY docker/agenticros/entrypoint.sh /usr/local/bin/agent-entrypoint
+COPY docker/agenticros/codex.sh /usr/local/bin/codex
+COPY docker/agenticros/environment.sh /etc/profile.d/rosbody.sh
 RUN chmod +x /usr/local/bin/agent-entrypoint /usr/local/bin/codex && \
     useradd -m -u 1001 -s /bin/bash agent && \
     mkdir -p /workspace /observations /home/agent/.codex && \

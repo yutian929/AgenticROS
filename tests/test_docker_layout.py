@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class DockerLayout(unittest.TestCase):
     def test_agent_boundary(self):
         config = json.loads(subprocess.check_output(
-            ['docker', 'compose', 'config', '--format', 'json'], cwd=ROOT, text=True))
-        agent = config['services']['agent']
+            ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'], cwd=ROOT, text=True))
+        agent = config['services']['agenticros']
         self.assertFalse(agent.get('privileged', False))
         self.assertEqual(agent['cap_drop'], ['ALL'])
         mounts = {m['target']: m for m in agent['volumes']}
@@ -21,21 +21,31 @@ class DockerLayout(unittest.TestCase):
         for target, mount in mounts.items():
             if target == '/config/codex.toml':
                 self.assertEqual(mount['type'], 'bind')
-                self.assertEqual(Path(mount['source']), ROOT / 'docker/agent/codex.toml')
+                self.assertEqual(Path(mount['source']), ROOT / 'docker/agenticros/codex.toml')
                 self.assertTrue(mount['read_only'])
             else:
                 self.assertEqual(mount['type'], 'volume')
-        for line in (ROOT / 'docker/agent/Dockerfile').read_text().splitlines():
+        for line in (ROOT / 'docker/agenticros/Dockerfile').read_text().splitlines():
             if line.startswith('COPY '):
-                self.assertTrue(all(s.startswith(('docker/agent/', 'docker/interfaces', 'docker/shared/'))
+                self.assertTrue(all(s.startswith(('docker/agenticros/', 'docker/interfaces', 'docker/shared/'))
                                     for s in line.split()[1:-1]))
 
+    def test_environment_is_opt_in(self):
+        config = json.loads(subprocess.check_output(
+            ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'],
+            cwd=ROOT, text=True))
+        self.assertEqual(set(config['services']), {'simple_mujoco', 'agenticros'})
+        self.assertEqual(config['services']['simple_mujoco']['profiles'], ['simulation'])
+        self.assertNotIn('depends_on', config['services']['agenticros'])
+        self.assertEqual(config['volumes']['workspace']['name'], 'rosbody_workspace')
+        self.assertEqual(config['volumes']['codex-home']['name'], 'rosbody_codex-home')
+
     def test_no_supplied_adapter(self):
-        tree = ast.parse((ROOT / 'docker/body/world.py').read_text())
+        tree = ast.parse((ROOT / 'docker/simple_mujoco/world.py').read_text())
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         self.assertFalse(names & {'move', 'grip', 'evaluate', 'locate_color'})
         self.assertFalse(list((ROOT / 'docker/agent').rglob('body.py')))
-        self.assertIn('does not supply its implementation', (ROOT / 'docker/agent/contract.md').read_text())
+        self.assertIn('does not supply its implementation', (ROOT / 'docker/agenticros/contract.md').read_text())
         # Keep historical reference-code fingerprints even after removing its source.
         hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
         self.assertTrue({'rosbody/client.py', 'examples/pick_place.py'} <= set(hashes.values()))

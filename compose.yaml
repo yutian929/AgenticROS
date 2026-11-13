@@ -1,11 +1,13 @@
+# Keep the existing project identity to preserve volumes, authentication and network.
 name: rosbody
 services:
-  body:
+  simple_mujoco:
+    profiles: [simulation]
     build:
       context: .
-      dockerfile: docker/body/Dockerfile
+      dockerfile: docker/simple_mujoco/Dockerfile
     environment:
-      ROS_DOMAIN_ID: "42"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       BODY_SEED: "${BODY_SEED:-0}"
     volumes:
       - observations:/observations
@@ -23,18 +25,18 @@ services:
       timeout: 4s
       retries: 12
       start_period: 20s
-  agent:
+  agenticros:
     build:
       context: .
-      dockerfile: docker/agent/Dockerfile
+      dockerfile: docker/agenticros/Dockerfile
     environment:
-      ROS_DOMAIN_ID: "42"
+      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       ROS_LOG_DIR: /workspace/ros_logs
     volumes:
       - workspace:/workspace
       - codex-home:/home/agent/.codex
       - observations:/observations:ro
-      - ./docker/agent/codex.toml:/config/codex.toml:ro
+      - ./docker/agenticros/codex.toml:/config/codex.toml:ro
     networks: [robot]
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]

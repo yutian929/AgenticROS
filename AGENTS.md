@@ -1,4 +1,4 @@
-# ROSBody maintainer rules
+# AgenticROS maintainer rules
 
 The product is compose.yaml, docker/, scripts/ and tests/. Host prerequisites are Docker
 and Python 3; no native ROS or pixi. Historical prototypes live only in Git history.

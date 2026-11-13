@@ -11,10 +11,10 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     config = json.loads(subprocess.check_output(['docker', 'compose', 'config', '--format', 'json'], cwd=ROOT, text=True))
-    image_name = config['services']['agent'].get('image', config['name'] + '-agent')
+    image_name = config['services']['agenticros'].get('image', config['name'] + '-agenticros')
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()
-    private = list((ROOT / 'docker/body').glob('*.py')) + list((ROOT / 'docker/body').glob('*.xml'))
+    private = list((ROOT / 'docker/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/simple_mujoco').glob('*.xml'))
     forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
     forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
                              for p in private if p.stat().st_size})

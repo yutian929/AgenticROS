@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def run(*args, **kwargs):
-    return subprocess.run(['docker', 'compose', *args], check=True, text=True, **kwargs)
+    return subprocess.run(['docker', 'compose', '--profile', 'simulation', *args], check=True, text=True, **kwargs)
 
 
 probe = r'''
@@ -77,7 +77,7 @@ print(json.dumps({'raw_ros': 'ok', 'snapshot': snapshot['snapshot_id'],
 n.destroy_node(); rclpy.shutdown()
 '''
 config = json.loads(run('config', '--format', 'json', capture_output=True).stdout)
-agent = config['services']['agent']
+agent = config['services']['agenticros']
 assert not agent.get('privileged', False)
 for mount in agent.get('volumes', []):
     assert mount['target'] in ('/workspace', '/observations', '/home/agent/.codex', '/config/codex.toml')
@@ -86,7 +86,7 @@ for mount in agent.get('volumes', []):
 # Inspect a real created container, including resolved mount paths and network settings.
 name = 'rosbody-isolation-' + uuid.uuid4().hex[:8]
 try:
-    run('run', '-d', '--no-deps', '--name', name, 'agent', 'sleep', '180')
+    run('run', '-d', '--no-deps', '--name', name, 'agenticros', 'sleep', '180')
     actual = json.loads(subprocess.check_output(['docker', 'inspect', name], text=True))[0]
     assert actual['Config']['User'] == 'agent'
     assert not actual['HostConfig']['Privileged']
@@ -111,12 +111,12 @@ try:
                       'mounts': [{k: m[k] for k in ('Type', 'Destination', 'RW')} for m in actual['Mounts']]}))
 finally:
     subprocess.run(['docker', 'rm', '-f', name], check=False, capture_output=True)
-with urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['body']['ports'][0]['published']) + '/frame.jpg') as response:
+with urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['simple_mujoco']['ports'][0]['published']) + '/frame.jpg') as response:
     assert response.headers['Content-Type'] == 'image/jpeg'
     assert response.read().startswith(b'\xff\xd8')
 for path in ('/evaluate', '/opt/body/world.py', '/snapshots/'):
     try:
-        urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['body']['ports'][0]['published']) + path)
+        urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['simple_mujoco']['ports'][0]['published']) + path)
     except urllib.error.HTTPError as exc:
         assert exc.code == 404
     else:

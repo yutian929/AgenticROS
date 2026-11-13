@@ -1,87 +1,70 @@
-# ROSBody
+# AgenticROS
 
-Mac 上的两个 Docker 容器，通过 ROS 2 Jazzy 通信，无需本机 ROS 或 pixi。
+AgenticROS 是运行 Codex、ROS 2 Jazzy、Python 和编译工具的 Agent 容器。
+环境独立启动，通过 ROS 2 提供身体控制和传感器接口。Mac 无需安装 ROS 或 pixi。
 
-- **Body**：MuJoCo 场景、原始关节驱动、RGB-D 观测和私有评估器。
-- **Agent**：Codex、ROS 2、Python、编译工具和身体资料。初始不包含适配器或任务程序，由 Codex 自行实现。
+- **仿真环境 `simple_mujoco`**：独立 Docker 容器，运行 MuJoCo、原始关节驱动、RGB-D 观测和私有评估器。
+- **真实环境**：Linux 主机上的硬件驱动与传感器节点，不需要本项目的仿真容器。目前只验证了 `simple_mujoco`；实机网络、身体资料和观测传输尚需适配。
+- **AgenticROS**（Compose 服务 `agenticros`）：初始没有适配器或任务程序，由 Codex 根据公开资料自行实现。
 
 ## 启动
 
-安装并启动 Docker Desktop，然后在项目目录运行：
+安装并启动 Docker Desktop，在项目目录依次运行：
 
 ```bash
-docker compose build
-bash scripts/docker-login.sh        # 首次在容器中独立登录
-bash scripts/docker-chat.sh         # 进入 Codex
+bash scripts/environment.sh simple_mujoco # 1. 先启动环境
+bash scripts/docker-login.sh              # 首次独立登录容器 Codex
+bash scripts/docker-chat.sh               # 2. 再启动 AgenticROS
 ```
 
-依次输入：
+聊天脚本不会启动或重启环境。`environment.sh real` 只说明外部环境接入要求并退出，不启动容器或操作硬件。
+在 Codex 中输入“适配一下你的身体”，完成后输入“把红色方块夹取到红色盘子上”。
+[localhost:8080](http://localhost:8080) 显示相机画面，终端显示命令、输出和错误。
+认证存入专用卷，不复制宿主机凭据；设备登录不可用时，可在自己的终端通过 `codex login --with-api-key` 的 stdin 登录。
 
-```text
-适配一下你的身体
-把红色方块夹取到红色盘子上
-```
+## 配置与停止
 
-在 [localhost:8080](http://localhost:8080) 观察执行，终端显示 Codex 的命令、输出和错误。
-认证保存在专用卷，不复制宿主机凭据；设备登录不可用时可在自己的终端使用 `codex login --with-api-key` 从 stdin 登录。
-
-## 配置与数据
-
-编辑 [docker/agent/codex.toml](docker/agent/codex.toml)：默认 `gpt-6-astra`、`medium`。
-配置只读挂载，启动时同步到容器。命名卷保存工作区、适配器、会话、认证和观测。
+编辑 [docker/agenticros/codex.toml](docker/agenticros/codex.toml)，默认 `gpt-6-astra`、`medium`。
+配置启动时同步。命名卷持久保存工作区、适配器、会话、认证和观测。
+Compose 项目名暂保留 `rosbody`，确保复用现有卷与网络；产品名和服务名已更新。
 
 ```bash
-bash scripts/docker-chat.sh resume --last  # 继续默认工作区的会话
-docker compose down                       # 停止，保留卷；不要加 -v
+bash scripts/docker-chat.sh resume --last
+docker compose stop simple_mujoco        # 停止仿真，保留数据
+# 确认没有控制任务后，显式重建环境（会生成新 session ID）
+BODY_SEED=3 docker compose up -d --build --force-recreate --wait simple_mujoco
 ```
 
-退出 Codex 不会取消已接受的动作，交接控制前必须核对 UUID 和停止回执。一次只运行一个控制 Agent。
-聊天启动脚本保留正在运行的 Body；要应用新身体代码或场景种子，先停止控制，再显式运行：
-
-```bash
-BODY_SEED=3 docker compose up -d --build --force-recreate --wait body
-```
-
-重启会重置物理状态并生成新 session ID；旧观测不能代表当前状态，动作必须携带当前 ID。
-`ROSBODY_VIEWER_PORT=8081` 可调整浏览器端口。仿真只在动作期间推进，等待墙上时间不会让物体继续运动。
+退出 Codex 不会取消已接受的动作；交接前核对 UUID 和停止回执，一次只运行一个控制 Agent。
+旧版 `body` 仿真若仍运行，启动脚本会保留并复用；切换服务名需要先停止控制，再手动 `docker stop rosbody-body-1`，然后重新启动环境。
+不要使用 `down -v` 或删除卷。重启后的旧观测不能代表当前状态。
+`ROSBODY_VIEWER_PORT` 设置端口，`ROS_DOMAIN_ID` 设置双方一致的 ROS 域（默认 42）。
+仿真只在动作期间推进。
 
 ## 开发与验证
 
-| 路径 | 用途 |
-| --- | --- |
-| `docker/body/` | 私有仿真、驱动和评估 |
-| `docker/interfaces/` | 原始 ROS 接口定义 |
-| `docker/agent/body.md`、`contract.md` | 身体资料和标准接口契约 |
-| `docker/agent/skills/setup-body/` | 自主适配流程 |
-| `scripts/`、`tests/` | 启动和验收工具，无预写适配答案 |
-
-维护者只需 Docker 和 Python 3 标准库：
+- `docker/simple_mujoco/`：私有仿真、原始驱动、评估器。
+- `docker/agenticros/`：公开身体资料、接口契约、setup-body skill 和 Codex 配置。
+- `docker/interfaces/`：原始 ROS IDL；保留现有 `rosbody_driver_interfaces` 包名以兼容生成的适配器。
+- `scripts/`、`tests/`：启动和验收工具，无预写适配答案。
 
 ```bash
-docker compose build
-bash scripts/test.sh                       # 布局和私有评估器单测，不影响活体仿真
-python3 scripts/audit_agent_image.py        # 实际镜像内容审计
-docker compose up -d --no-recreate --wait body
-python3 scripts/check_docker.py            # 跨容器通信、观测和隔离
-python3 scripts/check_docker.py --motion   # 另做小幅动作/取消测试，仅在没有任务时运行
-python3 scripts/docker-trial.py            # 独立新工作区，交给 Codex 两条原始指令
-bash scripts/docker-evaluate.sh            # 维护者侧独立评估，不向 Agent 提供结果
+docker compose --profile simulation build
+bash scripts/test.sh                      # 单测，不启动驱动
+python3 scripts/audit_agent_image.py       # 镜像内容审计
+python3 scripts/check_docker.py            # 已启动环境的 ROS、观测和隔离验证
+python3 scripts/check_docker.py --motion   # 小幅动作/取消测试，仅在没有任务时运行
+python3 scripts/docker-trial.py            # 新工作区的自主适配与任务试验
+bash scripts/docker-evaluate.sh           # 仿真容器内独立评估
 ```
 
-自主试验保留容器、专用工作区及 `runs/` 中的日志与证据。它与默认聊天工作区分开，继续或停止时使用脚本打印的名称：
-
-```bash
-docker exec -it TRIAL_CONTAINER /usr/local/bin/agent-entrypoint codex
-docker stop TRIAL_CONTAINER
-```
-
-单测、原始控制、自主适配和任务评估分别验收，不能凭 Codex 退出码判定成功。
-已完成试验和限制见 [验证记录](docs/docker-validation.md)。旧原生实现留在 Git 历史和归档分支。
+自主试验保留容器、工作区和 `runs/` 证据；原有试验容器和日志不因重命名而改动。
+单测、集成、自主适配和任务评估分别验收，已有结果与限制见[验证记录](docs/docker-validation.md)。
+旧原生实现仅保留在 Git 历史和归档分支。
 
 ## 隔离边界
 
-Agent 不挂载项目、宿主机 home 或 Docker socket，只得到公开资料、原始接口、只读观测和自己的工作区。
-评估器只监听 Body 内部 Unix socket，不通过 ROS、HTTP 或观测卷提供真值。
-
-两个容器均非 root、移除 capabilities。Codex 在容器内使用 `danger-full-access`，因为嵌套 bwrap namespace 不可用。
-DDS 未认证，Agent 有出站网络；这是文件和进程隔离，不是防御所有恶意行为的沙箱。仅用于仿真。
+AgenticROS 不挂载项目、宿主机 home 或 Docker socket，只获得公开资料、原始接口、只读观测与自己的工作区。
+评估器只监听仿真容器内部 Unix socket，不通过 ROS、HTTP 或观测卷提供真值。
+两侧非 root、移除 capabilities；Codex 使用 `danger-full-access`，因为嵌套 bwrap 不可用。
+DDS 未认证且 Agent 有出站网络；这是文件和进程隔离，不是防御所有恶意行为的沙箱。

@@ -18,22 +18,22 @@ def run(args, **kwargs):
 
 def main():
     login = run(['docker', 'compose', 'run', '--rm', '--no-deps', '-T',
-                 'agent', 'codex', 'login', 'status'])
+                 'agenticros', 'codex', 'login', 'status'])
     if login.returncode:
         print('BLOCKED: container Codex is not authenticated. Run bash scripts/docker-login.sh.', file=sys.stderr)
         return 2
     # The body must already be healthy; do not reset an existing user's physical state.
-    body = run(['docker', 'compose', 'ps', '--format', 'json', 'body'], capture_output=True, check=True)
+    body = run(['docker', 'compose', 'ps', '--format', 'json', 'simple_mujoco'], capture_output=True, check=True)
     if not body.stdout.strip():
-        raise RuntimeError('Start the body first: docker compose up -d --wait body')
+        raise RuntimeError('Start the environment first: bash scripts/environment.sh simple_mujoco')
     trial = 'rosbody-trial-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6]
     evidence = ROOT / 'runs' / trial
     evidence.mkdir(parents=True)
     name, volume = trial, trial + '-workspace'
     run(['docker', 'compose', 'run', '-d', '--no-deps', '--name', name,
-         '-v', volume + ':/workspace', 'agent', 'sleep', 'infinity'], check=True)
+         '-v', volume + ':/workspace', 'agenticros', 'sleep', 'infinity'], check=True)
     (evidence / 'trial.json').write_text(json.dumps(dict(container=name, workspace_volume=volume,
-        model_config=(ROOT / 'docker/agent/codex.toml').read_text()), indent=2))
+        model_config=(ROOT / 'docker/agenticros/codex.toml').read_text()), indent=2))
     print(f'Trial container: {name}\nPersistent workspace: {volume}\nHost evidence: {evidence}', flush=True)
     run(['docker', 'exec', name, '/usr/local/bin/agent-entrypoint', 'sh', '-c',
          'test -d /workspace/adapter && test -z "$(ls -A /workspace/adapter)"'], check=True)
