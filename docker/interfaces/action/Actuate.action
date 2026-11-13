@@ -1,0 +1,8 @@
+# Raw joint servo setpoints, NOT a Cartesian body command.
+string session_id
+float64[5] positions
+float64 duration
+---
+string receipt_json
+---
+float64[5] positions

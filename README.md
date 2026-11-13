@@ -1,273 +1,191 @@
-# ROSBody
+# ROSBody — Codex + ROS inside Docker
 
-**A ROS-native body interface for coding agents.**
-
-A minimal simulation-first prototype: a coding agent reads `setup_body.md`, observes a
-MuJoCo scene through ROS 2, writes short Python programs, and operates a physical-contact
-parallel gripper through bounded ROS Actions.
-
-This first body is a **three-axis Cartesian manipulator**, with fixed downward orientation.
-It is not a six-axis arm. The scene has red/blue/green cubes and matching circular plates.
-No model API key is required to run the simulator or diagnostic scripts.
-
-## Architecture
+A simulation-first robot agent. Codex and ROS 2 Jazzy run inside an isolated development
+container. A separate MuJoCo container exposes **raw joint servos and sensors**. The agent
+must discover the body, implement the standard adapter, verify it, then execute text tasks.
 
 ```text
-ROSBody chat → independent Codex agent
-    │ body instructions + Python programs + image inspection
-    ▼
-rosbody.client.Robot (rclpy)
-    │ ROS 2 Services / Actions / sensor topics
-    ▼
-ROSBody server — one active action, measured receipts, immutable snapshots
-    ▼
-MuJoCo — position servos, gripper contact and friction
+Mac terminal                              Mac browser
+    │                                      │ localhost:8080
+    ▼                                      ▼
+agent container ── ROS 2 / UDP ──► body container
+  Codex + ROS + build tools        MuJoCo physics + raw driver
+  interface contract               joint commands / sensors
+  body documentation               no standard move/grip API
+  generated adapter + task code
+    ▲                                      │
+    └──────── read-only observations ───────┘
 ```
 
-ROSBody starts its own Codex process through the official Python SDK. Its conversation is
-independent of the developer chat. Codex itself performs planning, tool calls and recovery;
-ROSBody supplies the body, workspace and process lifecycle.
-Robot state remains in the server between programs. Python variables do not persist between
-client processes. Generated helpers can persist as files.
+The agent image does not contain the simulator, old Robot client, reference adapter,
+color detector, grasp script or evaluator. The host repository and Docker socket are not
+mounted. Only body documentation, driver message definitions and the target API contract
+are supplied. This separates the filesystem; it is not protection against a malicious
+agent exploiting the kernel, network or driver. Only simulation is authorized.
 
-## Talk to the robot (Apple Silicon Mac)
+## Run on an Apple Silicon Mac
+
+Install and start Docker Desktop. Both services run Linux/ARM64 by default.
 
 ```bash
-pixi install
-pixi run build
-pixi run doctor
-pixi run chat
+docker compose build
+docker compose run --rm agent codex login --device-auth
+bash scripts/docker-chat.sh
 ```
 
-To see the robot move in a live 3D window:
-
-```bash
-pixi run chat --viewer
-# Also show complete tool output:
-pixi run chat --viewer --verbose
-```
-
-The terminal shows each command, its output and exit code, plus image paths and edited files.
-By default long command output is truncated to its last 3000 characters; `--verbose` shows it all.
-Complete events are always stored in the session's `events.jsonl`. This exposes executed tools
-and the agent's public progress messages, not private model reasoning.
-The MuJoCo window shows the current body with approximately real-time action pacing. Simulation
-still holds while the agent thinks. On macOS the launcher uses `mjpython` automatically.
-Use the terminal's `/exit` to end a session; closing the viewer also stops the body server.
-An existing headless chat cannot turn into a viewer session in place: exit and relaunch.
-Resuming its session keeps the conversation but creates a fresh simulation.
-
-The chat command starts its own MuJoCo/ROS server and Codex agent. Enter:
+Authenticate using the URL and code printed by Codex. Credentials stay in a dedicated
+Docker volume; host Codex credentials are neither copied nor mounted. API-key login is
+also supported by Codex's `login --with-api-key` via stdin; never put keys into project files.
+The standard Codex terminal UI shows commands, tool results and conversation.
+Open http://localhost:8080 for the live camera, then tell Codex:
 
 ```text
 适配一下你的身体
-把红色方块夹取到红色碟子上
-把其他方块也放到对应颜色的碟子上
-/exit
+把红色方块夹取到红色盘子上
 ```
 
-Codex reads the body instructions, observes images, writes programs and calls ROS.
-There is no hard-coded language-to-task mapping. The initial perception tool is a simple
-RGB-D color detector; SAM3/Jev are not included. Commands execute in simulation only.
-Exit or Ctrl+C closes the owned server; failed turns are not automatically retried.
+The first instruction should produce `/workspace/adapter/body.py` and verification evidence.
+There is deliberately no prebuilt Cartesian adapter. The task agent may write and launch
+ROS nodes, compile packages and install Python packages in a workspace virtual environment.
+System-wide dependencies belong in the agent Dockerfile. Real-time servos remain in the driver.
 
-Authentication uses the Codex login on this machine. If `doctor` reports logged out:
+## Configuration and persistence
 
-```bash
-pixi run rosbody login
-# Alternatively, with OPENAI_API_KEY already set securely in your shell:
-pixi run rosbody login --api-key
-```
-
-ChatGPT login can be used without supplying an API key separately. Model access and usage
-limits depend on that account. Never paste credentials into the robot conversation.
-`--model MODEL` overrides `rosbody.toml`; if neither specifies a model, Codex supplies the default.
-The SDK pins its own Codex runtime, so installing the desktop app is not required.
-
-Each session prints its directory under `runs/chat/`. `workspace/` contains the agent's
-body instructions, generated programs and evidence. `session.json` stores the thread ID,
-not credentials. `events.jsonl` records agent events and may contain your prompts/tool output.
-Resume with `pixi run rosbody chat --session /absolute/path/to/session`.
-The conversation and programs resume, but **the simulation restarts**; the agent is explicitly
-instructed to re-observe rather than replay previous actions. Concurrent use of a session is rejected.
-
-For noninteractive commands, repeat `--prompt`:
-
-```bash
-pixi run rosbody chat --prompt '适配一下你的身体' --prompt '把红色方块放到红色碟子上'
-```
-
-The Codex write sandbox is the session workspace, with network enabled for local ROS DDS.
-It is not a VM/container or a read-isolation boundary. ROS_DOMAIN_ID separates discovery,
-not security. Simulator truth is excluded by agent instructions, not access control.
-Only run this prototype on a trusted simulation machine; it does not attach to hardware.
-
-## Python programs in an agent workspace
-
-Run generated programs with `./body-python task.py` (also supports `-m`, `-c`, and stdin).
-The program can directly import `rosbody.client.Robot` and use rclpy. This is an environment
-launcher, not a CLI translation of each robot operation. It restores ROS overlay and dynamic
-library paths after entering the shell, then replaces itself with the Pixi Python process.
-On macOS, invoking a bare Python executable through the Codex system shell can lose inherited
-`DYLD_LIBRARY_PATH` and fail to load generated ROS type-support libraries.
-
-New and resumed chats generate this launcher automatically. Already-running chats must be
-exited and resumed to refresh their workspace instructions (the simulation restarts).
-
-## Configuration
-
-Edit `rosbody.toml` in the repository root, then restart `pixi run chat`:
+Edit `docker/agent/codex.toml` to select model and reasoning effort. It is mounted read-only
+and copied into the container's Codex home at startup. Example defaults:
 
 ```toml
 model = "gpt-6-astra"
-reasoning_effort = "medium"
-viewer = true
-verbose = true
-seed = 0
+model_reasoning_effort = "medium"
 ```
 
-The shipped configuration enables the live viewer and full command output. Model names and
-reasoning levels must be supported by your account/model. No credentials belong in this file.
-CLI flags override the file; omit model/effort from the file to inherit Codex defaults.
-The resolved settings are printed at startup and recorded in `session.json`.
-Resuming a conversation also uses the current configuration; edits do not affect running chats.
+`BODY_SEED=3 bash scripts/docker-chat.sh` chooses the initial scene seed when starting a
+new body. The chat launcher preserves an already running body, even if source or seed changes.
+To deliberately apply new body code or a seed, stop controlling agents, then run
+`BODY_SEED=3 docker compose up -d --build --force-recreate --wait body`. Driver restart produces a new session ID and resets physical
+state. Saved code and chat history do not restore that state: reobserve before acting.
+`ROSBODY_VIEWER_PORT=8081` changes the host camera port.
+
+Docker named volumes preserve `/workspace` (adapter/programs/evidence), Codex authentication
+and conversations, and public observations. To resume a conversation:
 
 ```bash
-pixi run chat --no-viewer --no-verbose
-pixi run chat --reasoning-effort high
-pixi run chat --config /absolute/path/my-robot.toml
+bash scripts/docker-chat.sh resume --last
 ```
 
-## Verified autonomous trial
+Exiting Codex leaves the body running, so subsequent agent sessions can share its current
+state. Only run one controlling agent at a time. Stop both services with `docker compose down`;
+this preserves named volumes. Do not use `down -v` unless deliberately erasing all saved data,
+including credentials and generated adapters.
 
-On macOS / ROS 2 Jazzy, the embedded Codex first completed a no-motion body check,
-then resumed the same conversation with a fresh simulation and autonomously moved the
-red block to the red plate. It generated stage programs, inspected initial/lift/final images,
-and checked action receipts. The independent evaluator was read only after the agent finished:
-success=true, block-to-plate XY center distance about 1.7 mm (seed 0).
-This is one successful simulation trial, not a success-rate measurement or hardware validation.
+## What Codex receives
 
-![Embedded Codex trial result](docs/agent-demo-result.png)
+| File | Purpose |
+|---|---|
+| `docker/agent/contract.md` | Required `Body` API, units, receipts and recovery semantics |
+| `docker/agent/body.md` | Raw endpoints, actuator order, geometry and limits |
+| `docker/agent/skills/setup-body/SKILL.md` | Discover → implement → verify → record |
+| `docker/interfaces/` | Raw ROS action/service IDL, no implementation |
 
-## Low-level diagnostics (without a model)
+Generated copies live in `/workspace`, along with the generated adapter. Raw driver and
+private scene files live only in the body image. Observations mount read-only in the agent.
+DDS is configured to use UDP, avoiding cross-container shared-memory dependencies. Both
+containers share a Compose bridge; no host ROS installation is needed.
 
-Install [Pixi](https://pixi.sh), then from this repository:
+## Validation
+
+Run the container integration check after building and starting the body:
 
 ```bash
-pixi install
-pixi run build
-pixi run server
+docker compose up -d --wait body
+python3 scripts/audit_agent_image.py
+python3 scripts/check_docker.py
 ```
 
-Alternatively use a ROS launch description (headless):
+This checks image/mount isolation, raw ROS discovery, sensor access and invalid-goal rejection.
+It does not provide an adapter to the agent. A successful autonomous adaptation and pick/place
+trial is a separate acceptance test; do not substitute a prewritten adapter for that test.
+
+The earlier native macOS prototype remains on `codex/macos-minimal-sim` and
+`archive/macos-prototype-20261113`. Its source is retained in this checkout for regression
+reference, but is excluded from Docker build inputs by `.dockerignore` and not used at runtime.
+See `docs/macos-prototype.md` for that version. `pixi run chat` still invokes the old native
+prototype; **use `bash scripts/docker-chat.sh` for this Docker rewrite**.
+
+### Separate acceptance stages
+
+`python3 scripts/check_docker.py --motion` additionally checks a small raw joint motion,
+exclusive admission, active UUID, cancellation acknowledgment, terminal stop confirmation,
+and ordinary servo completion. These are driver tests, not autonomous adaptation.
+Only run motion checks when no agent task is active.
+
+After authenticating, run the autonomous acceptance harness:
 
 ```bash
-pixi run bash -c 'source scripts/ros_env.sh; ros2 launch ./launch/sim.launch.py seed:=3'
+python3 scripts/docker-trial.py
 ```
 
-A separate terminal, same directory:
+It creates a **new named workspace volume**, verifies the adapter directory is empty,
+and gives container Codex exactly the two user instructions above, in sequence. It supplies
+no code solution or task coordinates. It records JSONL commands/results under `runs/`, keeps
+the trial container and workspace, and never automatically retries a failed stage. Both calls
+use the editable model configuration. Inspect generated code, image-view events, manifest and
+test evidence; a Codex exit code alone is not a passing adaptation test. Do not run this beside
+another controlling agent. The body is not reset by this script. The trial workspace is separate from the default
+interactive workspace. Continue using its generated adapter with the printed container name:
 
 ```bash
-pixi run bash scripts/client.sh status
-pixi run bash scripts/client.sh snapshot
-pixi run bash -c 'source scripts/ros_env.sh; python examples/pick_place.py'
+docker exec -it TRIAL_CONTAINER /usr/local/bin/agent-entrypoint codex resume --last
 ```
 
-The last command performs a **deterministic RGB-D diagnostic**, not an autonomous Codex trial.
-It uses image colour components and metric depth, not simulator object coordinates.
-Inspect the final RGB path printed by the program. The server's separate `evaluator.json`
-records the hidden ground-truth check for development; do not expose it to task agents.
+Do not run `docker-chat.sh` concurrently with that trial; its default workspace is intentionally
+separate. Generated trial code and evidence remain in the trial's named volume.
 
-For a visible simulation window on macOS:
+Independent task evaluation is available only to the maintainer:
 
 ```bash
-pixi run bash -c 'source scripts/ros_env.sh; mjpython -m rosbody.server --viewer'
+bash scripts/docker-evaluate.sh
 ```
 
-Use only one server at a time. `Ctrl-C` stops a headless server; close the viewer for a viewer run.
-A headless run still renders RGB-D through an offscreen OpenGL context (on Mac, run in a graphical login session).
-For Linux rendering, a working OpenGL backend is needed; `MUJOCO_GL=egl` is an option on suitable GPU hosts.
-The Linux dependency target is included but must be validated on a Linux host.
+It uses a Unix socket inside the body container, not a ROS service, HTTP endpoint, shared
+observation file or agent mount. Success requires the entire red-block footprint inside the
+red plate, bottom on the plate surface (3 mm tolerance), low velocity, no finger contact,
+and an idle driver. The simulation advances during commands and holds otherwise; this is
+an instantaneous simulated-state check, not a real-world robustness claim. Never feed this
+result back to the task-performing agent. The browser and ROS snapshots contain only sensors.
 
-The environment uses RoboStack ROS 2 Jazzy. Pixi locks the dependency versions.
-Custom action/service definitions are built by `colcon`; remember to source `scripts/ros_env.sh`
-inside the Pixi environment. No system ROS installation is needed.
+Actual results and blockers are recorded in `docs/docker-validation.md`.
 
-## Give the body to Codex
+## Lifecycle, state and isolation limits
 
-Open this repository in Codex and give a task such as:
+Each body process start generates a new session ID. Every raw goal must include that ID;
+stale-session goals are rejected. Snapshots contain the session and acquisition timestamp.
+`/driver/status` exposes the active UUID and terminal receipts for reconciliation. Unknown
+or missing receipts after timeout must not cause an automatic replay. Cancel acknowledgment
+is only acknowledgment: wait for a terminal receipt with `stop_confirmed` before proceeding.
+Receipt history is in memory for the current session; the agent saves durable evidence.
 
-> Read setup_body.md. Check the local simulation is ready. Use fresh RGB-D observations to
-> put the red cube on the red plate. Write and run stage programs, inspect images between
-> visually dependent stages, and recover from a failed grasp. Do not read evaluator truth
-> or copy the diagnostic example's task plan.
+Codex uses `sandbox_mode = "danger-full-access"` **inside the container**: the default
+Docker security profile rejects its nested bwrap namespace creation. This does not grant
+host filesystem access or root privileges. The agent runs as uid 1001 without capabilities
+or the Docker socket. It has network access
+for Codex and package installation; the ROS bridge is **not an adversarial security boundary**.
+DDS is unauthenticated, and any peer on that bridge can issue raw commands. The browser is
+bound to Mac loopback. The setup separates files and processes but does not claim protection
+against all malicious code, kernel exploits, network access or resource exhaustion. Use only
+trusted simulation sessions. Only the four documented mounts are available to the agent.
 
-`AGENTS.md` points to the body contract; `.agents/skills/setup-body/SKILL.md` provides a
-reusable skill entry point. Shell/Python access and local image reading suffice; MCP is optional.
-Run commands through `pixi run` so ROS dependencies and generated interfaces are available.
-For the embedded agent, use `pixi run chat`; it manages Codex authentication checks and its own workspace.
+Exiting a client does not cancel an already accepted raw goal. Reconcile its UUID or
+cancel and verify its terminal stop receipt before handing control to another client.
+Stop the interactive agent by exiting Codex. Stop the simulation and Compose services with
+`docker compose down` (without `-v`). Trial containers have separate names printed by the
+harness: stop those with `docker stop NAME`; keep their named volumes. Before intentionally
+restarting a body, stop agent control and expect a new session and scene. Changing BODY_SEED
+is a physical reset, not a continuation of the previous task.
 
-## Interfaces
-
-| Endpoint | Type | Purpose |
-|---|---|---|
-| `/body/move_free` | `rosbody_interfaces/action/Move` | Fixed-orientation grasp-center xyz in base metres |
-| `/body/gripper` | `rosbody_interfaces/action/Gripper` | Inner finger width in metres |
-| `/body/capture_snapshot` | `rosbody_interfaces/srv/Snapshot` | Immutable RGB/depth/calibration/state bundle |
-| `/body/status` | `std_srvs/srv/Trigger` | Measured state, session, busy flag, completed receipts |
-| `/sim/reset` | `std_srvs/srv/Trigger` | Reset only when no action is running |
-| `/camera/front/{rgb,depth,camera_info}` | sensor topics | 640×480 RGB-D, reliable QoS (depth 2) for cameras; sensor-data QoS for joints |
-| `/joint_states`, `/tf` | state topics | Cartesian/parallel-gripper joints and optical transform |
-
-See [setup_body.md](setup_body.md) for conventions, recovery and usage examples.
-
-## Verification
-
-```bash
-pixi run test
-pixi run bash -c 'source scripts/ros_env.sh; python examples/verify_ros.py'
-```
-
-The second command requires the running server and exercises ROS transport, concurrent-goal
-rejection, invalid targets, cancellation, and image topic publication. It resets the simulation.
-The physical-contact test and RGB-D tests can also run without ROS if Python dependencies are installed.
-
-## Verified locally
-
-On 2026-11-13, Apple Silicon macOS 26.6, ROS 2 Jazzy, Python 3.12.16 and MuJoCo 3.17.0:
-
-- Custom ROS interfaces compiled successfully.
-- 10 physics/observation tests passed.
-- 9 live ROS integration checks passed, including cancellation, goal exclusivity and timeout reconciliation without replay.
-- The RGB-D diagnostic completed red-cube-to-red-plate placement through ROS, at randomized seed 3; the separate evaluator reported success.
-- Final RGB was visually inspected. This is one diagnostic rollout, not a success-rate benchmark or an autonomous LLM evaluation.
-- Launch-description argument loading was checked; the interactive viewer path has not yet been exercised in this run.
-
-![Observed result of the ROS diagnostic](docs/demo-result.png)
-
-## Scope and limitations
-
-- Simulation only. No hardware driver or real robot motion.
-- Stepped time: physics advances during actions, pauses while reasoning. No real-time claim.
-- Straight-line Cartesian motion; workspace limits, but no general collision-free planner.
-- Three coloured cubes and flat plates; initial perception assumes separate regions and known size ordering.
-- No SAM3, Jev, VLA, learned planner, or automatic skill promotion yet.
-- ROS cancellation is cooperative; stop confirmation is derived from simulated measured velocities.
-- Receipts are cached in memory and journaled to disk. Restart recovery is not implemented;
-  a missing result after restart remains unknown. Actions are never automatically replayed.
-- Agent and server share a local filesystem for images; remote artifact transport is not implemented.
-- Evaluator separation is a convention, not an OS sandbox. An unrestricted coding agent can read local source.
-
-## Layout
-
-```text
-rosbody/assets/tabletop.xml MuJoCo body and scene
-src/rosbody_interfaces/     ROS Action/Service definitions
-rosbody/sim.py              physics, observations, evaluator-only checks
-rosbody/server.py           ROS bridge and action admission
-rosbody/client.py           blocking client, no automatic action retry
-rosbody/perception.py       RGB-D colour-component baseline
-setup_body.md               agent-facing body contract
-examples/                  developer diagnostics
-runs/                      ignored runtime observations and receipts
-```
+Authentication uses container-local device login, following the official
+[Codex authentication documentation](https://learn.chatgpt.com/docs/auth).
+Model and effort keys follow the official
+[configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference).
+No host credentials are imported. If device login is unavailable for your account, use the
+CLI's `login --with-api-key` via stdin in your own terminal; do not send secrets in chat.

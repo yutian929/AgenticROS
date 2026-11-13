@@ -1,0 +1,9 @@
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+cli_auth_credentials_store = "file"
+approval_policy = "never"
+# Docker is the execution boundary; nested bwrap namespaces are unavailable here.
+sandbox_mode = "danger-full-access"
+
+[projects."/workspace"]
+trust_level = "trusted"

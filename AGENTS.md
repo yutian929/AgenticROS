@@ -1,14 +1,18 @@
-# ROSBody
+# ROSBody Docker rewrite — maintainer instructions
 
-This repository is a simulation-only robot workspace. Read `setup_body.md` before operating it.
+The active product is compose.yaml plus docker/ and scripts/docker-chat.sh.
+The old native prototype is preserved on codex/macos-minimal-sim and retained here for
+regression reference. It must never be copied into the agent image or mounted into it.
 
-- Execute commands in the Pixi environment and source `scripts/ros_env.sh` for custom ROS interfaces.
-- The body is a three-axis Cartesian gripper, not a six-axis industrial arm. It has no rotation command.
-- Use the public ROS interfaces or `rosbody.client.Robot` for task execution.
-- Inspect returned RGB images before image-dependent decisions. A printed image path is not visual inspection.
-- Stop dependent actions on failed, unknown or unconfirmed-stop receipts. Never repeat a timed-out goal automatically.
-- Simulator truth, `Simulation.evaluate()`, `runs/**/evaluator.json`, and scene object coordinates are evaluator-only during agent task trials. Do not use them to choose actions or declare success.
-- This is an evaluation convention, not a security sandbox: a coding agent can technically read simulator files.
-- Record generated task programs and observations under `runs/`. Do not put credentials in the repository.
-- Prefer local Python helpers first; add a ROS service/node only for reusable capabilities.
-- No hardware integration or hardware motion is authorized by this prototype.
+- Simulation only; no physical robot integration or motion is authorized.
+- Agent image: Codex, ROS, raw IDL, documentation, build tools; NO prebuilt body adapter.
+- Body image: raw actuator driver, physics and sensors; no standard move/grip implementation.
+- Agent must generate its adapter, perception and task programs during autonomous trials.
+- Keep private scene/model/evaluator data out of the agent image and mounts.
+- Do not mount host home, source checkout, credentials, Docker socket or privileged devices.
+- Maintain bounded exclusive raw actions, UUID receipts, cancellation and stop reconciliation.
+- Never automatically replay timed-out goals or infer task completion from servo completion.
+- Inspect observations for image-dependent actions. Do not use hidden truth for task planning.
+- Test container startup, ROS connectivity and mount isolation. Clearly distinguish native
+  tests, Docker integration checks and autonomous agent trials in reports.
+- Do not erase volumes, restart a user's live body, or change their generated adapter silently.
