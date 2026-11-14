@@ -5,7 +5,7 @@ services:
     profiles: [simulation]
     build:
       context: .
-      dockerfile: docker/simple_mujoco/Dockerfile
+      dockerfile: docker/environments/simple_mujoco/Dockerfile
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       BODY_SEED: "${BODY_SEED:-0}"

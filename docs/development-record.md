@@ -5,10 +5,10 @@
 
 ## 当前开发说明
 
-- `docker/simple_mujoco/`：私有仿真、原始驱动、RGB-D 点云、评估器，以及公开 URDF、RViz 配置和容器图形进程管理。
+- `docker/environments/simple_mujoco/`：私有仿真、原始驱动、RGB-D 点云、评估器，以及公开 URDF、RViz 配置和容器图形进程管理。
 - `docker/agenticros/`：通用 ROS 工具、适配要求、setup-body skill 和 Codex 配置，不含环境专用接口或身体资料。
-- `docker/simple_mujoco/interfaces/`：归仿真端所有的原始 ROS IDL，包名保留为 `agenticros_driver_interfaces`。
-- `docker/simple_mujoco/body.md`：由仿真端通过 ROS 参数公开的设备说明，不复制进 Agent 镜像。
+- `docker/environments/simple_mujoco/interfaces/`：归仿真端所有的原始 ROS IDL，包名保留为 `agenticros_driver_interfaces`。
+- `docker/environments/simple_mujoco/body.md`：由仿真端通过 ROS 参数公开的设备说明，不复制进 Agent 镜像。
 - `scripts/`、`tests/`：启动和验收工具，无预写适配答案。
 
 ```bash
@@ -87,7 +87,8 @@ ROS 接口包改名后，旧适配器中的导入名需更新为 `agenticros_dri
 已有代码和会话会保留，但重启后的身体 session、观测和适配验证状态必须重新核对。
 历史验证文档、日志和禁用源码指纹中的原始名称保留用于追溯，不代表当前运行配置。
 
-`environment.sh real` 仅说明外部 ROS 接入要求并退出，不启动容器或操作硬件。
+`scripts/environment.sh` 是统一选择入口，具体启动逻辑位于 `docker/environments/<名称>/start.sh`。
+当前仅提供 `simple_mujoco`，未知或未实现的环境名称会报错，不启动容器。
 设备登录不可用时，可在容器中通过 `codex login --with-api-key` 从 stdin 登录；不要把密钥写入仓库。
 
 ### 断电或重启后恢复

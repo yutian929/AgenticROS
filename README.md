@@ -7,6 +7,9 @@
 宿主机只需 Docker（含 Compose）和 Python 3，无需安装 ROS。
 Agent 不预装仿真专用消息或身体说明，通过 ROS 2 运行时发现环境，获取公开定义、自行编译接口并编写控制代码。
 
+具体环境位于 `docker/environments/<名称>/`，各自包含镜像、驱动、接口和启动脚本。
+`environment.sh <名称>` 是统一入口，当前提供 `simple_mujoco`。
+
 ## 快速开始
 
 ```bash
