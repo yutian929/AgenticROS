@@ -1,49 +1,42 @@
 # AgenticROS
 
-让 Codex 通过 ROS 2 发现身体能力、自行实现适配，并执行用户的文本任务。
-Agent 容器包含 Codex、ROS 2 和开发工具，不预装适配器或任务程序。
+让 Codex 通过 ROS 2 发现设备能力、自行编写适配器，并执行文本任务。
+当前提供 `simple_mujoco` 仿真环境，内置 ROS 驱动、RGB-D 观测和浏览器中的 RViz2。
 
-环境独立于 AgenticROS：当前提供 **`simple_mujoco`** 仿真容器，包含 MuJoCo、原始 ROS 驱动和 RGB-D 观测。
-未来接实机时，由外部硬件驱动提供 ROS 接口；当前尚未验证实机接入。
-
-容器环境统一使用 **Ubuntu 22.04 Jammy + ROS 2 Humble**，支持 AMD64 和 ARM64。
-仿真与 Agent 均在容器中运行；宿主机只需要 Docker Engine（含 Compose）或 Docker Desktop，以及 Python 3。
+环境为 **Ubuntu 22.04 + ROS 2 Humble**，已在 **Linux AMD64** 验证。
+宿主机只需 Docker（含 Compose）和 Python 3，无需安装 ROS。
+Agent 不预装仿真专用消息或身体说明，通过 ROS 2 运行时发现环境，获取公开定义、自行编译接口并编写控制代码。
 
 ## 快速开始
 
-安装并启动 Docker Engine（含 Compose）或 Docker Desktop，在项目目录依次运行，无需本机 ROS：
-
 ```bash
-bash scripts/environment.sh simple_mujoco # 先启动仿真环境
+bash scripts/environment.sh simple_mujoco # 启动仿真与 RViz2
 bash scripts/docker-login.sh              # 首次登录容器内 Codex
-bash scripts/docker-chat.sh               # 再进入 AgenticROS
+bash scripts/docker-chat.sh               # 进入 Agent
 ```
 
-依次给 Codex 下达指令：
+依次下达指令：
 
 ```text
 适配一下你的身体
 把红色方块夹取到红色盘子上
 ```
 
-在 [localhost:8080](http://localhost:8080) 观察仿真；终端显示命令、输出和错误。
-启动 AgenticROS 不会自动启动或重置环境。
+启动脚本会显示 RViz2 的浏览器地址和连接密码，并尝试自动打开浏览器，输入显示的密码即可连接。
+没有桌面环境时，手动打开脚本输出的地址；默认端口为 `8080`。
 
-观察界面由独立的 `visualizer` 服务提供，通过 ROS 订阅关节状态、TF、机器人模型和 RGB-D 话题，
-显示可旋转的三维模型、彩色点云、相机画面及话题消息。点云从同步相机观测重建，不读取物体真值。
-默认连接 `simple_mujoco` 的固定接口；观察服务不提供运动控制，也不挂载仿真源码或观测文件卷。
-
-## 配置与日常使用
-
-模型配置：[docker/agenticros/codex.toml](docker/agenticros/codex.toml)，默认 `gpt-6-astra`、`medium`。
-代码、适配结果、会话和认证持久保存在 Docker 卷中，不复制宿主机凭据。
+## 常用操作
 
 ```bash
 bash scripts/docker-chat.sh resume --last # 继续会话
-docker compose stop simple_mujoco visualizer # 停止仿真与观察界面，保留数据
+bash scripts/environment.sh simple_mujoco # 停机或断电后恢复环境
+# 确认控制任务结束后停止环境：
+docker compose stop simple_mujoco
 ```
 
-一次只运行一个控制 Agent。退出 Codex 不会取消已接受的动作，交接前应确认停止。
-不要使用 `down -v` 删除数据；仿真重启后需重新核对 session 和观测。
+模型配置见 [codex.toml](docker/agenticros/codex.toml)，默认 `gpt-6-astra / medium`。
+工作区、认证、观测和 VNC 密码由数据卷保留；仿真重启会重置场景并更换 session，继续任务前须重新核对与观测。
+一次只运行一个控制 Agent，不要使用 `down -v` 删除数据卷。
 
-[开发、隔离边界与旧版迁移](docs/development.md) · [实际验证结果与限制](docs/docker-validation.md)
+[开发记录](docs/development-record.md)包含架构、配置、迁移、测试命令和验证历史。
+当前仅验证仿真环境，Humble 版本尚未完成自主抓取验收。

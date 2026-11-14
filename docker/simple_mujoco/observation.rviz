@@ -1,0 +1,97 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Views
+    Name: Views
+Visualization Manager:
+  Class: ""
+  Global Options:
+    Background Color: 28; 34; 43
+    Fixed Frame: base
+    Frame Rate: 20
+  Displays:
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Cell Size: 0.1
+      Plane Cell Count: 20
+      Color: 85; 105; 125
+      Alpha: 0.45
+    - Class: rviz_default_plugins/RobotModel
+      Name: Cartesian gripper
+      Enabled: true
+      Description Source: Topic
+      Description Topic:
+        Value: /robot_description
+        Reliability Policy: Reliable
+        Durability Policy: Transient Local
+        History Policy: Keep Last
+        Depth: 1
+      Visual Enabled: true
+      Collision Enabled: false
+    - Class: rviz_default_plugins/TF
+      Name: TF frames
+      Enabled: true
+      Show Axes: true
+      Show Arrows: false
+      Show Names: false
+      Marker Scale: 0.12
+      Frames:
+        All Enabled: true
+    - Class: rviz_default_plugins/PointCloud2
+      Name: RGB-D observations
+      Enabled: true
+      Topic:
+        Value: /camera/depth/color/points
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 2
+      Queue Size: 2
+      Style: Flat Squares
+      Size (m): 0.008
+      Color Transformer: RGB8
+      Position Transformer: XYZ
+      Decay Time: 0
+    - Class: rviz_default_plugins/Image
+      Name: RGB camera
+      Enabled: true
+      Topic:
+        Value: /camera/color/image_raw
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 2
+      Normalize Range: true
+    - Class: rviz_default_plugins/Image
+      Name: Depth camera
+      Enabled: false
+      Topic:
+        Value: /camera/depth/image_raw
+        Reliability Policy: Best Effort
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Depth: 2
+      Normalize Range: true
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Name: Current View
+      Target Frame: base
+      Distance: 1.5
+      Pitch: 0.65
+      Yaw: 5.1
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0.1
+Window Geometry:
+  Width: 1440
+  Height: 900
+  X: 0
+  Y: 0

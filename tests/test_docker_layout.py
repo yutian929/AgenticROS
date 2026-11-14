@@ -27,32 +27,55 @@ class DockerLayout(unittest.TestCase):
                 self.assertEqual(mount['type'], 'volume')
         for line in (ROOT / 'docker/agenticros/Dockerfile').read_text().splitlines():
             if line.startswith('COPY '):
-                self.assertTrue(all(s.startswith(('docker/agenticros/', 'docker/interfaces', 'docker/shared/'))
+                self.assertTrue(all(s.startswith(('docker/agenticros/', 'docker/shared/'))
                                     for s in line.split()[1:-1]))
 
     def test_environment_is_opt_in(self):
         config = json.loads(subprocess.check_output(
             ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'],
             cwd=ROOT, text=True))
-        self.assertEqual(set(config['services']), {'simple_mujoco', 'visualizer', 'agenticros'})
+        self.assertEqual(set(config['services']), {'simple_mujoco', 'agenticros'})
         self.assertEqual(config['services']['simple_mujoco']['profiles'], ['simulation'])
-        self.assertEqual(config['services']['visualizer']['profiles'], ['simulation'])
-        self.assertFalse(config['services']['simple_mujoco'].get('ports'))
-        self.assertFalse(config['services']['visualizer'].get('volumes'))
+        body = config['services']['simple_mujoco']
+        self.assertEqual({m['target'] for m in body['volumes']}, {'/observations', '/viewer-auth'})
+        self.assertEqual(len(body['ports']), 1)
+        self.assertEqual(body['ports'][0]['target'], 8080)
+        self.assertEqual(body['ports'][0]['host_ip'], '127.0.0.1')
+        self.assertFalse(any(m['type'] == 'bind' for m in body['volumes']))
         self.assertNotIn('depends_on', config['services']['agenticros'])
-        self.assertEqual(config['volumes']['workspace']['name'], 'rosbody_workspace')
-        self.assertEqual(config['volumes']['codex-home']['name'], 'rosbody_codex-home')
+        self.assertEqual(config['name'], 'agenticros')
+        self.assertEqual(config['volumes']['workspace']['name'], 'agenticros_workspace')
+        self.assertEqual(config['volumes']['codex-home']['name'], 'agenticros_codex-home')
+        self.assertEqual(config['volumes']['viewer-auth']['name'], 'agenticros_viewer-auth')
+        self.assertEqual(config['networks']['robot']['name'], 'agenticros_robot')
 
     def test_no_supplied_adapter(self):
         tree = ast.parse((ROOT / 'docker/simple_mujoco/world.py').read_text())
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         self.assertFalse(names & {'move', 'grip', 'evaluate', 'locate_color'})
-        self.assertFalse(list((ROOT / 'docker/agent').rglob('body.py')))
+        self.assertFalse(list((ROOT / 'docker/agenticros').rglob('body.py')))
         self.assertIn('does not supply its implementation', (ROOT / 'docker/agenticros/contract.md').read_text())
         # Keep historical reference-code fingerprints even after removing its source.
         hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
-        self.assertTrue({'rosbody/client.py', 'examples/pick_place.py'} <= set(hashes.values()))
+        self.assertIn('examples/pick_place.py', hashes.values())
+        self.assertTrue(hashes['3325d566e064286589ca146e0a3208dedfb6eb28bf84847da936f09ca2a8eaa0'].endswith('/client.py'))
         self.assertTrue(all(len(h) == 64 for h in hashes))
+
+    def test_agent_starts_without_device_knowledge(self):
+        dockerfile = (ROOT / 'docker/agenticros/Dockerfile').read_text()
+        self.assertNotIn('/opt/driver_ws', dockerfile)
+        self.assertNotIn('colcon build', dockerfile)
+        self.assertFalse((ROOT / 'docker/interfaces').exists())
+        self.assertFalse((ROOT / 'docker/agenticros/body.md').exists())
+        for path in (ROOT / 'docker/agenticros').rglob('*'):
+            if path.is_file():
+                text = path.read_text()
+                for private_hint in ('/driver/', '/camera/', 'agenticros_driver_interfaces',
+                                     '/opt/driver_ws', 'simple_mujoco'):
+                    self.assertNotIn(private_hint, text, str(path))
+        bodyfile = (ROOT / 'docker/simple_mujoco/Dockerfile').read_text()
+        self.assertIn('COPY docker/simple_mujoco/interfaces ', bodyfile)
+        self.assertIn('COPY docker/simple_mujoco/body.md ', bodyfile)
 
     def test_build_context(self):
         self.assertEqual((ROOT / '.dockerignore').read_text().splitlines(), ['**', '!docker/', '!docker/**'])

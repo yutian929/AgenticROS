@@ -15,10 +15,14 @@ def main():
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()
     private = list((ROOT / 'docker/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/simple_mujoco').glob('*.xml'))
+    # Device definitions are public at runtime, but must not be preinstalled in Agent.
+    private += [ROOT / 'docker/simple_mujoco/body.md']
+    private += [p for p in (ROOT / 'docker/simple_mujoco/interfaces').rglob('*') if p.is_file()]
     forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
     forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
                              for p in private if p.stat().st_size})
-    name = 'rosbody-image-audit-' + uuid.uuid4().hex[:8]
+    forbidden_paths = tuple('/' + source for source in forbidden_hashes.values())
+    name = 'agenticros-image-audit-' + uuid.uuid4().hex[:8]
     subprocess.run(['docker', 'create', '--name', name, '--entrypoint', '/bin/true', image_id], check=True, capture_output=True)
     count = 0
     try:
@@ -28,9 +32,13 @@ def main():
             with tarfile.open(fileobj=process.stdout, mode='r|') as archive:
                 for member in archive:
                     path = member.name.lstrip('./')
-                    assert not path.startswith(('opt/body/', 'var/run/docker.sock')), path
-                    assert not path.endswith(('/tabletop.xml', '/rosbody/client.py', '/adapter/body.py')), path
+                    assert not path.startswith(('opt/body/', 'var/run/docker.sock', 'opt/driver_ws/')), path
+                    # Original historical paths come from the unchanged fingerprint registry.
+                    assert not path.endswith(forbidden_paths + ('/tabletop.xml',
+                                               '/agenticros/client.py', '/adapter/body.py')), path
                     if member.isfile():
+                        assert not path.startswith('opt/device-public/'), path
+                        assert 'agenticros_driver_interfaces' not in path, path
                         count += 1
                         if 0 < member.size < 2_000_000:
                             digest = hashlib.sha256(archive.extractfile(member).read()).hexdigest()

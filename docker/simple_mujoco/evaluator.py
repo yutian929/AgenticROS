@@ -8,7 +8,7 @@ import threading
 
 import numpy as np
 
-SOCKET = '/tmp/rosbody-evaluator.sock'
+SOCKET = '/tmp/agenticros-evaluator.sock'
 
 
 def evaluate(sim):

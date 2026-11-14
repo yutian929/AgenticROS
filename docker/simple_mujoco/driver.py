@@ -14,16 +14,18 @@ from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
 from rclpy.node import Node
-from sensor_msgs.msg import JointState, Image, CameraInfo
+from rcl_interfaces.msg import ParameterDescriptor
+from sensor_msgs.msg import JointState, Image, CameraInfo, PointCloud2, PointField
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster
 from rclpy.qos import qos_profile_sensor_data
 from std_srvs.srv import Trigger
-from rosbody_driver_interfaces.action import Actuate
-from rosbody_driver_interfaces.srv import Snapshot
+from agenticros_driver_interfaces.action import Actuate
+from agenticros_driver_interfaces.srv import Snapshot
 from world import Simulation
 from evaluator import start_evaluator
+from sensors import point_cloud_buffer
 
 
 LOW = np.array([-.38, -.26, -.175, 0, 0])
@@ -39,6 +41,16 @@ def valid_goal(positions, duration):
 class Driver(Node):
     def __init__(self):
         super().__init__('raw_body_driver')
+        # Public device metadata is discovered over standard ROS parameter services.
+        # No simulator source, scene state, evaluator or client program is exported.
+        public = Path('/opt/device-public')
+        sources = {name: (public / 'interfaces' / name).read_text() for name in (
+            'package.xml', 'CMakeLists.txt', 'action/Actuate.action', 'srv/Snapshot.srv')}
+        self.declare_parameter('device_documentation', (public / 'body.md').read_text(),
+                               ParameterDescriptor(read_only=True, description='Public device manual'))
+        self.declare_parameter('interface_sources', json.dumps({
+            'package': 'agenticros_driver_interfaces', 'files': sources}),
+            ParameterDescriptor(read_only=True, description='Public ROS interface package sources; build locally to use custom types'))
         self.sim = Simulation(int(os.getenv('BODY_SEED', '0')))
         self.gate = threading.Lock()
         self.busy = self.recovery_required = False
@@ -58,6 +70,7 @@ class Driver(Node):
         self.rgb = self.create_publisher(Image, '/camera/color/image_raw', qos_profile_sensor_data)
         self.depth = self.create_publisher(Image, '/camera/depth/image_raw', qos_profile_sensor_data)
         self.camera_info = self.create_publisher(CameraInfo, '/camera/camera_info', qos_profile_sensor_data)
+        self.points = self.create_publisher(PointCloud2, '/camera/depth/color/points', qos_profile_sensor_data)
         self.telemetry = self.create_publisher(String, '/driver/state', 10)
         self.camera_tf = StaticTransformBroadcaster(self)
         self.camera_tf_sent = False
@@ -178,6 +191,14 @@ class Driver(Node):
                           p=np.column_stack((k, np.zeros(3))).ravel().tolist())
         info.header.stamp, info.header.frame_id = stamp, 'camera_optical_frame'
         self.camera_info.publish(info)
+        buffer, count = point_cloud_buffer(depth, rgb, k)
+        cloud = PointCloud2(height=1, width=count, is_bigendian=False, is_dense=True,
+                            point_step=16, row_step=count * 16, data=buffer,
+                            fields=[PointField(name=name, offset=index * 4, count=1,
+                                               datatype=PointField.UINT32 if name == 'rgb' else PointField.FLOAT32)
+                                    for index, name in enumerate(('x', 'y', 'z', 'rgb'))])
+        cloud.header = info.header
+        self.points.publish(cloud)
         if not self.camera_tf_sent:
             transform = TransformStamped()
             transform.header.stamp, transform.header.frame_id = stamp, 'base'

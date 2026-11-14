@@ -1,4 +1,4 @@
-# ROSBody standard body contract v0.2
+# AgenticROS standard body contract v0.2
 Implement `/workspace/adapter/body.py` exporting context-manager class `Body`.
 This file defines the API; it does not supply its implementation.
 
@@ -8,8 +8,9 @@ This file defines the API; it does not supply its implementation.
 * `grip(width)` -> set inner finger separation in metres.
 * `close()` and context-manager cleanup -> release your client resources without resetting body.
 
-Capability metadata must explicitly say whether orientation is supported. This first task
-requires position only. Refuse unsupported DOFs and invalid/unreachable/nonfinite inputs
+Capability metadata must explicitly say whether orientation is supported. Expose only
+capabilities established from runtime discovery and verification. Refuse unsupported DOFs
+and invalid/unreachable/nonfinite inputs
 before sending a goal. A workspace bound is not collision avoidance: transport needs clearance.
 
 Action returns must distinguish complete, executed ("none", "some", "unknown"),
@@ -18,11 +19,12 @@ applicable. Gripper contact can prevent requested closure without implying a fai
 report actual opening. Never claim grasp/task success from a movement receipt alone.
 
 Allocate UUID BEFORE submission, record it in evidence, then send exactly once with the current session_id. An acceptance
-or result timeout leaves execution UNKNOWN. Query /driver/status to reconcile the UUID; do
+or result timeout leaves execution UNKNOWN. Use the discovered status mechanism to reconcile the UUID; do
 not automatically resend it. Cancellation must be confirmed by a terminal receipt. Stop
 subsequent actions when stop is unconfirmed. Rejected requests mean no execution. A server
 restart invalidates receipt lookup from the old session, not proof of non-execution.
 
-Persist programs, observations and receipts under /workspace/evidence. Snapshot paths are
-readable under /observations. Implement perception from RGB-D if a task requires it; there
+Persist programs, observations and receipts under /workspace/evidence. Use discovered sensor
+topics or public observation resources; do not assume snapshot endpoints or file paths.
+Implement perception from RGB-D if a task requires it; there
 are no hidden scene coordinates or object IDs available to the agent.

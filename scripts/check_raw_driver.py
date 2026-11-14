@@ -1,5 +1,5 @@
 """Raw-driver regression: status, observation, rejection, cancellation, HTTP boundary.
-Run with ROS overlay for docker/interfaces; never during an active agent task.
+Run with a locally built overlay for the discovered device interfaces; never during an active agent task.
 """
 import json
 import time
@@ -10,8 +10,8 @@ import uuid
 import rclpy
 from rclpy.action import ActionClient
 from std_srvs.srv import Trigger
-from rosbody_driver_interfaces.action import Actuate
-from rosbody_driver_interfaces.srv import Snapshot
+from agenticros_driver_interfaces.action import Actuate
+from agenticros_driver_interfaces.srv import Snapshot
 
 
 def main():

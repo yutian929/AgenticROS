@@ -4,7 +4,8 @@ The product is compose.yaml, docker/, scripts/ and tests/. Host prerequisites ar
 and Python 3; no native ROS or pixi. Historical prototypes live only in Git history.
 
 - Simulation only; never operate physical robots or push without instruction.
-- Agent image contains public docs, raw IDL and tools, never simulator/evaluator source,
+- Agent image contains generic ROS tools and adaptation rules, no device-specific docs or IDL,
+  never simulator/evaluator source,
   hidden scene state, reference adapters or task programs. Codex generates its own code.
 - Do not mount host home, source checkout, credentials or Docker socket into Agent.
 - Preserve UUID/session checks, exclusive raw actions, cancellation and stop reconciliation.

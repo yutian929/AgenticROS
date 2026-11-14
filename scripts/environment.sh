@@ -3,15 +3,19 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 case "${1:-}" in
   simple_mujoco)
-    # Preserve the running pre-rename simulator, including its physical session.
-    legacy=$(docker ps -q --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME:-rosbody}" --filter label=com.docker.compose.service=body)
-    if [ -n "$legacy" ]; then
-      echo "Existing simulator retained: $legacy (legacy body service)."
-      echo 'To adopt the new service name, first stop control, then explicitly docker stop this container.'
-      exit 0
+    docker compose up -d --build --no-recreate --wait simple_mujoco
+    binding=$(docker compose port simple_mujoco 8080)
+    viewer_url="http://localhost:${binding##*:}/vnc.html?autoconnect=1&resize=scale"
+    viewer_password=$(docker compose exec -T simple_mujoco cat /viewer-auth/password)
+    printf '\nRViz2: %s\n连接密码: %s\n' "$viewer_url" "$viewer_password"
+    echo '请在浏览器中输入以上密码。'
+    if [[ "$(uname -s)" == Darwin ]] && command -v open >/dev/null 2>&1; then
+      open "$viewer_url" >/dev/null 2>&1 &
+    elif [[ -n "${DISPLAY:-}${WAYLAND_DISPLAY:-}" ]] && command -v xdg-open >/dev/null 2>&1; then
+      xdg-open "$viewer_url" >/dev/null 2>&1 &
+    else
+      echo '未检测到可用的桌面浏览器，请手动打开以上地址。'
     fi
-    docker compose up -d --build --no-recreate --wait simple_mujoco visualizer
-    printf 'ROS observer: http://localhost:%s\n' "${ROSBODY_VIEWER_PORT:-8080}"
     ;;
   real)
     echo 'Real environments are external ROS drivers; no simulator container will be started.'

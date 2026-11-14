@@ -1,5 +1,5 @@
-# Keep the existing project identity to preserve volumes, authentication and network.
-name: rosbody
+# Project, network, images and persistent volumes share the AgenticROS namespace.
+name: agenticros
 services:
   simple_mujoco:
     profiles: [simulation]
@@ -11,37 +11,19 @@ services:
       BODY_SEED: "${BODY_SEED:-0}"
     volumes:
       - observations:/observations
+      - viewer-auth:/viewer-auth
     networks: [robot]
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     init: true
-    healthcheck:
-      test: ["CMD", "/opt/body-venv/bin/python", "-c", "import pathlib,time; p=pathlib.Path('/tmp/body-camera-ready'); assert p.exists() and time.time()-p.stat().st_mtime<15"]
-      interval: 5s
-      timeout: 4s
-      retries: 12
-      start_period: 20s
-  visualizer:
-    profiles: [simulation]
-    build:
-      context: .
-      dockerfile: docker/visualizer/Dockerfile
-    environment:
-      ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
-    networks: [robot]
     ports:
-      - "127.0.0.1:${ROSBODY_VIEWER_PORT:-8080}:8080"
-    read_only: true
-    tmpfs: [/tmp]
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    init: true
+      - "127.0.0.1:${AGENTICROS_VIEWER_PORT:-8080}:8080"
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health',timeout=3).read()"]
+      test: ["CMD", "/opt/body-venv/bin/python", "/opt/agenticros/healthcheck.py"]
       interval: 5s
-      timeout: 4s
+      timeout: 8s
       retries: 12
       start_period: 20s
   agenticros:
@@ -69,3 +51,4 @@ volumes:
   workspace:
   observations:
   codex-home:
+  viewer-auth:

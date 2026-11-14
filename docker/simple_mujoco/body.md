@@ -14,15 +14,23 @@ Permitted joint setpoints: x ±0.38, y ±0.26, z -0.175..0.13, fingers 0..0.04.
 Use grasp-center speeds 0.01..0.25 m/s. There is no collision planner.
 
 ## Raw driver protocol
-* `/driver/actuate`: rosbody_driver_interfaces/action/Actuate.
+* `/driver/actuate`: agenticros_driver_interfaces/action/Actuate.
   Goal: session_id (must match the current driver), positions[5] in the joint order above, duration in seconds (0.1..30).
   Raw position servos interpolate all joints over duration, then settle. No TCP/width conversion.
   One goal at a time; invalid/concurrent goals are rejected. UUIDs are ROS action goal IDs.
   Feedback: measured joint positions. Result: receipt_json.
 * `/driver/status`: std_srvs/srv/Trigger. JSON in message: session_id, busy,
   recovery_required, active_goal_id, execution_status, stop_confirmed, state, completed receipts keyed by goal UUID.
-* `/driver/observe`: rosbody_driver_interfaces/srv/Snapshot. Empty request, snapshot_json response.
+* `/driver/observe`: agenticros_driver_interfaces/srv/Snapshot. Empty request, snapshot_json response.
 * `/driver/joint_states`: sensor_msgs/msg/JointState, positions and velocities at 10 Hz.
+* `/driver/state`: std_msgs/msg/String, public session/busy/recovery status and measured state at 10 Hz.
+* `/camera/color/image_raw`: sensor_msgs/msg/Image, rgb8 at approximately 2 Hz.
+* `/camera/depth/image_raw`: sensor_msgs/msg/Image, 32FC1 optical-Z depth in metres.
+* `/camera/camera_info`: sensor_msgs/msg/CameraInfo, synchronized calibration.
+* `/camera/depth/color/points`: sensor_msgs/msg/PointCloud2, sampled XYZ/RGB reconstructed from that same capture.
+  The optical frame is `camera_optical_frame`. Cloud fields are float32 x/y/z and uint32 packed RGB.
+* `/robot_description`, `/tf`, `/tf_static`: public robot geometry and kinematic frames.
+  All publishers run in the environment container; they do not depend on a browser or separate viewer service.
 
 Raw receipt: complete (servo settled, not proof requested position reached), executed
 ("none"/"some"/"unknown"), stop_confirmed, reason, state, goal_id, session_id.
@@ -33,7 +41,8 @@ No reset service is exposed. Completed receipts are in memory until driver resta
 RGB/depth are synchronized; depth is optical Z in metres. Calibration in each snapshot
 contains K and optical_to_base_rotation/translation. Never mix calibrations or timestamps.
 The simulation steps during commands and holds while the agent thinks. Captures happen only
-on request. The user can watch the latest camera image in the separate browser viewer.
+on request for immutable files; camera topics stream without advancing physics.
+The user can inspect these standard topics in the environment's RViz2 via a browser.
 
 Every snapshot contains explicit session_id and captured_at_unix. Reject stale observations.
 A session mismatch rejects a goal without movement. Status reports the active UUID; a

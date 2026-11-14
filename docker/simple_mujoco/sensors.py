@@ -29,3 +29,14 @@ def project_depth(depth, rgb, k, stride=5):
     mask = np.isfinite(z) & (z > .01) & (z < 3.)
     points = np.stack(((u-k[0, 2])*z/k[0, 0], (v-k[1, 2])*z/k[1, 1], z), axis=-1)
     return points[mask].astype(np.float32), rgb[::stride, ::stride][mask]
+
+
+def point_cloud_buffer(depth, rgb, k, stride=5):
+    """Packed XYZ + RGB PointCloud2 payload from the same registered RGB-D capture."""
+    points, colors = project_depth(depth, rgb, k, stride)
+    data = np.empty(len(points), dtype=[('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('rgb', '<u4')])
+    for index, axis in enumerate(('x', 'y', 'z')):
+        data[axis] = points[:, index]
+    colors = colors.astype(np.uint32)
+    data['rgb'] = (colors[:, 0] << 16) | (colors[:, 1] << 8) | colors[:, 2]
+    return data.tobytes(), len(points)

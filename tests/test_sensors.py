@@ -5,8 +5,8 @@ from types import SimpleNamespace
 import unittest
 
 import numpy as np
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'docker/visualizer') if '__file__' in globals() and __file__ != '<stdin>' else '/opt/visualizer')
-from sensors import decode_image, project_depth
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'docker/simple_mujoco') if '__file__' in globals() and __file__ != '<stdin>' else '/opt/body')
+from sensors import decode_image, project_depth, point_cloud_buffer
 
 
 class SensorProjection(unittest.TestCase):
@@ -29,6 +29,17 @@ class SensorProjection(unittest.TestCase):
         points, colors = project_depth(depth, rgb, [2., 0., 0., 0., 4., 0., 0., 0., 1.], stride=1)
         np.testing.assert_allclose(points, [[0., 0., 1.], [1., .5, 2.]])
         np.testing.assert_array_equal(colors, [[255, 0, 0], [0, 255, 0]])
+
+    def test_pointcloud_wire_format_preserves_xyz_and_rgb(self):
+        depth = np.array([[1., 2.]], dtype=np.float32)
+        rgb = np.array([[[255, 0, 0], [0, 128, 255]]], dtype=np.uint8)
+        buffer, count = point_cloud_buffer(depth, rgb, np.eye(3), stride=1)
+        self.assertEqual(count, 2)
+        self.assertEqual(len(buffer), 32)
+        packed = np.frombuffer(buffer, dtype=[('x', '<f4'), ('y', '<f4'), ('z', '<f4'), ('rgb', '<u4')])
+        np.testing.assert_allclose(packed['x'], [0., 2.])
+        np.testing.assert_allclose(packed['z'], [1., 2.])
+        np.testing.assert_array_equal(packed['rgb'], [0xFF0000, 0x0080FF])
 
     def test_mismatched_streams_and_uncalibrated_camera_rejected(self):
         with self.assertRaises(ValueError):

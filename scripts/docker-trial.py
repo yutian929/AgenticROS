@@ -26,7 +26,7 @@ def main():
     body = run(['docker', 'compose', 'ps', '--format', 'json', 'simple_mujoco'], capture_output=True, check=True)
     if not body.stdout.strip():
         raise RuntimeError('Start the environment first: bash scripts/environment.sh simple_mujoco')
-    trial = 'rosbody-trial-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6]
+    trial = 'agenticros-trial-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6]
     evidence = ROOT / 'runs' / trial
     evidence.mkdir(parents=True)
     name, volume = trial, trial + '-workspace'

@@ -3,8 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 # Never start or restart an environment from the AgenticROS launcher.
 current=$(docker compose ps --status running -q simple_mujoco)
-legacy=$(docker ps -q --filter "label=com.docker.compose.project=${COMPOSE_PROJECT_NAME:-rosbody}" --filter label=com.docker.compose.service=body)
-if [ -z "$current$legacy" ]; then
+if [ -z "$current" ]; then
   echo 'Start the environment first: bash scripts/environment.sh simple_mujoco' >&2
   exit 1
 fi

@@ -1,21 +1,21 @@
 ---
 name: setup-body
-description: Discover the raw ROS device, implement and verify the ROSBody standard adapter.
+description: Discover an unknown ROS 2 environment and implement and verify your own adapter.
 ---
-Read /workspace/contract.md and /workspace/body.md. This is an implementation task.
-1. Discover live ROS nodes, services, actions and message types. Check the driver session.
-2. Inspect documented joints, dimensions, frames and limits. Do not assume a robot model.
-   Inventory existing controllers and adapters; reuse suitable verified capabilities. Do not
-   rewrite existing servo/physics functionality merely to demonstrate autonomy.
-3. Implement a reusable Python adapter in /workspace/adapter/body.py with the contract's API.
-   Use rclpy directly. Build and launch additional ROS nodes if useful. There is no supplied
-   Cartesian adapter, grasp program, perception implementation, or task-coordinate list.
-4. Validate arguments before any goal submission. Preserve request UUIDs and evidence.
-5. Verify observation and state first. Inspect an image, then test small safe movements and
-   empty gripper open/close. Compare measured results, record failures and recovery.
-6. Save /workspace/adapter/manifest.json with driver session, supported DOFs, tested limits,
-   adapter path, launch instructions if needed, verification evidence and unresolved limitations.
-7. Report ready only after tests pass. After driver restart, retain code but invalidate previous
-   physical state and observations; check the new session and reobserve.
-For subsequent tasks, use your adapter and write your own stage programs. Do not redo setup
-unnecessarily. A manifest is a record, not proof: check live driver availability and identity.
+Read /workspace/contract.md. No device-specific interface package or manual is preinstalled.
+1. Inventory live nodes, topics, services, actions, types and QoS using ROS 2 tools.
+2. Inspect parameters and publicly exposed documentation to establish units, limits, geometry,
+   control semantics and safety requirements. Do not assume endpoint names or robot structure.
+3. Standard types can be used directly. For unknown custom types, locate public definitions
+   exposed by the environment, inspect them and build the required interface package yourself.
+   ROS graph discovery reports type names; Humble does not automatically install their bindings.
+   If definitions or necessary semantics are unavailable, report the specific blocker; do not guess.
+4. Implement reusable code in /workspace/adapter/body.py. You may use CLI tools or your own nodes.
+   Save any interface source, build and launch instructions. No adapter or task program is supplied.
+5. Establish live identity, measured state and observations before motion. Validate inputs and
+   request IDs; implement timeout, cancellation and stop reconciliation before testing motion.
+   Inspect actual images where available, then verify small safe movements supported by the device.
+6. Save /workspace/adapter/manifest.json with discovered capabilities, identity, interface origin,
+   code paths, invocation instructions, test evidence and unresolved limitations.
+7. Report ready only for verified capabilities. Recheck identity and reobserve after a restart.
+Reuse verified generated code for subsequent tasks. Do not treat a manifest as proof of live state.

@@ -1,4 +1,4 @@
-<mujoco model="ROSBody Cartesian gripper">
+<mujoco model="AgenticROS Cartesian gripper">
   <compiler angle="radian"/>
   <option timestep="0.002" gravity="0 0 -9.81" integrator="implicitfast"/>
   <visual><global offwidth="640" offheight="480"/><map znear="0.01" zfar="10"/></visual>

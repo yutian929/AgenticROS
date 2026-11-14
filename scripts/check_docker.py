@@ -12,24 +12,26 @@ def run(*args, **kwargs):
     return subprocess.run(['docker', 'compose', '--profile', 'simulation', *args], check=True, text=True, **kwargs)
 
 
-probe = r'''
+raw_probe = r'''
 import json, pathlib, time, uuid
 import rclpy
 from rclpy.action import ActionClient
 from std_srvs.srv import Trigger
 from unique_identifier_msgs.msg import UUID
-from rosbody_driver_interfaces.action import Actuate
-from rosbody_driver_interfaces.srv import Snapshot
+from agenticros_driver_interfaces.action import Actuate
+from agenticros_driver_interfaces.srv import Snapshot
 assert not pathlib.Path('/opt/body').exists(), 'private body source leaked'
 assert not pathlib.Path('/var/run/docker.sock').exists(), 'Docker socket leaked'
-assert not pathlib.Path('/tmp/rosbody-evaluator.sock').exists()
+assert not pathlib.Path('/viewer-auth').exists(), 'Viewer credentials leaked'
 for root in ('/opt', '/workspace', '/home/agent'):
     for filename in ('tabletop.xml', 'world.py', 'evaluator.py', 'client.py'):
-        # Python dependencies can have client.py; only the legacy rosbody package is forbidden.
+        # Python dependencies can have client.py; private adapter packages are forbidden.
         if filename != 'client.py':
             assert not list(pathlib.Path(root).rglob(filename)), (root, filename)
 import importlib.util
-assert importlib.util.find_spec('rosbody') is None, 'legacy adapter package leaked'
+for package in __PRIVATE_PACKAGES__:
+    assert importlib.util.find_spec(package) is None, 'private adapter package leaked: ' + package
+    assert not pathlib.Path('/tmp/' + package + '-evaluator.sock').exists(), 'private evaluator socket leaked'
 rclpy.init()
 n = rclpy.create_node('docker_integration_check_' + uuid.uuid4().hex[:8])
 def wait(f):
@@ -76,6 +78,78 @@ print(json.dumps({'raw_ros': 'ok', 'snapshot': snapshot['snapshot_id'],
                   'invalid_goal': 'rejected without stepping', 'observations': 'read-only'}))
 n.destroy_node(); rclpy.shutdown()
 '''
+# Preserve old-namespace isolation checks without using old names as runtime configuration.
+fingerprints = json.loads((Path(__file__).resolve().parents[1] / 'tests/forbidden_sources.json').read_text())
+private_packages = {'agenticros'} | {Path(path).parts[0] for path in fingerprints.values()
+                                    if path.endswith('/__init__.py')}
+raw_probe = raw_probe.replace('__PRIVATE_PACKAGES__', repr(sorted(private_packages)))
+if '--motion' in sys.argv:
+    raw_probe += '\n' + (Path(__file__).resolve().parent / 'check_raw_driver.py').read_text()
+# Maintainer-only regression probe: rebuild the interface from live ROS parameters.
+# This code is streamed into a temporary directory; it is not installed in the Agent image.
+bootstrap = r'''
+import importlib.util, json, pathlib, subprocess, tempfile, uuid
+import rclpy
+from rcl_interfaces.srv import ListParameters, GetParameters
+assert importlib.util.find_spec('agenticros_driver_interfaces') is None, 'device types preinstalled or sourced'
+assert not pathlib.Path('/opt/driver_ws').exists()
+assert not pathlib.Path('/opt/agenticros/body.md').exists()
+rclpy.init()
+n = rclpy.create_node('interface_discovery_check_' + uuid.uuid4().hex[:8])
+def wait(f):
+    rclpy.spin_until_future_complete(n, f, timeout_sec=15)
+    assert f.done(), 'metadata response timeout'
+    return f.result()
+# Graph discovery must work before any custom binding is available.
+from rclpy.action.graph import get_action_names_and_types
+for _ in range(100):
+    actions = dict(get_action_names_and_types(n))
+    if '/driver/actuate' in actions:
+        break
+    rclpy.spin_once(n, timeout_sec=.1)
+assert actions.get('/driver/actuate') == ['agenticros_driver_interfaces/action/Actuate']
+# Find metadata through standard services; no custom binding is needed.
+metadata = None
+for _ in range(100):
+    nodes = n.get_node_names_and_namespaces()
+    for name, namespace in nodes:
+        prefix = namespace.rstrip('/') + '/' + name
+        listing = n.create_client(ListParameters, prefix + '/list_parameters')
+        if not listing.wait_for_service(timeout_sec=.1):
+            n.destroy_client(listing)
+            continue
+        names = wait(listing.call_async(ListParameters.Request())).result.names
+        n.destroy_client(listing)
+        if 'interface_sources' not in names or 'device_documentation' not in names:
+            continue
+        reader = n.create_client(GetParameters, prefix + '/get_parameters')
+        assert reader.wait_for_service(timeout_sec=5)
+        values = wait(reader.call_async(GetParameters.Request(names=['interface_sources', 'device_documentation']))).values
+        metadata = json.loads(values[0].string_value)
+        assert '/driver/actuate' in values[1].string_value
+        n.destroy_client(reader)
+        break
+    if metadata is not None:
+        break
+    rclpy.spin_once(n, timeout_sec=.1)
+assert metadata is not None, 'public device interfaces not discoverable'
+n.destroy_node(); rclpy.shutdown()
+assert metadata['package'] == 'agenticros_driver_interfaces'
+assert set(metadata['files']) == {'package.xml', 'CMakeLists.txt', 'action/Actuate.action', 'srv/Snapshot.srv'}
+with tempfile.TemporaryDirectory(prefix='ros-discovery-') as directory:
+    root = pathlib.Path(directory)
+    package = root / 'src' / metadata['package']
+    for name, content in metadata['files'].items():
+        target = package / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content)
+    subprocess.run(['colcon', 'build', '--executor', 'sequential'], cwd=root, check=True)
+    import shlex
+    command = 'source ' + shlex.quote(str(root / 'install/setup.bash')) + ' && python -c ' + shlex.quote(__RAW_PROBE__)
+    subprocess.run(['bash', '-c', command], check=True)
+'''
+probe = bootstrap.replace('__RAW_PROBE__', repr(raw_probe))
+
 config = json.loads(run('config', '--format', 'json', capture_output=True).stdout)
 agent = config['services']['agenticros']
 assert not agent.get('privileged', False)
@@ -84,9 +158,9 @@ for mount in agent.get('volumes', []):
     if mount['type'] == 'bind':
         assert mount['target'] == '/config/codex.toml' and mount.get('read_only')
 # Inspect a real created container, including resolved mount paths and network settings.
-name = 'rosbody-isolation-' + uuid.uuid4().hex[:8]
+name = 'agenticros-isolation-' + uuid.uuid4().hex[:8]
 try:
-    run('run', '-d', '--no-deps', '--name', name, 'agenticros', 'sleep', '180')
+    run('run', '-d', '--no-deps', '--name', name, 'agenticros', 'sleep', '600')
     actual = json.loads(subprocess.check_output(['docker', 'inspect', name], text=True))[0]
     assert actual['Config']['User'] == 'agent'
     assert not actual['HostConfig']['Privileged']
@@ -103,20 +177,15 @@ try:
     assert image['Architecture'] in ('amd64', 'arm64'), image['Architecture']
     subprocess.run(['docker', 'exec', name, '/usr/local/bin/agent-entrypoint',
                     'python', '-c', probe], check=True)
-    if '--motion' in sys.argv:
-        subprocess.run(['docker', 'exec', '-i', name, '/usr/local/bin/agent-entrypoint',
-                        'python', '-'], input=Path('scripts/check_raw_driver.py').read_text(),
-                       text=True, check=True)
     print(json.dumps({'image': actual['Image'], 'architecture': image['Architecture'],
                       'mounts': [{k: m[k] for k in ('Type', 'Destination', 'RW')} for m in actual['Mounts']]}))
 finally:
     subprocess.run(['docker', 'rm', '-f', name], check=False, capture_output=True)
-with urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['visualizer']['ports'][0]['published']) + '/frame.jpg') as response:
-    assert response.headers['Content-Type'] == 'image/jpeg'
-    assert response.read().startswith(b'\xff\xd8')
-for path in ('/evaluate', '/opt/body/world.py', '/snapshots/'):
+with urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['simple_mujoco']['ports'][0]['published']) + '/vnc.html') as response:
+    assert b'noVNC' in response.read()
+for path in ('/evaluate', '/opt/body/world.py', '/snapshots/', '/api/state', '/api/cloud', '/viewer-auth/password'):
     try:
-        urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['visualizer']['ports'][0]['published']) + path)
+        urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['simple_mujoco']['ports'][0]['published']) + path)
     except urllib.error.HTTPError as exc:
         assert exc.code == 404
     else:
