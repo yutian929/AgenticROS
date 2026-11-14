@@ -68,7 +68,7 @@ class DockerLayout(unittest.TestCase):
         self.assertFalse((ROOT / 'docker/interfaces').exists())
         self.assertFalse((ROOT / 'docker/agenticros/body.md').exists())
         for path in (ROOT / 'docker/agenticros').rglob('*'):
-            if path.is_file():
+            if path.is_file() and '__pycache__' not in path.parts:
                 text = path.read_text()
                 for private_hint in ('/driver/', '/camera/', 'agenticros_driver_interfaces',
                                      '/opt/driver_ws', 'simple_mujoco'):

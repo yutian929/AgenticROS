@@ -18,9 +18,9 @@ def run(args, **kwargs):
 
 def main():
     login = run(['docker', 'compose', 'run', '--rm', '--no-deps', '-T',
-                 'agenticros', 'codex', 'login', 'status'])
+                 'agenticros', 'agenticros', 'status'])
     if login.returncode:
-        print('BLOCKED: container Codex is not authenticated. Run bash scripts/docker-login.sh.', file=sys.stderr)
+        print('BLOCKED: configure the container model connection with bash scripts/agenticros.sh.', file=sys.stderr)
         return 2
     # The body must already be healthy; do not reset an existing user's physical state.
     body = run(['docker', 'compose', 'ps', '--format', 'json', 'simple_mujoco'], capture_output=True, check=True)

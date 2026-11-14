@@ -91,6 +91,50 @@ ROS 接口包改名后，旧适配器中的导入名需更新为 `agenticros_dri
 当前仅提供 `simple_mujoco`，未知或未实现的环境名称会报错，不启动容器。
 设备登录不可用时，可在容器中通过 `codex login --with-api-key` 从 stdin 登录；不要把密钥写入仓库。
 
+### Agent 启动、登录与模型切换
+
+`bash scripts/agenticros.sh` 构建 Agent 镜像，启动容器内的 `agenticros start` 终端菜单：
+
+```text
+1. ChatGPT 账号
+2. DeepSeek API
+3. 其他云端 API（Responses 协议）
+0. 退出
+```
+
+ChatGPT 方式输入模型名，复用有效账号认证或启动 `codex login --device-auth`，由用户在浏览器确认。
+账号分支检查认证状态，不把它当作模型访问或任务验收。
+API 方式输入 HTTPS Base URL、模型名和不回显的 API Key；DeepSeek 预填官方地址和 `deepseek-flash`。
+其他 API 可包括 OpenAI API；只支持云端 Responses 协议，本菜单不提供本地部署选项。
+账号和 API 两种方式都可输入推理强度，并随连接配置保存；已有配置可选 4 单独修改强度，不重填 Key。
+GPT-6.1 Sol 可选 `low/medium/high/xhigh/max`；其他模型支持范围由提供方决定，菜单中的 `none` 不适用于所有模型。
+API 校验请求使用所选强度；账号分支只检查登录，强度支持情况以实际模型请求为准。
+单次临时覆盖可用 `bash scripts/agenticros.sh -c 'model_reasoning_effort="high"'`；这不会修改已保存的强度，
+菜单校验仍使用保存或新选择的值。
+
+API 校验使用两个小型 SSE 请求，检查鉴权、模型可用性、完整结束事件、函数工具调用参数和工具结果往返。
+校验会产生 API 用量，不执行工具程序、不访问 ROS、不执行机器人动作。
+HTTP 错误按鉴权、权限、地址或模型、余额与限流分类；不回显服务端错误正文，拒绝携带 Key 跟随重定向。
+这属于基础 API 兼容性检查，不代表完整 Codex 工具、图像、自主适配或抓取验收。
+
+校验通过后，连接配置和 Key 原子写入专用 Codex 卷中的 `agenticros-connection.json`，文件权限 0600。
+失败不覆盖旧配置，Ctrl+C 或 EOF 退出；后续启动可回车复用配置并重新校验。
+Key 不写入源码、公开 TOML 或命令行参数，启动 Codex 时仅通过进程环境提供。
+配置保存在卷中，不会被 entrypoint 每次复制基础 `codex.toml` 的操作覆盖。
+`codex` 包装器让后续 `codex exec` 和试验脚本使用同一连接；显式 `codex login/logout` 仍可独立使用。
+
+退出交互后仅删除本次运行容器，保留工作区和 Codex 卷；入口不启动或重启仿真。
+`bash scripts/agenticros.sh resume --last` 在选择连接后恢复会话；`docker-chat.sh` 为兼容入口。
+需要单独账号登录时仍可运行 `bash scripts/docker-login.sh`。
+`agenticros status` 只检查本地配置或账号状态，不发起付费 API 校验。
+
+当前基础默认配置仍在 `docker/agenticros/codex.toml`，菜单选择通过包装器的运行参数覆盖模型与提供方。
+模型能力目录（尤其图像能力）可按提供方官方说明配置；菜单不会因文字/函数测试通过就宣称支持视觉。
+参见 [OpenAI 登录说明](https://learn.chatgpt.com/docs/auth?surface=cli)、
+[提供方配置](https://learn.chatgpt.com/docs/config-file/config-advanced)、
+[协议兼容要求](https://learn.chatgpt.com/docs/enterprise/gateway-compatibility) 和
+[DeepSeek Codex 接入说明](https://api-docs.deepseek.com/quick_start/agent_integrations/codex/)。
+
 ### 断电或重启后恢复
 
 Docker 启动后，在项目目录恢复已有仿真容器并等待健康检查：
@@ -265,3 +309,15 @@ Agent 只保留通用发现、编译工具和适配要求，不预置驱动名�
 测试未执行有效运动，不代表 Codex 自主适配或抓取任务验收。
 测试项目及其临时卷已清理，原运行仿真、会话与应用数据卷保持不动。
 当前运行容器仍是旧版本；新参数发布功能需在确认无任务后更新仿真容器才能生效。
+
+
+### 2026-11-14：容器内云端登录与连接校验
+
+新增终端菜单，支持 ChatGPT 账号、DeepSeek 和其他云端 Responses API。
+Key 隐藏输入，连接校验成功后保存到专用 Codex 卷；失败保留旧配置。
+统一 Codex 包装器与试验入口的连接读取，保留独立登录命令兼容性。
+
+通过 `scripts/test.sh` 的 22 项单测，以及 Agent 镜像构建与文件系统审计。
+真实临时容器终端验证菜单显示、Key 不回显、无效地址拒绝和退出；未挂载现有认证卷。
+API 流式与工具往返使用模拟响应验证，未使用真实云端 Key，未替用户完成账号授权。
+当前运行的仿真容器未修改或重启，未执行机器人动作。

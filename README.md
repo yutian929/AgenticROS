@@ -14,9 +14,13 @@ Agent 不预装仿真专用消息或身体说明，通过 ROS 2 运行时发现�
 
 ```bash
 bash scripts/environment.sh simple_mujoco # 启动仿真与 RViz2
-bash scripts/docker-login.sh              # 首次登录容器内 Codex
-bash scripts/docker-chat.sh               # 进入 Agent
+bash scripts/agenticros.sh                # 启动 Agent，选择账号或 API 并校验
 ```
+
+Agent 启动后显示终端菜单：ChatGPT 账号、DeepSeek API、其他云端 Responses API。
+账号方式按设备码完成浏览器授权；API 方式输入地址、模型和隐藏的 Key，校验通过后进入 Codex。
+后续启动可回车复用已保存的配置。旧的 `docker-chat.sh` 保留为兼容入口。
+模型名后可选择推理强度；已有配置可选“仅修改推理强度”，不必重填 Key。
 
 依次下达指令：
 
@@ -31,13 +35,14 @@ bash scripts/docker-chat.sh               # 进入 Agent
 ## 常用操作
 
 ```bash
-bash scripts/docker-chat.sh resume --last # 继续会话
+bash scripts/agenticros.sh resume --last  # 继续会话
 bash scripts/environment.sh simple_mujoco # 停机或断电后恢复环境
 # 确认控制任务结束后停止环境：
 docker compose stop simple_mujoco
 ```
 
 模型配置见 [codex.toml](docker/agenticros/codex.toml)，默认 `gpt-6-astra / medium`。
+菜单选择、模型和 Key 保存在容器专用 Codex 卷，校验失败不覆盖原配置；API 校验会产生少量用量。
 工作区、认证、观测和 VNC 密码由数据卷保留；仿真重启会重置场景并更换 session，继续任务前须重新核对与观测。
 一次只运行一个控制 Agent，不要使用 `down -v` 删除数据卷。
 

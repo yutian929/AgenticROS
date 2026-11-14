@@ -12,8 +12,9 @@ COPY docker/agenticros/AGENTS.md /opt/agenticros/AGENTS.md
 COPY docker/shared/fastdds.xml /etc/agenticros/fastdds.xml
 COPY docker/agenticros/entrypoint.sh /usr/local/bin/agent-entrypoint
 COPY docker/agenticros/codex.sh /usr/local/bin/codex
+COPY docker/agenticros/connection.py /usr/local/bin/agenticros
 COPY docker/agenticros/environment.sh /etc/profile.d/agenticros.sh
-RUN chmod +x /usr/local/bin/agent-entrypoint /usr/local/bin/codex && \
+RUN chmod +x /usr/local/bin/agent-entrypoint /usr/local/bin/codex /usr/local/bin/agenticros && \
     useradd -m -u 1001 -s /bin/bash agent && \
     mkdir -p /workspace /observations /home/agent/.codex && \
     chown -R agent:agent /workspace /observations /home/agent
@@ -22,4 +23,4 @@ ENV PATH="/opt/agent-venv/bin:${PATH}" CODEX_HOME=/home/agent/.codex \
 USER agent
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/agent-entrypoint"]
-CMD ["codex"]
+CMD ["agenticros", "start"]
