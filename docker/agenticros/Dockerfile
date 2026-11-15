@@ -9,6 +9,7 @@ RUN python3 -m venv --system-site-packages /opt/agent-venv && \
 COPY docker/agenticros/contract.md /opt/agenticros/
 COPY docker/agenticros/skills /opt/agenticros/skills
 COPY docker/agenticros/AGENTS.md /opt/agenticros/AGENTS.md
+COPY docker/shared/lan_profile.py /opt/agenticros/lan_profile.py
 COPY docker/shared/fastdds.xml /etc/agenticros/fastdds.xml
 COPY docker/agenticros/entrypoint.sh /usr/local/bin/agent-entrypoint
 COPY docker/agenticros/codex.sh /usr/local/bin/codex

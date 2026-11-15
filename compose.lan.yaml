@@ -1,0 +1,59 @@
+# Linux host networking: DDS data is peer-to-peer, not tunneled through the registry.
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/server/Dockerfile
+    image: agenticros-server:lan
+    network_mode: host
+    environment:
+      AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
+      AGENTICROS_INSTANCE_ID: ${AGENTICROS_INSTANCE_ID:?}
+      AGENTICROS_JOIN_TOKEN: ${AGENTICROS_JOIN_TOKEN:?}
+      AGENTICROS_REGISTRY_PORT: ${AGENTICROS_REGISTRY_PORT:?}
+      AGENTICROS_DDS_HOST: ${AGENTICROS_DDS_HOST:?}
+      AGENTICROS_DDS_PORT: ${AGENTICROS_DDS_PORT:?}
+      AGENTICROS_DDS_PREFIX: ${AGENTICROS_DDS_PREFIX:?}
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:?}
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    healthcheck:
+      test: [CMD, python3, -c, "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['AGENTICROS_REGISTRY_PORT']+'/health',timeout=2)"]
+      interval: 3s
+      timeout: 4s
+      retries: 10
+  agenticros:
+    build:
+      context: .
+      dockerfile: docker/agenticros/Dockerfile
+    image: agenticros-agenticros:lan
+    network_mode: host
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:?}
+      ROS_LOG_DIR: /workspace/ros_logs
+      AGENTICROS_REGISTRY_URL: http://${AGENTICROS_DDS_HOST}:${AGENTICROS_REGISTRY_PORT}
+      AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
+      AGENTICROS_INSTANCE_ID: ${AGENTICROS_INSTANCE_ID:?}
+      AGENTICROS_DDS_HOST: ${AGENTICROS_DDS_HOST:?}
+      AGENTICROS_DDS_PORT: ${AGENTICROS_DDS_PORT:?}
+      AGENTICROS_DDS_PREFIX: ${AGENTICROS_DDS_PREFIX:?}
+    volumes:
+      - type: bind
+        source: ./runs/${AGENTICROS_WORKSPACE_SUBDIR:?}
+        target: /workspace
+        bind:
+          create_host_path: false
+      - codex-home:/home/agent/.codex
+      - ./docker/agenticros/codex.toml:/config/codex.toml:ro
+    group_add: ["${AGENTICROS_WORKSPACE_GID:-1000}"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stdin_open: true
+    tty: true
+    init: true
+volumes:
+  codex-home:
+    name: agenticros_codex-home${AGENTICROS_INSTANCE_SUFFIX:-}

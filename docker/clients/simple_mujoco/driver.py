@@ -39,19 +39,32 @@ def valid_goal(positions, duration):
 
 
 class Driver(Node):
-    def __init__(self):
-        super().__init__('raw_body_driver')
+    def __init__(self, lan=None):
+        self.lan = lan
+        self.robot_namespace = lan.membership['namespace'] if lan else ''
+        super().__init__('raw_body_driver', namespace=self.robot_namespace or '/')
         # Public device metadata is discovered over standard ROS parameter services.
         # No simulator source, scene state, evaluator or client program is exported.
         public = Path('/opt/device-public')
         sources = {name: (public / 'interfaces' / name).read_text() for name in (
             'package.xml', 'CMakeLists.txt', 'action/Actuate.action', 'srv/Snapshot.srv')}
-        self.declare_parameter('device_documentation', (public / 'body.md').read_text(),
+        documentation = (public / 'body.md').read_text()
+        if lan:
+            documentation = documentation.replace('`/driver/', '`'+self.robot_namespace+'/driver/').replace('`/camera/', '`'+self.robot_namespace+'/camera/')
+            documentation += ('\nLAN mode (headless): identity '+json.dumps(lan.identity())+
+                '\nAll endpoints and frames are scoped to this robot. No robot_description publisher or RViz desktop in LAN mode. '
+                'Snapshot returns rgb_url, depth_url, snapshot_json_url instead of local paths. '
+                'Download these immutable public artifacts into your workspace; validate session, identity and SHA256. '
+                'Keep URLs private: they carry read-only snapshot tokens. '
+                'Instance heartbeat loss aborts active motion and rejects new goals until explicit client restart.\n')
+        self.declare_parameter('device_documentation', documentation,
                                ParameterDescriptor(read_only=True, description='Public device manual'))
         self.declare_parameter('interface_sources', json.dumps({
             'package': 'agenticros_driver_interfaces', 'files': sources}),
             ParameterDescriptor(read_only=True, description='Public ROS interface package sources; build locally to use custom types'))
         self.sim = Simulation(int(os.getenv('BODY_SEED', '0')))
+        if lan:
+            self.sim.session = lan.session
         self.gate = threading.Lock()
         self.busy = self.recovery_required = False
         self.receipts = {}
@@ -60,26 +73,36 @@ class Driver(Node):
         self.render = ThreadPoolExecutor(max_workers=1)
         self.pending_frame = None
         group = ReentrantCallbackGroup()
-        self.action = ActionServer(self, Actuate, '/driver/actuate', self.execute,
+        self.action = ActionServer(self, Actuate, 'driver/actuate', self.execute,
                                    goal_callback=self.accept, handle_accepted_callback=self.accepted,
                                    cancel_callback=lambda _: CancelResponse.ACCEPT,
                                    callback_group=group)
-        self.create_service(Trigger, '/driver/status', self.status, callback_group=group)
-        self.create_service(Snapshot, '/driver/observe', self.observe, callback_group=group)
-        self.joints = self.create_publisher(JointState, '/driver/joint_states', 10)
-        self.rgb = self.create_publisher(Image, '/camera/color/image_raw', qos_profile_sensor_data)
-        self.depth = self.create_publisher(Image, '/camera/depth/image_raw', qos_profile_sensor_data)
-        self.camera_info = self.create_publisher(CameraInfo, '/camera/camera_info', qos_profile_sensor_data)
-        self.points = self.create_publisher(PointCloud2, '/camera/depth/color/points', qos_profile_sensor_data)
-        self.telemetry = self.create_publisher(String, '/driver/state', 10)
+        self.create_service(Trigger, 'driver/status', self.status, callback_group=group)
+        self.create_service(Snapshot, 'driver/observe', self.observe, callback_group=group)
+        self.joints = self.create_publisher(JointState, 'driver/joint_states', 10)
+        self.rgb = self.create_publisher(Image, 'camera/color/image_raw', qos_profile_sensor_data)
+        self.depth = self.create_publisher(Image, 'camera/depth/image_raw', qos_profile_sensor_data)
+        self.camera_info = self.create_publisher(CameraInfo, 'camera/camera_info', qos_profile_sensor_data)
+        self.points = self.create_publisher(PointCloud2, 'camera/depth/color/points', qos_profile_sensor_data)
+        self.telemetry = self.create_publisher(String, 'driver/state', 10)
         self.camera_tf = StaticTransformBroadcaster(self)
         self.camera_tf_sent = False
         self.create_timer(.1, self.publish)
         self.create_timer(.5, self.camera)
 
+    def measured_state(self):
+        state = self.sim.state()
+        if self.lan:
+            state['frame'] = self.robot_namespace.strip('/')+'/base'
+        return state
+
+    def frame(self, name):
+        return self.robot_namespace.strip('/')+'/'+name if self.robot_namespace else name
+
     def accept(self, request):
         with self.gate:
             if (self.shutting_down.is_set() or request.session_id != self.sim.session
+                    or (self.lan and not self.lan.lease.valid())
                     or self.busy or self.recovery_required
                     or not valid_goal(request.positions, request.duration)):
                 return GoalResponse.REJECT
@@ -100,13 +123,13 @@ class Driver(Node):
     def execute(self, handle):
         gid = bytes(handle.goal_id.uuid).hex()
         count = max(1, int(math.ceil(handle.request.duration / .02)))
-        start = np.array(self.sim.state()['joint_positions'])
+        start = np.array(self.measured_state()['joint_positions'])
         target = np.array(handle.request.positions)
         executed, reason, complete, stopped = 'none', 'settled', False, False
         try:
             for i in range(1, count + 61):
-                if handle.is_cancel_requested or self.shutting_down.is_set():
-                    reason = "cancelled" if handle.is_cancel_requested else "shutdown"
+                if handle.is_cancel_requested or self.shutting_down.is_set() or (self.lan and not self.lan.lease.valid()):
+                    reason = "cancelled" if handle.is_cancel_requested else ("lease_lost" if self.lan and not self.lan.lease.valid() else "shutdown")
                     stopped = self.hold()
                     break
                 with self.sim.lock:
@@ -131,7 +154,9 @@ class Driver(Node):
             except Exception:
                 stopped = False
         receipt = dict(complete=complete, executed=executed, stop_confirmed=stopped,
-                       reason=reason, state=self.sim.state(), goal_id=gid, session_id=self.sim.session)
+                       reason=reason, state=self.measured_state(), goal_id=gid, session_id=self.sim.session)
+        if self.lan:
+            receipt.update(self.lan.identity())
         with self.gate:
             self.receipts[gid] = receipt
             self.recovery_required = not stopped
@@ -152,19 +177,24 @@ class Driver(Node):
                          execution_status=("fault" if self.recovery_required else
                                            "executing" if self.busy else "idle"),
                          receipts=dict(self.receipts))
-        state['state'] = self.sim.state()
+        state['state'] = self.measured_state()
         state['stop_confirmed'] = bool(not state['busy'] and not state['recovery_required']
                                        and np.max(np.abs(state['state']['joint_velocities'])) < .02)
+        if self.lan:
+            state.update(self.lan.identity())
+            state['connected'] = self.lan.lease.valid()
         response.success, response.message = True, json.dumps(state)
         return response
 
     def observe(self, request, response):
         snapshot = self.render.submit(self.sim.snapshot, os.getenv('OBSERVATION_ROOT', '/observations')).result()
+        if self.lan:
+            snapshot = self.lan.export(snapshot)
         response.snapshot_json = json.dumps(snapshot)
         return response
 
     def publish(self):
-        state = self.sim.state()
+        state = self.measured_state()
         msg = JointState()
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name, msg.position, msg.velocity = state['joint_names'], state['joint_positions'], state['joint_velocities']
@@ -172,6 +202,9 @@ class Driver(Node):
         with self.gate:
             telemetry = dict(session_id=self.sim.session, busy=self.busy,
                              recovery_required=self.recovery_required, state=state)
+        if self.lan:
+            telemetry.update(self.lan.identity())
+            telemetry['connected'] = self.lan.lease.valid()
         self.telemetry.publish(String(data=json.dumps(telemetry)))
 
     def capture_frame(self):
@@ -182,14 +215,14 @@ class Driver(Node):
                 (self.depth, depth.astype('<f4'), '32FC1', depth.shape[1] * 4)):
             msg = Image(height=pixels.shape[0], width=pixels.shape[1], encoding=encoding,
                         is_bigendian=0, step=step, data=pixels.tobytes())
-            msg.header.stamp, msg.header.frame_id = stamp, 'camera_optical_frame'
+            msg.header.stamp, msg.header.frame_id = stamp, self.frame('camera_optical_frame')
             publisher.publish(msg)
         k = np.asarray(calibration['K']).reshape(3, 3)
         info = CameraInfo(width=calibration['width'], height=calibration['height'],
                           distortion_model='plumb_bob', d=[0.] * 5,
                           k=k.ravel().tolist(), r=np.eye(3).ravel().tolist(),
                           p=np.column_stack((k, np.zeros(3))).ravel().tolist())
-        info.header.stamp, info.header.frame_id = stamp, 'camera_optical_frame'
+        info.header.stamp, info.header.frame_id = stamp, self.frame('camera_optical_frame')
         self.camera_info.publish(info)
         buffer, count = point_cloud_buffer(depth, rgb, k)
         cloud = PointCloud2(height=1, width=count, is_bigendian=False, is_dense=True,
@@ -201,8 +234,8 @@ class Driver(Node):
         self.points.publish(cloud)
         if not self.camera_tf_sent:
             transform = TransformStamped()
-            transform.header.stamp, transform.header.frame_id = stamp, 'base'
-            transform.child_frame_id = 'camera_optical_frame'
+            transform.header.stamp, transform.header.frame_id = stamp, self.frame('base')
+            transform.child_frame_id = self.frame('camera_optical_frame')
             t = calibration['optical_to_base_translation']
             transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z = t
             quaternion = np.empty(4)
@@ -220,8 +253,12 @@ class Driver(Node):
 
 
 def main():
+    lan = None
+    if os.getenv('AGENTICROS_SERVER'):
+        from lan import Client
+        lan = Client()
     rclpy.init()
-    driver = Driver()
+    driver = Driver(lan)
     evaluator = start_evaluator(driver)
     executor = MultiThreadedExecutor(num_threads=4)
     executor.add_node(driver)
@@ -236,6 +273,8 @@ def main():
         executor.shutdown()
         driver.render.shutdown()
         driver.destroy_node()
+        if lan:
+            lan.close()
         if rclpy.ok():
             rclpy.shutdown()
 

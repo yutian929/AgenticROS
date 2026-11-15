@@ -2,6 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 python3 -m unittest discover -s tests -p test_docker_layout.py -v
+python3 -m unittest discover -s tests -p test_lan.py -v
 python3 -m unittest discover -s tests -p test_connection.py -v
 python3 -m unittest discover -s tests -p test_workspace.py -v
 python3 -m unittest discover -s tests -p test_delete_instance.py -v

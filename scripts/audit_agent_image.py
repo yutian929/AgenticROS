@@ -1,4 +1,5 @@
 """Inspect the actual agent image filesystem without attaching any user volumes."""
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -12,12 +13,15 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     config = json.loads(subprocess.check_output(['docker', 'compose', 'config', '--format', 'json'], cwd=ROOT, text=True))
     image_name = config['services']['agenticros'].get('image', config['name'] + '-agenticros')
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--image', default=image_name)
+    image_name = parser.parse_args().image
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()
-    private = list((ROOT / 'docker/environments/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/environments/simple_mujoco').glob('*.xml'))
+    private = list((ROOT / 'docker/clients/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/clients/simple_mujoco').glob('*.xml'))
     # Device definitions are public at runtime, but must not be preinstalled in Agent.
-    private += [ROOT / 'docker/environments/simple_mujoco/body.md']
-    private += [p for p in (ROOT / 'docker/environments/simple_mujoco/interfaces').rglob('*') if p.is_file()]
+    private += [ROOT / 'docker/clients/simple_mujoco/body.md']
+    private += [p for p in (ROOT / 'docker/clients/simple_mujoco/interfaces').rglob('*') if p.is_file()]
     forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
     forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
                              for p in private if p.stat().st_size})

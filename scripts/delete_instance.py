@@ -22,6 +22,9 @@ def delete_instance(instance, dry_run=False):
     subdir = 'workspace' if instance == 'default' else f'instances/{instance}/workspace'
     workspace = ROOT / 'runs' / subdir
     target = workspace if instance == 'default' else workspace.parent
+    lan = (ROOT / 'runs' if instance == 'default' else workspace.parent) / 'lan'
+    if lan.exists():
+        raise RuntimeError('拒绝删除：该 instance 包含 LAN 配置。请先单独停止并归档 LAN server/client；此命令不删除 LAN 数据。')
     for path in [workspace, *workspace.parents]:
         if path == ROOT:
             break

@@ -2,6 +2,13 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 source scripts/instance.sh
+lan_config="runs/lan/server.json"
+if [[ $instance != default ]]; then
+  lan_config="runs/instances/$instance/lan/server.json"
+fi
+if [[ $instance != default || -f "$lan_config" ]]; then
+  exec python3 scripts/lan.py agent --instance "$instance" -- "$@"
+fi
 # The Agent is independent of any particular environment; never start a body here.
 docker compose build agenticros
 export AGENTICROS_WORKSPACE_GID="$(id -g)"

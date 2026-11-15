@@ -1,0 +1,29 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: docker/clients/simple_mujoco/Dockerfile
+    image: agenticros-simple_mujoco:lan
+    network_mode: host
+    environment:
+      AGENTICROS_SERVER: ${AGENTICROS_SERVER:?}
+      AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
+      AGENTICROS_ROBOT_ID: ${AGENTICROS_ROBOT_ID:?}
+      AGENTICROS_JOIN_TOKEN: ${AGENTICROS_JOIN_TOKEN:?}
+      AGENTICROS_CLIENT_HOST: ${AGENTICROS_CLIENT_HOST:?}
+      AGENTICROS_OBSERVATION_PORT: ${AGENTICROS_OBSERVATION_PORT:?}
+      BODY_SEED: ${BODY_SEED:-0}
+    volumes:
+      - observations:/observations
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    healthcheck:
+      test: [CMD, /opt/body-venv/bin/python, -c, "import pathlib,time,json; p=pathlib.Path('/tmp/lan-health.json'); d=json.loads(p.read_text()); assert time.time()-d['updated']<5 and d['connected']; p=pathlib.Path('/tmp/body-camera-ready'); assert time.time()-p.stat().st_mtime<15"]
+      interval: 3s
+      timeout: 4s
+      retries: 15
+volumes:
+  observations:

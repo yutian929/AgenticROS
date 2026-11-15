@@ -8,14 +8,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 RUN python3 -m venv --system-site-packages /opt/body-venv && \
     /opt/body-venv/bin/pip install --no-cache-dir mujoco==3.3.7 numpy==1.26.4 pillow==11.3.0
-COPY docker/environments/simple_mujoco/interfaces /opt/driver_ws/src/agenticros_driver_interfaces
+COPY docker/clients/simple_mujoco/interfaces /opt/driver_ws/src/agenticros_driver_interfaces
 RUN source /opt/ros/humble/setup.bash && cd /opt/driver_ws && colcon build
-COPY docker/environments/simple_mujoco/world.py docker/environments/simple_mujoco/driver.py docker/environments/simple_mujoco/tabletop.xml docker/environments/simple_mujoco/evaluator.py docker/environments/simple_mujoco/sensors.py /opt/body/
-COPY docker/environments/simple_mujoco/desktop.py docker/environments/simple_mujoco/healthcheck.py docker/environments/simple_mujoco/robot.urdf docker/environments/simple_mujoco/observation.rviz docker/environments/simple_mujoco/openbox.xml /opt/agenticros/
-COPY docker/environments/simple_mujoco/interfaces /opt/device-public/interfaces
-COPY docker/environments/simple_mujoco/body.md /opt/device-public/body.md
+COPY docker/clients/simple_mujoco/world.py docker/clients/simple_mujoco/driver.py docker/clients/simple_mujoco/tabletop.xml docker/clients/simple_mujoco/evaluator.py docker/clients/simple_mujoco/sensors.py docker/clients/simple_mujoco/lan.py docker/shared/lan_profile.py /opt/body/
+COPY docker/clients/simple_mujoco/desktop.py docker/clients/simple_mujoco/healthcheck.py docker/clients/simple_mujoco/robot.urdf docker/clients/simple_mujoco/observation.rviz docker/clients/simple_mujoco/openbox.xml /opt/agenticros/
+COPY docker/clients/simple_mujoco/interfaces /opt/device-public/interfaces
+COPY docker/clients/simple_mujoco/body.md /opt/device-public/body.md
 COPY docker/shared/fastdds.xml /etc/agenticros/fastdds.xml
-COPY docker/environments/simple_mujoco/entrypoint.sh /usr/local/bin/body-entrypoint
+COPY docker/clients/simple_mujoco/entrypoint.sh /usr/local/bin/body-entrypoint
 RUN chmod +x /usr/local/bin/body-entrypoint && useradd -u 1001 -m body && \
     mkdir /observations /viewer-auth && chown body:body /observations /viewer-auth && \
     chmod 700 /viewer-auth && ln -s vnc.html /usr/share/novnc/index.html

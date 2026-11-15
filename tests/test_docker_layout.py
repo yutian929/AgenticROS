@@ -93,7 +93,7 @@ class DockerLayout(unittest.TestCase):
         self.assertEqual(config['networks']['robot']['name'], 'agenticros_robot')
 
     def test_no_supplied_adapter(self):
-        tree = ast.parse((ROOT / 'docker/environments/simple_mujoco/world.py').read_text())
+        tree = ast.parse((ROOT / 'docker/clients/simple_mujoco/world.py').read_text())
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         self.assertFalse(names & {'move', 'grip', 'evaluate', 'locate_color'})
         self.assertFalse(list((ROOT / 'docker/agenticros').rglob('body.py')))
@@ -115,9 +115,9 @@ class DockerLayout(unittest.TestCase):
                 for private_hint in ('/driver/', '/camera/', 'agenticros_driver_interfaces',
                                      '/opt/driver_ws', 'simple_mujoco'):
                     self.assertNotIn(private_hint, text, str(path))
-        bodyfile = (ROOT / 'docker/environments/simple_mujoco/Dockerfile').read_text()
-        self.assertIn('COPY docker/environments/simple_mujoco/interfaces ', bodyfile)
-        self.assertIn('COPY docker/environments/simple_mujoco/body.md ', bodyfile)
+        bodyfile = (ROOT / 'docker/clients/simple_mujoco/Dockerfile').read_text()
+        self.assertIn('COPY docker/clients/simple_mujoco/interfaces ', bodyfile)
+        self.assertIn('COPY docker/clients/simple_mujoco/body.md ', bodyfile)
 
     def test_build_context(self):
         self.assertEqual((ROOT / '.dockerignore').read_text().splitlines(), ['**', '!docker/', '!docker/**'])
