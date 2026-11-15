@@ -4,6 +4,7 @@ Retains the trial container/volume on failure; never retries an action or delete
 """
 import datetime
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -17,7 +18,14 @@ def run(args, **kwargs):
 
 
 def main():
+    os.environ['AGENTICROS_WORKSPACE_GID'] = str(os.getgid())
+    trial = 'agenticros-trial-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6]
+    evidence = ROOT / 'runs' / trial
+    workspace = evidence / 'workspace'
+    workspace.mkdir(parents=True)
+    workspace.chmod(0o2775)
     login = run(['docker', 'compose', 'run', '--rm', '--no-deps', '-T',
+                 '-v', str(workspace) + ':/workspace',
                  'agenticros', 'agenticros', 'status'])
     if login.returncode:
         print('BLOCKED: configure the container model connection with bash scripts/agenticros.sh.', file=sys.stderr)
@@ -26,15 +34,12 @@ def main():
     body = run(['docker', 'compose', 'ps', '--format', 'json', 'simple_mujoco'], capture_output=True, check=True)
     if not body.stdout.strip():
         raise RuntimeError('Start the environment first: bash scripts/environment.sh simple_mujoco')
-    trial = 'agenticros-trial-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6]
-    evidence = ROOT / 'runs' / trial
-    evidence.mkdir(parents=True)
-    name, volume = trial, trial + '-workspace'
+    name = trial
     run(['docker', 'compose', 'run', '-d', '--no-deps', '--name', name,
-         '-v', volume + ':/workspace', 'agenticros', 'sleep', 'infinity'], check=True)
-    (evidence / 'trial.json').write_text(json.dumps(dict(container=name, workspace_volume=volume,
+         '-v', str(workspace) + ':/workspace', 'agenticros', 'sleep', 'infinity'], check=True)
+    (evidence / 'trial.json').write_text(json.dumps(dict(container=name, workspace_path=str(workspace),
         model_config=(ROOT / 'docker/agenticros/codex.toml').read_text()), indent=2))
-    print(f'Trial container: {name}\nPersistent workspace: {volume}\nHost evidence: {evidence}', flush=True)
+    print(f'Trial container: {name}\nPersistent workspace: {workspace}\nHost evidence: {evidence}', flush=True)
     run(['docker', 'exec', name, '/usr/local/bin/agent-entrypoint', 'sh', '-c',
          'test -d /workspace/adapter && test -z "$(ls -A /workspace/adapter)"'], check=True)
     for stage, prompt in [('adaptation', '适配一下你的身体'), ('task', '把红色方块夹取到红色盘子上')]:
@@ -65,7 +70,7 @@ def main():
     print('Independent evaluation (maintainer only): ' + result.stdout)
     run(['docker', 'cp', name + ':/workspace/evidence', str(evidence / 'agent-evidence')], check=True)
     print('Review agent image inspections, generated code and manifest before accepting adaptation.\n'
-          'Codex exit=0 alone is not validation. Container and volume remain for inspection.\n'
+          'Codex exit=0 alone is not validation. Container and host workspace remain for inspection.\n'
           f'Continue in this workspace: docker exec -it {name} /usr/local/bin/agent-entrypoint codex resume --last\n'
           f'Stop agent processes without deleting data: docker stop {name}')
     return 0 if json.loads(result.stdout)['success'] else 1

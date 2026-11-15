@@ -23,6 +23,11 @@ class DockerLayout(unittest.TestCase):
                 self.assertEqual(mount['type'], 'bind')
                 self.assertEqual(Path(mount['source']), ROOT / 'docker/agenticros/codex.toml')
                 self.assertTrue(mount['read_only'])
+            elif target == '/workspace':
+                self.assertEqual(mount['type'], 'bind')
+                self.assertEqual(Path(mount['source']), ROOT / 'runs/workspace')
+                self.assertFalse(mount.get('read_only', False))
+                self.assertFalse(mount['bind']['create_host_path'])
             else:
                 self.assertEqual(mount['type'], 'volume')
         for line in (ROOT / 'docker/agenticros/Dockerfile').read_text().splitlines():
@@ -44,7 +49,7 @@ class DockerLayout(unittest.TestCase):
         self.assertFalse(any(m['type'] == 'bind' for m in body['volumes']))
         self.assertNotIn('depends_on', config['services']['agenticros'])
         self.assertEqual(config['name'], 'agenticros')
-        self.assertEqual(config['volumes']['workspace']['name'], 'agenticros_workspace')
+        self.assertNotIn('workspace', config['volumes'])
         self.assertEqual(config['volumes']['codex-home']['name'], 'agenticros_codex-home')
         self.assertEqual(config['volumes']['viewer-auth']['name'], 'agenticros_viewer-auth')
         self.assertEqual(config['networks']['robot']['name'], 'agenticros_robot')

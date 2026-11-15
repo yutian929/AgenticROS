@@ -8,6 +8,8 @@ and Python 3; no native ROS or pixi. Historical prototypes live only in Git hist
   never simulator/evaluator source,
   hidden scene state, reference adapters or task programs. Codex generates its own code.
 - Do not mount host home, source checkout, credentials or Docker socket into Agent.
+  Only the dedicated ignored runs/workspace (or a fresh trial workspace under runs/) may
+  be bound to /workspace for generated code and evidence; never bind the repository root.
 - Preserve UUID/session checks, exclusive raw actions, cancellation and stop reconciliation.
   Never replay a timed-out goal or equate servo completion with grasp/task success.
 - Keep independent evaluation outside Agent. Test image contents and actual mounts.

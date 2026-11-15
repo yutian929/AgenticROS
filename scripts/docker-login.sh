@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+export AGENTICROS_WORKSPACE_GID="$(id -g)"
+python3 scripts/prepare_workspace.py
 # Only the container's dedicated Codex volume is used; no host credential import.
 if [[ $# -eq 0 ]]; then
   set -- --device-auth

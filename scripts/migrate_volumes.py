@@ -58,7 +58,9 @@ def main():
     if args.from_project == config['name']:
         parser.error('Source and destination projects must differ')
     image = config['services']['simple_mujoco'].get('image', config['name'] + '-simple_mujoco')
-    plan = [(key, args.from_project + '_' + key, config['volumes'][key]['name'])
+    # Workspace is staged in a legacy volume, then prepare_workspace imports it to runs/.
+    plan = [(key, args.from_project + '_' + key,
+             config['name'] + '_workspace' if key == 'workspace' else config['volumes'][key]['name'])
             for key in ('workspace', 'codex-home', 'observations')]
     print(json.dumps({'source_project': args.from_project, 'target_project': config['name'],
                       'volumes': [{'source': s, 'destination': t} for _, s, t in plan]}, indent=2), flush=True)

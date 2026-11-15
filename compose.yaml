@@ -34,11 +34,16 @@ services:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       ROS_LOG_DIR: /workspace/ros_logs
     volumes:
-      - workspace:/workspace
+      - type: bind
+        source: ./runs/workspace
+        target: /workspace
+        bind:
+          create_host_path: false
       - codex-home:/home/agent/.codex
       - observations:/observations:ro
       - ./docker/agenticros/codex.toml:/config/codex.toml:ro
     networks: [robot]
+    group_add: ["${AGENTICROS_WORKSPACE_GID:-1000}"]
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
     stdin_open: true
@@ -48,7 +53,6 @@ networks:
   robot:
     driver: bridge
 volumes:
-  workspace:
   observations:
   codex-home:
   viewer-auth:

@@ -28,7 +28,8 @@ bash scripts/docker-evaluate.sh           # 仿真容器内独立评估
 
 ### 隔离边界
 
-AgenticROS 不挂载项目、宿主机 home 或 Docker socket，只预装通用 ROS 工具和适配要求，挂载只读观测与自己的工作区。
+AgenticROS 不挂载整个项目、宿主机 home 或 Docker socket，只预装通用 ROS 工具和适配要求。
+仓库内仅专用产物目录 `runs/workspace/` 绑定到 `/workspace`；不会暴露上级源码目录，观测仍为只读挂载。
 启动时没有设备专用消息绑定、端点名称或身体说明。Agent 从 ROS 图发现节点、话题、服务和 action，
 通过标准参数服务获取设备公开的 `device_documentation` 与 `interface_sources`，自行构建接口包并编写调用代码。
 Humble 的图发现可以返回自定义类型名称，但 `ros2 interface show` 和客户端调用需要本地定义及类型支持；
@@ -69,8 +70,9 @@ BODY_SEED=3 docker compose up -d --build --force-recreate --wait simple_mujoco
 ```
 
 重启生成新的 session ID，旧观测不能代表当前状态。
-Compose 项目名、镜像与网络使用 `agenticros` 命名空间；持久卷为
-`agenticros_workspace`、`agenticros_codex-home`、`agenticros_observations` 和 `agenticros_viewer-auth`。
+Compose 项目名、镜像与网络使用 `agenticros` 命名空间；当前持久卷为
+`agenticros_codex-home`、`agenticros_observations` 和 `agenticros_viewer-auth`。
+工作区现为 `runs/workspace/`，原 `agenticros_workspace` 卷只保留作迁移来源和备份，不自动删除。
 原有数据不会自动出现在新项目中。升级已有安装时，先确认驱动空闲、停止所有控制程序，
 再停止旧项目的容器，使用以下迁移入口（将 `OLD_PROJECT` 换成旧 Compose 项目名）：
 
@@ -78,6 +80,7 @@ Compose 项目名、镜像与网络使用 `agenticros` 命名空间；持久卷�
 docker compose --profile simulation build
 python3 scripts/migrate_volumes.py --from-project OLD_PROJECT         # 查看复制计划
 python3 scripts/migrate_volumes.py --from-project OLD_PROJECT --apply # 复制并校验
+python3 scripts/prepare_workspace.py # 将已停止的旧工作区卷复制到 runs/workspace
 bash scripts/environment.sh simple_mujoco
 ```
 
@@ -144,9 +147,25 @@ docker compose up -d --no-build --no-recreate --wait simple_mujoco
 docker compose ps
 ```
 
-工作区、Codex 认证、观测文件和 VNC 密码保存在应用数据卷中，不因普通停止而删除；
+工作区保存在仓库的 `runs/workspace/`，Codex 认证、观测文件和 VNC 密码保存在应用数据卷中，不因普通停止而删除；
 仿真物理状态不持久化，启动后场景重置且 session 改变。恢复 Agent 会话前先核对 session、重新观测，
 不重放断电前未确认完成的动作。不要用 `down -v` 删除数据卷。
+
+### 仓库中的生成产物
+
+默认映射为 `runs/workspace/` → `/workspace`。生成的 `adapter/`、`interfaces/`、`evidence/`、
+`ros_logs/` 会直接出现在宿主机，`runs/` 已被 Git 忽略，也不进入 Docker 构建上下文。
+相机原始快照仍在 observations 卷；Codex 原始聊天会话、登录和模型 Key 仍在 codex-home 卷，
+不会为导出代码而将凭据放入源码仓库。
+
+启动入口先调用 `prepare_workspace.py`。仅当目标为空且没有运行中的旧卷使用者时，
+才将旧工作区复制到临时目录，核对源/目标文件哈希和符号链接后替换空目标，保留原卷。
+非空工作区直接复用，不自动覆盖或合并。旧 Agent 若仍运行，首次迁移会要求先退出；不停止仿真。
+新增文件通过目录 setgid、宿主机附加组和 umask 0002 支持宿主机用户与非 root Agent 共同读写。
+启动脚本自动设置宿主机组 ID；直接运行 Compose 时，自定义组用户需设置 `AGENTICROS_WORKSPACE_GID`。
+`docker-login.sh` 也会准备工作区；全新检出时先构建 Agent 镜像，再迁移已有旧卷。
+
+自主试验使用单独的 `runs/<trial>/workspace/`，保持空工作区验收，不与日常适配产物混用。
 
 ## 开发与验证历史
 
@@ -321,3 +340,15 @@ Key 隐藏输入，连接校验成功后保存到专用 Codex 卷；失败保留
 真实临时容器终端验证菜单显示、Key 不回显、无效地址拒绝和退出；未挂载现有认证卷。
 API 流式与工具往返使用模拟响应验证，未使用真实云端 Key，未替用户完成账号授权。
 当前运行的仿真容器未修改或重启，未执行机器人动作。
+
+
+### 2026-11-14：工作区绑定到仓库产物目录
+
+将日常 `/workspace` 改为绑定宿主机 `runs/workspace/`，自主试验绑定独立的 `runs/<trial>/workspace/`。
+不挂载仓库根目录，认证、模型 Key 和原始会话缓存仍在 Codex 专用卷。
+旧 Agent 退出后，复制并校验原 `agenticros_workspace` 的 961 个条目，保留原卷作为备份。
+迁移调整的是新副本的宿主机所有者与共享组权限，不修改原卷。
+
+28 项单测通过。实际临时 Agent 容器验证了非 root、限定目录绑定、宿主机与容器双向读写、
+只读观测挂载，以及既有适配器内容未改变；Agent 镜像审计通过。
+未运行模型、未启动仿真驱动、未执行机器人动作，临时检查容器与测试文件已清理。

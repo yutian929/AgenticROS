@@ -156,7 +156,11 @@ assert not agent.get('privileged', False)
 for mount in agent.get('volumes', []):
     assert mount['target'] in ('/workspace', '/observations', '/home/agent/.codex', '/config/codex.toml')
     if mount['type'] == 'bind':
-        assert mount['target'] == '/config/codex.toml' and mount.get('read_only')
+        assert mount['target'] in ('/config/codex.toml', '/workspace')
+        if mount['target'] == '/config/codex.toml':
+            assert mount.get('read_only')
+workspace = next(m for m in agent['volumes'] if m['target'] == '/workspace')
+assert workspace['type'] == 'bind' and not workspace.get('read_only')
 # Inspect a real created container, including resolved mount paths and network settings.
 name = 'agenticros-isolation-' + uuid.uuid4().hex[:8]
 try:
@@ -172,7 +176,10 @@ try:
         if mount['Destination'] in ('/observations', '/config/codex.toml'):
             assert not mount['RW']
         if mount['Type'] == 'bind':
-            assert mount['Destination'] == '/config/codex.toml'
+            assert mount['Destination'] in ('/config/codex.toml', '/workspace')
+        if mount['Destination'] == '/workspace':
+            assert mount['Type'] == 'bind' and mount['RW']
+            assert mount['Source'] == workspace['source']
     image = json.loads(subprocess.check_output(['docker', 'image', 'inspect', actual['Image']], text=True))[0]
     assert image['Architecture'] in ('amd64', 'arm64'), image['Architecture']
     subprocess.run(['docker', 'exec', name, '/usr/local/bin/agent-entrypoint',

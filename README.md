@@ -43,7 +43,9 @@ docker compose stop simple_mujoco
 
 模型配置见 [codex.toml](docker/agenticros/codex.toml)，默认 `gpt-6-astra / medium`。
 菜单选择、模型和 Key 保存在容器专用 Codex 卷，校验失败不覆盖原配置；API 校验会产生少量用量。
-工作区、认证、观测和 VNC 密码由数据卷保留；仿真重启会重置场景并更换 session，继续任务前须重新核对与观测。
+生成代码、编译产物和动作证据直接保存在仓库的 `runs/workspace/`，对应容器内 `/workspace`，Git 默认忽略。
+首次切换时，先退出旧 Agent；启动脚本会复制并校验旧工作区卷，保留原卷。不会自动合并非空目录。
+认证、相机观测和 VNC 密码仍由独立数据卷保留；仿真重启会重置场景并更换 session，继续任务前须重新核对与观测。
 一次只运行一个控制 Agent，不要使用 `down -v` 删除数据卷。
 
 [开发记录](docs/development-record.md)包含架构、配置、迁移、测试命令和验证历史。

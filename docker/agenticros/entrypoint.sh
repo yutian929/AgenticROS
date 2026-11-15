@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+umask 0002
 source /etc/profile.d/agenticros.sh
 mkdir -p /workspace/.agents/skills/setup-body /workspace/evidence /workspace/adapter
 cp /opt/agenticros/AGENTS.md /workspace/AGENTS.md
