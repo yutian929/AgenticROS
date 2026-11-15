@@ -1,37 +1,20 @@
-# Linux host networking: DDS data is peer-to-peer, not tunneled through the registry.
+# One persistent container per LAN instance; robot clients remain separate.
 services:
-  server:
-    build:
-      context: .
-      dockerfile: docker/server/Dockerfile
-    image: agenticros-server:lan
-    network_mode: host
-    environment:
-      AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
-      AGENTICROS_INSTANCE_ID: ${AGENTICROS_INSTANCE_ID:?}
-      AGENTICROS_JOIN_TOKEN: ${AGENTICROS_JOIN_TOKEN:?}
-      AGENTICROS_REGISTRY_PORT: ${AGENTICROS_REGISTRY_PORT:?}
-      AGENTICROS_DDS_HOST: ${AGENTICROS_DDS_HOST:?}
-      AGENTICROS_DDS_PORT: ${AGENTICROS_DDS_PORT:?}
-      AGENTICROS_DDS_PREFIX: ${AGENTICROS_DDS_PREFIX:?}
-      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:?}
-    read_only: true
-    tmpfs: [/tmp]
-    cap_drop: [ALL]
-    security_opt: ["no-new-privileges:true"]
-    init: true
-    healthcheck:
-      test: [CMD, python3, -c, "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ['AGENTICROS_REGISTRY_PORT']+'/health',timeout=2)"]
-      interval: 3s
-      timeout: 4s
-      retries: 10
-  agenticros:
+  instance:
+    container_name: agenticros-instance-${AGENTICROS_INSTANCE:?}
     build:
       context: .
       dockerfile: docker/agenticros/Dockerfile
-    image: agenticros-agenticros:lan
+      target: instance
+    image: agenticros-instance:lan
     network_mode: host
     environment:
+      AGENTICROS_JOIN_TOKEN: ${AGENTICROS_JOIN_TOKEN:?}
+      AGENTICROS_REGISTRY_PORT: ${AGENTICROS_REGISTRY_PORT:?}
+      AGENTICROS_VIEWER_PORT: ${AGENTICROS_VIEWER_PORT:-8080}
+      AGENTICROS_VNC_PORT: ${AGENTICROS_VNC_PORT:-5900}
+      AGENTICROS_VIEWER_BIND: ${AGENTICROS_VIEWER_BIND:-127.0.0.1}
+      FASTRTPS_DEFAULT_PROFILES_FILE: /tmp/agenticros-lan.xml
       ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:?}
       ROS_LOG_DIR: /workspace/ros_logs
       AGENTICROS_REGISTRY_URL: http://${AGENTICROS_DDS_HOST}:${AGENTICROS_REGISTRY_PORT}
@@ -40,7 +23,9 @@ services:
       AGENTICROS_DDS_HOST: ${AGENTICROS_DDS_HOST:?}
       AGENTICROS_DDS_PORT: ${AGENTICROS_DDS_PORT:?}
       AGENTICROS_DDS_PREFIX: ${AGENTICROS_DDS_PREFIX:?}
+    command: [python3, /opt/instance/runtime.py, serve]
     volumes:
+      - viewer-auth:/viewer-auth
       - type: bind
         source: ./runs/${AGENTICROS_WORKSPACE_SUBDIR:?}
         target: /workspace
@@ -54,6 +39,15 @@ services:
     stdin_open: true
     tty: true
     init: true
+    stop_grace_period: 60s
+    healthcheck:
+      test: [CMD, python3, /opt/instance/runtime.py, health]
+      interval: 3s
+      timeout: 10s
+      retries: 20
+      start_period: 15s
 volumes:
+  viewer-auth:
+    name: agenticros_viewer-auth${AGENTICROS_INSTANCE_SUFFIX:-}
   codex-home:
     name: agenticros_codex-home${AGENTICROS_INSTANCE_SUFFIX:-}

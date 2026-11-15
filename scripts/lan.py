@@ -87,6 +87,14 @@ def run(config, args, client=False):
     subprocess.run(compose(config, client)+args, env=environment(config), cwd=ROOT, check=True)
 
 
+def ensure_image(config, service, client=False):
+    images = {'client': 'agenticros-simple_mujoco:lan', 'instance': 'agenticros-instance:lan'}
+    result = subprocess.run(['docker', 'image', 'inspect', images[service]],
+                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode:
+        run(config, ['build', service], client=client)
+
+
 def health(config):
     url = f"http://{config['AGENTICROS_DDS_HOST']}:{config['AGENTICROS_REGISTRY_PORT']}"
     with urllib.request.urlopen(url+'/health', timeout=3) as response:
@@ -159,12 +167,14 @@ def saved_configs():
     paths = list((ROOT/'runs/lan').glob('*.json'))
     paths += list((ROOT/'runs/instances').glob('*/lan/server.json'))
     paths += list((ROOT/'runs/instances').glob('*/lan/client-*.json'))
+    paths += list((ROOT/'runs/instances').glob('*/lan/viewer.json'))
     return [json.loads(path.read_text()) for path in paths
-            if path.name == 'server.json' or path.name.startswith('client-')]
+            if path.name in ('server.json', 'viewer.json') or path.name.startswith('client-')]
 
 
 def available_port(start, configs, udp=False, explicit=None):
-    keys = ('AGENTICROS_DDS_PORT',) if udp else ('AGENTICROS_REGISTRY_PORT', 'AGENTICROS_OBSERVATION_PORT')
+    keys = ('AGENTICROS_DDS_PORT',) if udp else ('AGENTICROS_REGISTRY_PORT', 'AGENTICROS_OBSERVATION_PORT',
+                                               'AGENTICROS_VIEWER_PORT', 'AGENTICROS_VNC_PORT')
     reserved = {c[k] for c in configs for k in keys if k in c}
     for number in ([explicit] if explicit is not None else range(start, 65536)):
         if number in reserved:
@@ -206,13 +216,61 @@ def server_config(instance, host=None, registry_port=None, discovery_port=None, 
         return config
 
 
+def prepare_workspace(config):
+    subprocess.run([sys.executable, 'scripts/prepare_workspace.py'], cwd=ROOT,
+                   env=environment(config), check=True)
+
+
 def ensure_server(config):
     try:
         return health(config)
     except (OSError, urllib.error.URLError):
-        # Never replace an existing registry: clients depend on its live epoch.
-        run(config, ['up', '-d', '--build', '--no-recreate', '--wait', 'server'])
+        # Never replace a running instance: clients depend on its live epoch.
+        config = viewer_config(config)
+        prepare_workspace(config)
+        ensure_image(config, 'instance')
+        run(config, ['up', '-d', '--no-build', '--pull', 'never', '--no-recreate', '--wait', 'instance'])
         return health(config)
+
+
+def control(config, command):
+    run(viewer_config(config), ['exec', '-T', 'instance', 'python3', '/opt/instance/runtime.py', command])
+
+
+def viewer_config(config):
+    with config_lock():
+        path = folder(config['AGENTICROS_INSTANCE'])/'lan/viewer.json'
+        if path.exists():
+            settings = json.loads(path.read_text())
+        else:
+            saved = saved_configs()
+            settings = dict(AGENTICROS_INSTANCE=config['AGENTICROS_INSTANCE'],
+                            AGENTICROS_VIEWER_BIND=ipv4(os.getenv('AGENTICROS_VIEWER_BIND', '127.0.0.1')),
+                            AGENTICROS_VIEWER_PORT=available_port(8080, saved),
+                            AGENTICROS_VNC_PORT=available_port(5900, saved))
+            write_new(path, settings)
+        return dict(config, **settings)
+
+
+def ensure_viewer(config):
+    config = viewer_config(config)
+    ensure_server(config)
+    control(config, 'viewer-start')
+    return config
+
+
+def print_viewer(config):
+    path = folder(config['AGENTICROS_INSTANCE'])/'lan/viewer.json'
+    if not path.exists():
+        return
+    config = dict(config, **json.loads(path.read_text()))
+    print('Viewer: http://'+config['AGENTICROS_VIEWER_BIND']+':'+str(config['AGENTICROS_VIEWER_PORT'])+'/vnc.html?autoconnect=1&resize=scale')
+    result = subprocess.run(compose(config)+['exec', '-T', 'instance', 'cat', '/viewer-auth/password'],
+                            cwd=ROOT, env=environment(config), text=True, capture_output=True)
+    if result.returncode == 0:
+        print('Viewer password:', result.stdout.strip(), flush=True)
+    else:
+        print('Viewer is stopped; start with: python3 scripts/lan.py viewer --instance '+config['AGENTICROS_INSTANCE'], flush=True)
 
 
 def join_code(config):
@@ -298,16 +356,16 @@ def client_config(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    server = sub.add_parser('server', help='start instance registry and ROS discovery; never starts a body')
+    server = sub.add_parser('server', help='start the instance (communication and viewer), without entering Codex')
     server.add_argument('--instance', type=instance_name, default='default')
     server.add_argument('--host', type=ipv4, default=os.getenv('AGENTICROS_HOST'))
     server.add_argument('--port', type=port)
     server.add_argument('--discovery-port', type=port)
     server.add_argument('--domain-id', type=int)
-    for command in ('status', 'token', 'info', 'agent', 'stop-server'):
+    for command in ('status', 'token', 'info', 'agent', 'login', 'viewer', 'stop-viewer', 'stop-server'):
         p = sub.add_parser(command)
         p.add_argument('--instance', type=instance_name, default='default')
-        if command == 'agent':
+        if command in ('agent', 'login'):
             p.add_argument('codex_args', nargs=argparse.REMAINDER)
     client = sub.add_parser('client')
     client.add_argument('--instance', type=instance_name)
@@ -326,15 +384,24 @@ def main():
         print_join(config)
     elif args.command == 'client':
         config = client_config(args)
-        run(config, ['stop', 'client'] if args.stop else ['up', '-d', '--build', '--no-recreate', '--wait', 'client'], client=True)
+        if not args.stop:
+            ensure_image(config, 'client', client=True)
+        run(config, ['stop', 'client'] if args.stop else
+            ['up', '-d', '--no-build', '--pull', 'never', '--no-recreate', '--wait', 'client'], client=True)
         print('Client:', args.robot_id, 'instance:', args.instance)
     else:
-        config = (server_config(args.instance, os.getenv('AGENTICROS_HOST')) if args.command == 'agent'
+        config = (server_config(args.instance, os.getenv('AGENTICROS_HOST')) if args.command in ('agent', 'login')
                   else json.loads(server_file(args.instance).read_text()))
         if args.command == 'stop-server':
-            run(config, ['stop', 'server'])
+            run(viewer_config(config), ['stop', 'instance'])
+        elif args.command == 'stop-viewer':
+            control(config, 'viewer-stop')
+        elif args.command == 'viewer':
+            ensure_server(config)
+            print_viewer(ensure_viewer(config))
         elif args.command == 'info':
             print_join(config)
+            print_viewer(config)
         elif args.command == 'token':
             print(config['AGENTICROS_JOIN_TOKEN'])
         elif args.command == 'status':
@@ -342,17 +409,20 @@ def main():
                 print(json.dumps(json.load(response), indent=2))
         else:
             ensure_server(config)
-            subprocess.run([sys.executable, 'scripts/prepare_workspace.py'], cwd=ROOT,
-                           env=environment(config), check=True)
-            run(config, ['build', 'agenticros'])
+            config = ensure_viewer(config)
             extra = args.codex_args
             if extra[:1] == ['--']:
                 extra = extra[1:]
-            cmd = compose(config)+['run', '--rm', '--no-deps', '--name', 'agenticros-controller-'+args.instance]
+            cmd = compose(config)+['exec']
+            if not sys.stdin.isatty():
+                cmd += ['-T']
             if os.getenv('AGENTICROS_MODEL_API_KEY'):
                 cmd += ['-e', 'AGENTICROS_MODEL_API_KEY']
-            cmd += ['agenticros', 'agenticros', 'start', *extra]
+            action = ['codex', 'login'] if args.command == 'login' else ['agenticros', 'start']
+            cmd += ['instance', '/usr/local/bin/agent-entrypoint', 'python3',
+                    '/opt/instance/runtime.py', 'attach', *action, *extra]
             print_join(config)
+            print_viewer(config)
             os.chdir(ROOT)
             os.execvpe(cmd[0], cmd, environment(config))
 

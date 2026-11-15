@@ -70,7 +70,7 @@ class DockerLayout(unittest.TestCase):
                 self.assertEqual(mount['type'], 'volume')
         for line in (ROOT / 'docker/agenticros/Dockerfile').read_text().splitlines():
             if line.startswith('COPY '):
-                self.assertTrue(all(s.startswith(('docker/agenticros/', 'docker/shared/'))
+                self.assertTrue(all(s.startswith(('docker/agenticros/', 'docker/shared/', 'docker/server/', 'docker/viewer/', 'docker/instance/'))
                                     for s in line.split()[1:-1]))
 
     def test_environment_is_opt_in(self):

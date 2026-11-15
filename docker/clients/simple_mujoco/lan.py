@@ -84,8 +84,10 @@ class Client:
                     if reply['epoch'] != self.membership['epoch']:
                         raise ValueError('server restarted')
                     self.lease.renew(sent, reply['lease_seconds'])
-                except Exception:
-                    pass  # Deadline expires locally even when the server is unreachable.
+                except Exception as exc:
+                    # Do not log URLs, tokens or request bodies. Preserve the
+                    # fail-closed deadline while making transport failures visible.
+                    print('LAN heartbeat failed: '+type(exc).__name__, flush=True)
             target = Path('/tmp/lan-health.json')
             temporary = target.with_suffix('.tmp')
             temporary.write_text(json.dumps(dict(updated=time.time(), connected=self.lease.valid())))

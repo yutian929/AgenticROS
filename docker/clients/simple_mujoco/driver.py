@@ -1,5 +1,6 @@
 """Raw position-servo ROS driver; deliberately no move/grip standard adapter."""
 import json
+import io
 import math
 import os
 import threading
@@ -8,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import numpy as np
+from PIL import Image as PILImage
 import mujoco
 import rclpy
 from rclpy.action import ActionServer, CancelResponse, GoalResponse
@@ -15,7 +17,7 @@ from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
-from sensor_msgs.msg import JointState, Image, CameraInfo, PointCloud2, PointField
+from sensor_msgs.msg import JointState, Image, CompressedImage, CameraInfo, PointCloud2, PointField
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster
@@ -81,6 +83,7 @@ class Driver(Node):
         self.create_service(Snapshot, 'driver/observe', self.observe, callback_group=group)
         self.joints = self.create_publisher(JointState, 'driver/joint_states', 10)
         self.rgb = self.create_publisher(Image, 'camera/color/image_raw', qos_profile_sensor_data)
+        self.rgb_compressed = self.create_publisher(CompressedImage, 'camera/color/image_raw/compressed', qos_profile_sensor_data)
         self.depth = self.create_publisher(Image, 'camera/depth/image_raw', qos_profile_sensor_data)
         self.camera_info = self.create_publisher(CameraInfo, 'camera/camera_info', qos_profile_sensor_data)
         self.points = self.create_publisher(PointCloud2, 'camera/depth/color/points', qos_profile_sensor_data)
@@ -210,6 +213,12 @@ class Driver(Node):
     def capture_frame(self):
         rgb, depth, calibration, _ = self.sim.observe()
         stamp = self.get_clock().now().to_msg()
+        if self.rgb_compressed.get_subscription_count():
+            buffer = io.BytesIO()
+            PILImage.fromarray(rgb).save(buffer, format='JPEG', quality=75)
+            compressed = CompressedImage(format='rgb8; jpeg compressed bgr8', data=buffer.getvalue())
+            compressed.header.stamp, compressed.header.frame_id = stamp, self.frame('camera_optical_frame')
+            self.rgb_compressed.publish(compressed)
         for publisher, pixels, encoding, step in (
                 (self.rgb, rgb, 'rgb8', rgb.shape[1] * 3),
                 (self.depth, depth.astype('<f4'), '32FC1', depth.shape[1] * 4)):

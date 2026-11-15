@@ -1,4 +1,4 @@
-FROM ros:humble-ros-base-jammy
+FROM ros:humble-ros-base-jammy AS agent
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-venv python3-colcon-common-extensions build-essential cmake git ripgrep \
@@ -25,3 +25,21 @@ USER agent
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/agent-entrypoint"]
 CMD ["agenticros", "start"]
+
+# Generic LAN instance: communication, interactive brain, and visualization.
+FROM agent AS instance
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ros-humble-rviz2 ros-humble-compressed-image-transport python3-pyqt5 python3-yaml \
+    libgl1-mesa-dri xvfb x11-utils x11vnc novnc websockify openbox \
+    && rm -rf /var/lib/apt/lists/*
+COPY docker/server/registry.py docker/shared/lan_profile.py /opt/agenticros-server/
+COPY docker/viewer/*.py docker/viewer/*.sh docker/viewer/openbox.xml /opt/viewer/
+COPY docker/shared/lan_profile.py /opt/viewer/lan_profile.py
+COPY docker/instance/*.py /opt/instance/
+RUN mkdir /viewer-auth && chown agent:agent /viewer-auth && chmod 700 /viewer-auth && \
+    ln -s vnc.html /usr/share/novnc/index.html
+ENV XDG_RUNTIME_DIR=/tmp/runtime-viewer MESA_SHADER_CACHE_DIR=/tmp/mesa-cache \
+    QT_X11_NO_MITSHM=1 LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
+USER agent
+CMD ["python3", "/opt/instance/runtime.py", "serve"]

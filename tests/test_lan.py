@@ -156,15 +156,15 @@ class Configuration(unittest.TestCase):
                       AGENTICROS_JOIN_TOKEN='secret')
         data = json.loads(subprocess.check_output(launcher.compose(config)+['config','--format','json'],
                           cwd=ROOT, env=launcher.environment(config), text=True))
-        agent = data['services']['agenticros']
+        self.assertEqual(set(data['services']), {'instance'})
+        agent = data['services']['instance']
         self.assertEqual(agent['network_mode'], 'host')
-        self.assertNotIn('AGENTICROS_JOIN_TOKEN', agent['environment'])
+        self.assertEqual(agent['container_name'], 'agenticros-instance-test-fleet')
         mounts = {m['target']:m for m in agent['volumes']}
-        self.assertEqual(set(mounts), {'/workspace','/home/agent/.codex','/config/codex.toml'})
+        self.assertEqual(set(mounts), {'/workspace','/home/agent/.codex','/config/codex.toml','/viewer-auth'})
         self.assertEqual(Path(mounts['/workspace']['source']), ROOT/'runs/instances/test-fleet/workspace')
         self.assertTrue(mounts['/config/codex.toml']['read_only'])
         self.assertEqual(mounts['/home/agent/.codex']['type'], 'volume')
-        self.assertNotIn('volumes', data['services']['server'])
 
     def test_deletion_preserves_lan_configuration_without_calling_docker(self):
         deletion = load('lan_delete_test', 'scripts/delete_instance.py')
@@ -231,9 +231,21 @@ class Startup(unittest.TestCase):
             with self.assertRaises(ValueError):
                 launcher.ensure_server(config)
             run.assert_not_called()
-        with patch.object(launcher, 'health', side_effect=[OSError(), 'ok']), patch.object(launcher, 'run') as run:
+        with patch.object(launcher, 'health', side_effect=[OSError(), 'ok']), patch.object(launcher, 'run') as run, patch.object(launcher, 'ensure_image'), patch.object(launcher, 'prepare_workspace'):
             launcher.ensure_server(config)
             self.assertIn('--no-recreate', run.call_args.args[1])
+            self.assertIn('--no-build', run.call_args.args[1])
+            self.assertIn('never', run.call_args.args[1])
+
+    def test_existing_image_starts_offline_and_only_missing_image_is_built(self):
+        config = self.server()
+        for service, client in [('instance', False), ('client', True)]:
+            with patch.object(launcher.subprocess, 'run', return_value=argparse.Namespace(returncode=0)), patch.object(launcher, 'run') as run:
+                launcher.ensure_image(config, service, client=client)
+                run.assert_not_called()
+            with patch.object(launcher.subprocess, 'run', return_value=argparse.Namespace(returncode=1)), patch.object(launcher, 'run') as run:
+                launcher.ensure_image(config, service, client=client)
+                run.assert_called_once_with(config, ['build', service], client=client)
 
     def test_join_roundtrip_and_invalid_payloads(self):
         config = self.server()

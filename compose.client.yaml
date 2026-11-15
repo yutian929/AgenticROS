@@ -13,6 +13,9 @@ services:
       AGENTICROS_CLIENT_HOST: ${AGENTICROS_CLIENT_HOST:?}
       AGENTICROS_OBSERVATION_PORT: ${AGENTICROS_OBSERVATION_PORT:?}
       BODY_SEED: ${BODY_SEED:-0}
+      # Large camera samples must not synchronously block the driver's Python
+      # threads (including lease renewal) when a remote viewer subscribes.
+      RMW_FASTRTPS_PUBLICATION_MODE: ASYNCHRONOUS
     volumes:
       - observations:/observations
     read_only: true

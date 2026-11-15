@@ -43,6 +43,9 @@ contains K and optical_to_base_rotation/translation. Never mix calibrations or t
 The simulation steps during commands and holds while the agent thinks. Captures happen only
 on request for immutable files; camera topics stream without advancing physics.
 The user can inspect these standard topics in the environment's RViz2 via a browser.
+`/camera/color/image_raw/compressed` publishes JPEG `sensor_msgs/msg/CompressedImage`
+previews on demand. Prefer this topic for LAN visualization; raw RGB-D and immutable
+snapshots remain available for measurement and task evidence.
 
 Every snapshot contains explicit session_id and captured_at_unix. Reject stale observations.
 A session mismatch rejects a goal without movement. Status reports the active UUID; a

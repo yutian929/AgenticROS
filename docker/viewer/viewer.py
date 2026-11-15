@@ -1,0 +1,181 @@
+"""Instance robot selector and RViz launcher using only public ROS discovery."""
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import threading
+import time
+import urllib.request
+
+from PyQt5 import QtCore, QtWidgets
+import rclpy
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, qos_profile_sensor_data
+from sensor_msgs.msg import CompressedImage, PointCloud2
+from tf2_msgs.msg import TFMessage
+import yaml
+from discovery import robots, scoped_topics, fixed_frame, configuration
+
+
+class Discovery(QtCore.QThread):
+    updated = QtCore.pyqtSignal(object)
+
+    def __init__(self):
+        super().__init__()
+        self.stop = threading.Event()
+        self.selected = ''
+
+    def run(self):
+        rclpy.init()
+        node = rclpy.create_node('instance_viewer')
+        edges, frames = set(), set()
+        def tf(message):
+            edges.update((t.header.frame_id, t.child_frame_id) for t in message.transforms)
+        qos = QoSProfile(depth=100, durability=DurabilityPolicy.TRANSIENT_LOCAL,
+                         reliability=ReliabilityPolicy.RELIABLE)
+        node.create_subscription(TFMessage, '/tf_static', tf, qos)
+        subscription, active, selected, next_poll = None, None, '', 0
+        try:
+            while not self.stop.is_set():
+                rclpy.spin_once(node, timeout_sec=.1)
+                if time.monotonic() < next_poll:
+                    continue
+                next_poll = time.monotonic()+2
+                try:
+                    with urllib.request.urlopen(os.environ['AGENTICROS_REGISTRY_URL']+'/robots', timeout=3) as response:
+                        roster = robots(json.load(response), os.environ['AGENTICROS_INSTANCE_ID'])
+                    error = ''
+                except Exception as exc:
+                    roster, error = {}, 'Registry unavailable: '+type(exc).__name__
+                topics = node.get_topic_names_and_types()
+                if selected != self.selected:
+                    frames.clear()
+                    selected = self.selected
+                sensors = [(name, CompressedImage if 'sensor_msgs/msg/CompressedImage' in types else PointCloud2)
+                           for name, types in scoped_topics(topics, self.selected) if self.selected
+                           and ('sensor_msgs/msg/CompressedImage' in types or 'sensor_msgs/msg/PointCloud2' in types)]
+                # Once a public TF or sensor header supplies the frame, stop the
+                # discovery subscription. RViz alone consumes the live image stream.
+                desired = sensors[0] if sensors and not fixed_frame(selected, edges, frames) else None
+                if desired != active:
+                    if subscription:
+                        node.destroy_subscription(subscription)
+                    subscription, active = None, desired
+                    if desired:
+                        subscription = node.create_subscription(desired[1], desired[0],
+                            lambda msg: frames.add(msg.header.frame_id), qos_profile_sensor_data)
+                self.updated.emit(dict(robots=roster, topics=topics, edges=list(edges), frames=list(frames), error=error))
+        finally:
+            node.destroy_node()
+            rclpy.shutdown()
+
+
+class Viewer(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle('AgenticROS — '+os.environ['AGENTICROS_INSTANCE'])
+        self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
+        self.setGeometry(0, 0, 1440, 125)
+        self.setStyleSheet('QWidget { background: #19222e; color: #edf3fa; font-size: 15px; }'
+                          'QPushButton, QComboBox { padding: 7px; background: #30445a; }')
+        layout = QtWidgets.QVBoxLayout(self)
+        row = QtWidgets.QHBoxLayout()
+        row.addWidget(QtWidgets.QLabel('Instance: '+os.environ['AGENTICROS_INSTANCE']))
+        self.selector = QtWidgets.QComboBox()
+        self.selector.setMinimumWidth(300)
+        self.selector.currentIndexChanged.connect(self.select)
+        row.addWidget(self.selector)
+        reopen = QtWidgets.QPushButton('Open / reset RViz')
+        reopen.clicked.connect(lambda: self.select(force=True))
+        row.addWidget(reopen)
+        topics = QtWidgets.QPushButton('ROS topics')
+        topics.clicked.connect(self.show_topics)
+        row.addWidget(topics)
+        layout.addLayout(row)
+        self.status = QtWidgets.QLabel('Waiting for clients…')
+        layout.addWidget(self.status)
+        layout.addWidget(QtWidgets.QLabel('Each robot uses its own coordinate frame. This viewer does not send robot commands.'))
+        self.process, self.signature, self.latest = None, None, {}
+        self.discovery = Discovery()
+        self.discovery.updated.connect(self.receive)
+        self.discovery.start()
+        self.timer = QtCore.QTimer(self)
+        self.timer.timeout.connect(self.heartbeat)
+        self.timer.start(1000)
+
+    def receive(self, snapshot):
+        self.latest = snapshot
+        previous = self.selector.currentText()
+        names = sorted(snapshot['robots'])
+        if names != [self.selector.itemText(i) for i in range(self.selector.count())]:
+            self.selector.blockSignals(True)
+            self.selector.clear()
+            self.selector.addItems(names)
+            if previous in names:
+                self.selector.setCurrentText(previous)
+            self.selector.blockSignals(False)
+        self.select()
+
+    def stop_rviz(self):
+        if self.process and self.process.poll() is None:
+            self.process.terminate()
+            try:
+                self.process.wait(timeout=4)
+            except subprocess.TimeoutExpired:
+                self.process.kill()
+                self.process.wait()
+        self.process = None
+
+    def select(self, index=None, force=False):
+        name = self.selector.currentText()
+        namespace = self.latest.get('robots', {}).get(name, '')
+        self.discovery.selected = namespace
+        topics = scoped_topics(self.latest.get('topics', []), namespace) if namespace else []
+        frame = fixed_frame(namespace, self.latest.get('edges', []), self.latest.get('frames', [])) if namespace else ''
+        signature = json.dumps([namespace, topics, frame])
+        if signature == self.signature and not force:
+            return
+        self.stop_rviz()
+        self.signature = signature
+        if not namespace or not frame:
+            self.status.setText(self.latest.get('error') or ('Waiting for sensor frames…' if namespace else 'Waiting for clients…'))
+            return
+        path = Path('/tmp/current.rviz')
+        path.write_text(yaml.safe_dump(configuration(topics, frame), sort_keys=False))
+        self.process = subprocess.Popen(['rviz2', '-d', str(path), '--ros-args', '-r', '__node:=instance_rviz'])
+        self.status.setText(name+'  |  '+namespace+'  |  Frame: '+frame)
+
+    def show_topics(self):
+        dialog = QtWidgets.QDialog(self)
+        dialog.setWindowTitle('ROS topics — '+os.environ['AGENTICROS_INSTANCE'])
+        dialog.resize(1000, 650)
+        layout = QtWidgets.QVBoxLayout(dialog)
+        text = QtWidgets.QPlainTextEdit()
+        text.setReadOnly(True)
+        text.setPlainText('\n'.join(name+'\n    '+', '.join(types)
+                                   for name, types in sorted(self.latest.get('topics', []))))
+        layout.addWidget(text)
+        dialog.exec_()
+
+    def heartbeat(self):
+        data = dict(instance=os.environ['AGENTICROS_INSTANCE'], robots=self.latest.get('robots', {}),
+                    selected=self.selector.currentText(), rviz_pid=self.process.pid if self.process and self.process.poll() is None else None,
+                    error=self.latest.get('error',''))
+        path = Path('/tmp/viewer-status.tmp')
+        path.write_text(json.dumps(data))
+        path.replace('/tmp/viewer-status.json')
+
+    def closeEvent(self, event):
+        self.stop_rviz()
+        self.discovery.stop.set()
+        self.discovery.wait(5000)
+        event.accept()
+
+
+if __name__ == '__main__':
+    app = QtWidgets.QApplication([])
+    viewer = Viewer()
+    signal.signal(signal.SIGTERM, lambda *_: viewer.close())
+    signal.signal(signal.SIGINT, lambda *_: viewer.close())
+    viewer.show()
+    app.exec_()

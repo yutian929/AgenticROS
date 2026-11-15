@@ -30,6 +30,7 @@ services:
     build:
       context: .
       dockerfile: docker/agenticros/Dockerfile
+      target: agent
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       ROS_LOG_DIR: /workspace/ros_logs

@@ -28,7 +28,7 @@ def profile(host, port, prefix, server=False):
 
 def configure(host, port, prefix, server=False):
     import os
-    path = Path('/tmp/agenticros-lan.xml')
+    path = Path('/tmp/agenticros-server.xml' if server else '/tmp/agenticros-lan.xml')
     import tempfile
     fd, temporary = tempfile.mkstemp(prefix='lan-profile-', dir='/tmp')
     try:
