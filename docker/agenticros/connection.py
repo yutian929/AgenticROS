@@ -205,9 +205,33 @@ def chatgpt_status(profile):
     return result.returncode == 0 and 'chatgpt' in (result.stdout + result.stderr).lower()
 
 
-def validate_connection(profile):
+def switch_chatgpt_account(profile):
+    # Authorize into a temporary file store. Cancelled/failed login must not
+    # destroy the current account; only a verified replacement is committed.
+    home = Path(os.environ['CODEX_HOME'])
+    home.mkdir(parents=True, exist_ok=True)
+    print('请在浏览器中选择要使用的 ChatGPT 账号，再完成设备码授权。')
+    with tempfile.TemporaryDirectory(prefix='.account-login-', dir=home) as temporary:
+        settings = ['-c', 'cli_auth_credentials_store="file"']
+        argv, environment = command(profile, settings + ['login', '--device-auth'])
+        environment['CODEX_HOME'] = temporary
+        if subprocess.run(argv, env=environment).returncode:
+            raise ConnectionError('ChatGPT 登录未完成，原账号和配置保留。')
+        argv, _ = command(profile, settings + ['login', 'status'])
+        result = subprocess.run(argv, env=environment, capture_output=True, text=True)
+        auth = Path(temporary) / 'auth.json'
+        if (result.returncode or 'chatgpt' not in (result.stdout + result.stderr).lower()
+                or not auth.is_file()):
+            raise ConnectionError('新账号认证校验失败，原账号和配置保留。')
+        auth.chmod(0o600)
+        os.replace(auth, home / 'auth.json')
+
+
+def validate_connection(profile, *, switch_account=False):
     if profile['kind'] == 'chatgpt':
-        if not chatgpt_status(profile):
+        if switch_account:
+            switch_chatgpt_account(profile)
+        elif not chatgpt_status(profile):
             print('请按 Codex 提示在浏览器完成设备码授权。')
             argv, environment = command(profile, ['login', '--device-auth'])
             if subprocess.run(argv, env=environment).returncode or not chatgpt_status(profile):
@@ -244,18 +268,34 @@ def start(arguments):
     except ConnectionError as error:
         print(str(error))
         saved = None
+    if saved is None:
+        # docker-login.sh can have saved a login without creating a menu profile.
+        existing = {'kind': 'chatgpt', 'model': default_model()}
+        if chatgpt_status(existing):
+            saved = existing
+    if saved:
+        print('已保存：%s / %s / %s' % (saved['kind'], saved['model'], effort(saved)))
+        while True:
+            change = input('是否切换账号或修改连接配置？[y/N，q 退出]: ').strip().lower()
+            if change in ('', 'n', 'no'):
+                return launch(saved, arguments)
+            if change in ('q', '0'):
+                return 0
+            if change in ('y', 'yes'):
+                break
+            print('请输入 y、n 或 q。')
     while True:
         print('\nAgenticROS — 选择云端模型登录方式')
         if saved:
             print('当前：%s / %s / %s' % (saved['kind'], saved['model'], effort(saved)))
-            print('回车：复用并校验当前配置')
+            print('回车：直接使用当前配置')
             print('4. 仅修改当前配置的推理强度')
         print('1. ChatGPT 账号\n2. DeepSeek API\n3. 其他云端 API（Responses 协议）\n0. 退出')
         selection = input('请选择: ').strip()
         if selection == '0':
             return 0
         if not selection and saved:
-            candidate = dict(saved)
+            return launch(saved, arguments)
         elif selection == '4' and saved:
             candidate = dict(saved)
             candidate['reasoning_effort'] = prompt('推理强度（' + '/'.join(EFFORTS) + '）', effort(saved))
@@ -276,14 +316,21 @@ def start(arguments):
             continue
         try:
             validate_fields(candidate)
-            validate_connection(candidate)
+            if selection == '1':
+                validate_connection(candidate, switch_account=True)
+            else:
+                validate_connection(candidate)
             save_profile(candidate)
         except ConnectionError as error:
             print('校验失败：' + str(error))
             continue
         print('配置已保存到容器专用卷，正在进入 Codex。')
-        argv, environment = command(candidate, arguments)
-        os.execve(argv[0], argv, environment)
+        return launch(candidate, arguments)
+
+
+def launch(profile, arguments):
+    argv, environment = command(profile, arguments)
+    os.execve(argv[0], argv, environment)
 
 
 def main(arguments=None):

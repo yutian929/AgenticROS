@@ -1,21 +1,16 @@
 ---
 name: setup-body
-description: Discover an unknown ROS 2 environment and implement and verify your own adapter.
+description: 适配未知 ROS 2 环境或补充缺失能力时使用；发现并验证已有接口，按需开发功能节点，建立供 Codex 逐步调用的能力清单。
 ---
-Read /workspace/contract.md. No device-specific interface package or manual is preinstalled.
-1. Inventory live nodes, topics, services, actions, types and QoS using ROS 2 tools.
-2. Inspect parameters and publicly exposed documentation to establish units, limits, geometry,
-   control semantics and safety requirements. Do not assume endpoint names or robot structure.
-3. Standard types can be used directly. For unknown custom types, locate public definitions
-   exposed by the environment, inspect them and build the required interface package yourself.
-   ROS graph discovery reports type names; Humble does not automatically install their bindings.
-   If definitions or necessary semantics are unavailable, report the specific blocker; do not guess.
-4. Implement reusable code in /workspace/adapter/body.py. You may use CLI tools or your own nodes.
-   Save any interface source, build and launch instructions. No adapter or task program is supplied.
-5. Establish live identity, measured state and observations before motion. Validate inputs and
-   request IDs; implement timeout, cancellation and stop reconciliation before testing motion.
-   Inspect actual images where available, then verify small safe movements supported by the device.
-6. Save /workspace/adapter/manifest.json with discovered capabilities, identity, interface origin,
-   code paths, invocation instructions, test evidence and unresolved limitations.
-7. Report ready only for verified capabilities. Recheck identity and reobserve after a restart.
-Reuse verified generated code for subsequent tasks. Do not treat a manifest as proof of live state.
+
+先读 `/workspace/contract.md`，按其执行保障与能力清单格式工作。环境专用接口和说明未预装。
+
+1. 用 ROS 2 工具发现节点、topic、service、action、类型和 QoS；查看参数及公开说明，建立单位、限制、几何和控制语义，不凭名称猜测。
+2. 标准类型可直接使用。自定义类型需找到环境公开定义，检查后在 `/workspace/ros_ws/src/` 保存并构建。ROS 图能发现类型名，不意味着 Humble 自动安装了绑定；缺少定义或关键语义时报告具体阻塞。
+3. 先验证已有接口能提供哪些能力。只有缺少必要的可复用功能或执行保障时，才创建 ROS 功能包；不要求固定适配器、固定节点或固定接口名称。
+4. 构建并启动需要的节点，保存源码、overlay 加载方式、启停及健康检查命令、进程标识和日志。确认节点在终端命令结束后仍运行，并通过 ROS 接口验证；启动不自动运动。
+5. 运动验证前建立实时身份、状态、观测以及 UUID、会话、取消和停止核对机制。实际查看图像，再验证设备支持的小幅安全运动；保留请求、回执和观测证据，不能从动作完成推断抓取成功。
+6. 写入 `/workspace/capabilities/manifest.json`，区分已验证和未验证能力，注明接口来源、调用方法、证据与限制。直接复用环境接口是有效适配，不必为验收编写多余节点。
+7. 只对实际验证过的能力报告就绪。后续由 Codex 在会话中逐步调用、读取反馈、判断和调整；不得把用户整个任务交给生成的脚本、行为树或任务节点运行。
+
+复用已验证的能力和节点。重启或换会话后重新核对身份、状态与观测，清单不代表当前在线状态。

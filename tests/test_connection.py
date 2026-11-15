@@ -138,7 +138,7 @@ class CloudConnection(unittest.TestCase):
         connection.save_profile(api_profile())
         with patch.object(sys.stdin, 'isatty', return_value=True), \
                 patch.object(sys.stdout, 'isatty', return_value=True), \
-                patch('builtins.input', side_effect=['2', '', '', '', '0']), \
+                patch('builtins.input', side_effect=['y', '2', '', '', '', '0']), \
                 patch.object(connection.getpass, 'getpass', return_value='new-test-key'), \
                 patch.object(connection, 'validate_connection', side_effect=connection.ConnectionError('failed')), \
                 contextlib.redirect_stdout(io.StringIO()) as output:
@@ -154,7 +154,7 @@ class CloudConnection(unittest.TestCase):
             pass
         with patch.object(sys.stdin, 'isatty', return_value=True), \
                 contextlib.redirect_stdout(io.StringIO()) as output, \
-                patch('builtins.input', side_effect=['4', 'high']), \
+                patch('builtins.input', side_effect=['y', '4', 'high']), \
                 patch.object(connection, 'validate_connection') as validate, \
                 patch.object(connection, 'codex_binary', return_value='/mock/codex'), \
                 patch.object(connection.os, 'execve', side_effect=Started):
@@ -174,6 +174,74 @@ class CloudConnection(unittest.TestCase):
             run.return_value.returncode = 0
             connection.validate_connection(profile)
         self.assertEqual(run.call_args.args[0][-2:], ['login', '--device-auth'])
+
+    def test_returning_user_enters_saved_config_without_probe_or_rewrite(self):
+        for profile in (api_profile(), dict(kind='chatgpt', model='saved-model')):
+            connection.save_profile(profile)
+            with patch.object(sys.stdin, 'isatty', return_value=True), \
+                    contextlib.redirect_stdout(io.StringIO()) as output, \
+                    patch('builtins.input', return_value=''), \
+                    patch.object(connection, 'launch') as launch, \
+                    patch.object(connection, 'validate_connection') as validate, \
+                    patch.object(connection, 'save_profile') as save:
+                output.isatty = lambda: True
+                connection.start(['resume', '--last'])
+            launch.assert_called_once_with(profile, ['resume', '--last'])
+            validate.assert_not_called()
+            save.assert_not_called()
+
+    def test_selecting_chatgpt_forces_new_login(self):
+        connection.save_profile(dict(kind='chatgpt', model='old-model'))
+        with patch.object(sys.stdin, 'isatty', return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as output, \
+                patch('builtins.input', side_effect=['y', '1', 'new-model', 'medium']), \
+                patch.object(connection, 'validate_connection') as validate, \
+                patch.object(connection, 'launch') as launch:
+            output.isatty = lambda: True
+            connection.start([])
+        expected = dict(kind='chatgpt', model='new-model', reasoning_effort='medium')
+        validate.assert_called_once_with(expected, switch_account=True)
+        launch.assert_called_once_with(expected, [])
+
+    def test_device_login_without_menu_profile_offers_reuse(self):
+        with patch.object(sys.stdin, 'isatty', return_value=True), \
+                contextlib.redirect_stdout(io.StringIO()) as output, \
+                patch('builtins.input', return_value='n') as prompt, \
+                patch.object(connection, 'chatgpt_status', return_value=True), \
+                patch.object(connection, 'launch') as launch:
+            output.isatty = lambda: True
+            connection.start([])
+        self.assertIn('是否切换', prompt.call_args.args[0])
+        self.assertEqual(launch.call_args.args[0]['kind'], 'chatgpt')
+
+    def test_cancelled_switch_keeps_original_auth(self):
+        auth = Path(self.directory.name) / 'auth.json'
+        auth.write_text('original credentials')
+        with patch.object(connection, 'codex_binary', return_value='/mock/codex'), \
+                patch.object(connection.subprocess, 'run') as run, \
+                contextlib.redirect_stdout(io.StringIO()):
+            run.return_value.returncode = 1
+            with self.assertRaises(connection.ConnectionError):
+                connection.switch_chatgpt_account(dict(kind='chatgpt', model='test-model'))
+        self.assertEqual(auth.read_text(), 'original credentials')
+        self.assertEqual(list(Path(self.directory.name).glob('.account-login-*')), [])
+
+    def test_switch_commits_only_verified_auth(self):
+        auth = Path(self.directory.name) / 'auth.json'
+        auth.write_text('original credentials')
+        def run(argv, env, **kwargs):
+            self.assertEqual(auth.read_text(), 'original credentials')
+            self.assertNotEqual(env['CODEX_HOME'], self.directory.name)
+            if argv[-2:] == ['login', '--device-auth']:
+                (Path(env['CODEX_HOME']) / 'auth.json').write_text('new credentials')
+                return connection.subprocess.CompletedProcess(argv, 0)
+            return connection.subprocess.CompletedProcess(argv, 0, 'Logged in using ChatGPT', '')
+        with patch.object(connection, 'codex_binary', return_value='/mock/codex'), \
+                patch.object(connection.subprocess, 'run', side_effect=run), \
+                contextlib.redirect_stdout(io.StringIO()):
+            connection.switch_chatgpt_account(dict(kind='chatgpt', model='test-model'))
+        self.assertEqual(auth.read_text(), 'new credentials')
+        self.assertEqual(stat.S_IMODE(auth.stat().st_mode), 0o600)
 
 
 if __name__ == '__main__':

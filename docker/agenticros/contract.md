@@ -1,30 +1,68 @@
-# AgenticROS standard body contract v0.2
-Implement `/workspace/adapter/body.py` exporting context-manager class `Body`.
-This file defines the API; it does not supply its implementation.
+# AgenticROS ROS 能力契约 v0.3
 
-* `status()` -> measured state, driver session ID, available capabilities, busy/recovery status.
-* `observe()` -> immutable RGB/depth paths, camera calibration and synchronized measured state.
-* `move(xyz, speed=0.12)` -> move grasp center in base coordinates, metres, metres/second.
-* `grip(width)` -> set inner finger separation in metres.
-* `close()` and context-manager cleanup -> release your client resources without resetting body.
+本文只约定能力的开发、调用和验证方式，不提供实现，也不预设设备接口或支持的自由度。
+不要求生成 `Body` 类。Codex 在会话中逐步决定并调用 ROS 操作；代码用于提供可复用功能节点。
 
-Capability metadata must explicitly say whether orientation is supported. Expose only
-capabilities established from runtime discovery and verification. Refuse unsupported DOFs
-and invalid/unreachable/nonfinite inputs
-before sending a goal. A workspace bound is not collision avoidance: transport needs clearance.
+## 能力与调用边界
 
-Action returns must distinguish complete, executed ("none", "some", "unknown"),
-stop_confirmed, measured state, driver session, request UUID, reason and position error where
-applicable. Gripper contact can prevent requested closure without implying a failed servo;
-report actual opening. Never claim grasp/task success from a movement receipt alone.
+- 优先直接使用环境已有接口，不为已有能力强制增加包装节点。
+- Topic 用于连续状态和观测；Service 用于快速查询、配置；Action 用于需要反馈、结果和取消的耗时操作。
+- 功能节点可完成单项能力的内部计算和控制，如定位、规划或目标位姿运动。不得封装整个用户任务及其跨步骤决策、重试策略。
+- CLI 可直接调用已满足安全语义的接口。若 CLI 无法提供所需请求 UUID、取消或状态核对，应开发能力节点处理这些机制，再通过 ROS 调用它；不得为坚持 CLI 而丢失执行保障。
+- 每次控制操作后读取反馈，再决定下一步。长操作允许先返回请求标识，随后查询状态、读取反馈或取消；客户端等待结束或被 `timeout` 杀死不代表服务器已停止。
+- 观测必须带采集时间、坐标系及相关会话信息；持续订阅由节点维护，查询结果须说明新鲜度。图像可导出到工作区供实际查看，文件路径本身不是视觉证据。
 
-Allocate UUID BEFORE submission, record it in evidence, then send exactly once with the current session_id. An acceptance
-or result timeout leaves execution UNKNOWN. Use the discovered status mechanism to reconcile the UUID; do
-not automatically resend it. Cancellation must be confirmed by a terminal receipt. Stop
-subsequent actions when stop is unconfirmed. Rejected requests mean no execution. A server
-restart invalidates receipt lookup from the old session, not proof of non-execution.
+## 执行保障
 
-Persist programs, observations and receipts under /workspace/evidence. Use discovered sensor
-topics or public observation resources; do not assume snapshot endpoints or file paths.
-Implement perception from RGB-D if a task requires it; there
-are no hidden scene coordinates or object IDs available to the agent.
+运动前核对设备身份、当前会话、实测状态、忙碌及恢复状态，确认如何取消并证明停止。
+只暴露已经建立语义并验证的能力，明确是否支持姿态；在发送目标前拒绝不支持的自由度、非有限数、非法或不可达输入。
+工作空间边界不等于避障，搬运必须考虑净空。
+
+发送前分配并记录请求 UUID，携带当前 session，目标只发送一次。接受或结果超时意味着执行状态未知；
+通过公开状态机制按 UUID 核对，不自动重发。取消必须获得终态回执和停止确认；停止未确认时禁止后续动作。
+拒绝表示未执行；服务器换 session 后无法查到旧回执，不证明旧请求没有执行。
+如果环境没有足够信息建立这些保障，报告具体阻塞，不猜测或绕过。
+
+结果应区分完成情况、执行程度（`none`、`some`、`unknown`）、停止是否确认、实测状态、session、
+请求 UUID、原因及适用的位置误差。夹爪接触可能阻止到达目标开口，应报告实际开口；伺服完成不代表抓取或任务成功。
+关键阶段重新观测，只使用公开传感器和资料，不获取隐藏场景状态或独立评估真值。
+
+## 工作区和进程
+
+- `/workspace/ros_ws/src/`：自行生成的 ROS 包及取得的公开接口源码；在 `ros_ws` 内构建，生成 `build/`、`install/`、`log/`。
+- `/workspace/capabilities/manifest.json`：能力清单，结构见下文。
+- `/workspace/evidence/`：发现记录、实际图像、动作回执、验证结果和功能节点进程日志。
+
+提供可重复的构建、启动、健康检查和停止方法。启动前检查节点及其所属进程，避免重复实例；
+使用与当前终端命令分离的受管理进程或后台 launch，记录 PID/进程组和日志，确认命令退出后节点仍在线。
+每个新终端按需加载自己的 ROS 工作区 overlay。不要把一次 `source` 当成所有后续终端都已配置。
+不要使用范围不明的 `pkill`，只停止自己管理的进程；控制节点退出前要核对正在执行的动作和停止状态。
+节点生命周期限于当前容器，重建容器后先核对环境再启动所需节点；启动不得自动运动、恢复目标或重放任务。
+
+## 能力清单
+
+保存 JSON 对象，字段名保持英文。不要预填不存在的能力，未验证项不得标成 `verified`。
+
+| 字段 | 内容 |
+| --- | --- |
+| `schema_version` | 整数 `1` |
+| `environment` | 对象，记录发现的身份、会话及核对方式；未知内容如实说明 |
+| `capabilities` | 能力数组；每项包含下述字段 |
+| `generated_nodes` | 自行启动的节点数组；全部直接使用环境接口时允许为空 |
+| `limitations` | 字符串数组，记录限制、阻塞和未验证内容；无已知限制时为空数组 |
+
+每项 capability：
+
+- `name`：唯一的能力标识；`kind`：`topic`、`service` 或 `action`。
+- `endpoint`：完整 ROS 名称；`interface_type`：实际消息、服务或动作类型。
+- `origin`：`environment` 或 `generated`；`status`：`verified` 或 `unverified`。
+- `description`：用途、参数单位、坐标系、限制及反馈含义。
+- `invocation`：可复用的调用模板，包含必要 overlay 和超时说明；模板不等于已经执行。
+- `evidence`：相对 `/workspace` 的验证文件路径数组；`verified` 项至少有一个非空证据文件。
+
+每项 generated node：`node_name`（完整 ROS 名称）、`package`、`source_path`（相对工作区的源码目录）、
+`start_command`、`stop_command`、`health_command`、`log_path`（相对工作区的实际进程日志文件）。
+命令字段仅作人工及 Codex 调用说明，验收工具不会自动执行清单中的命令。
+
+验收工具核对清单结构、证据文件和当前 ROS 图中的接口/类型，以及所声明生成节点是否在线。
+图中存在不证明接口可用、设备空闲、停止已确认或任务成功；必须结合实际调用记录、观测和独立评估。

@@ -9,6 +9,44 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DockerLayout(unittest.TestCase):
+    def instance_config(self, name):
+        return json.loads(subprocess.check_output([
+            'bash', '-c', 'source scripts/instance.sh >/dev/null; '
+            'docker compose --profile simulation config --format json',
+            'instance-test', '--instance', name], cwd=ROOT, text=True))
+
+    def test_named_instances_isolate_data_but_share_body(self):
+        first = self.instance_config('account-a')
+        second = self.instance_config('account-b')
+        for name, config in [('account-a', first), ('account-b', second)]:
+            mounts = {m['target']: m for m in config['services']['agenticros']['volumes']}
+            self.assertEqual(Path(mounts['/workspace']['source']),
+                             ROOT / 'runs/instances' / name / 'workspace')
+            self.assertEqual(config['volumes']['codex-home']['name'],
+                             'agenticros_codex-home-instance-' + name)
+            self.assertEqual(set(mounts),
+                             {'/workspace', '/home/agent/.codex', '/observations', '/config/codex.toml'})
+            self.assertTrue(mounts['/observations']['read_only'])
+        self.assertEqual(first['services']['simple_mujoco'], second['services']['simple_mujoco'])
+        self.assertEqual(first['networks'], second['networks'])
+        default = self.instance_config('default')
+        self.assertEqual(default['volumes']['codex-home']['name'], 'agenticros_codex-home')
+
+    def test_instance_option_preserves_codex_arguments(self):
+        result = subprocess.check_output([
+            'bash', '-c', 'source scripts/instance.sh >/dev/null; printf "%s\\n" "$@"',
+            'instance-test', '--instance', 'account-a', 'resume', '--last'], cwd=ROOT, text=True)
+        self.assertEqual(result.splitlines(), ['resume', '--last'])
+
+    def test_invalid_instances_fail_before_starting_containers(self):
+        for name in ('../escape', '/tmp', '', '-bad', 'a' * 49):
+            result = subprocess.run(['bash', 'scripts/agenticros.sh', '--instance', name],
+                                    cwd=ROOT, capture_output=True)
+            self.assertEqual(result.returncode, 2)
+        result = subprocess.run(['bash', 'scripts/docker-login.sh', '--instance'],
+                                cwd=ROOT, capture_output=True)
+        self.assertEqual(result.returncode, 2)
+
     def test_agent_boundary(self):
         config = json.loads(subprocess.check_output(
             ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'], cwd=ROOT, text=True))
@@ -59,7 +97,6 @@ class DockerLayout(unittest.TestCase):
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         self.assertFalse(names & {'move', 'grip', 'evaluate', 'locate_color'})
         self.assertFalse(list((ROOT / 'docker/agenticros').rglob('body.py')))
-        self.assertIn('does not supply its implementation', (ROOT / 'docker/agenticros/contract.md').read_text())
         # Keep historical reference-code fingerprints even after removing its source.
         hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
         self.assertIn('examples/pick_place.py', hashes.values())

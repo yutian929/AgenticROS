@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+source scripts/instance.sh
 # The Agent is independent of any particular environment; never start a body here.
 docker compose build agenticros
 export AGENTICROS_WORKSPACE_GID="$(id -g)"

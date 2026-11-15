@@ -1,6 +1,7 @@
 """Prepare the ignored host workspace; import a stopped legacy volume without deleting it."""
 import json
 import os
+import re
 from pathlib import Path
 import stat
 import subprocess
@@ -51,9 +52,22 @@ def docker(*args, **kwargs):
 
 def prepare():
     runs = ROOT / 'runs'
-    destination = runs / 'workspace'
-    if runs.is_symlink() or destination.is_symlink():
-        raise RuntimeError('runs/ and runs/workspace must be real directories, not symlinks')
+    instance = os.environ.get('AGENTICROS_INSTANCE', 'default')
+    if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}', instance):
+        raise RuntimeError('Invalid instance name')
+    destination = (runs / 'workspace' if instance == 'default' else
+                   runs / 'instances' / instance / 'workspace')
+    for path in [destination, *destination.parents]:
+        if path == ROOT:
+            break
+        if path.is_symlink():
+            raise RuntimeError('Workspace paths must be real directories, not symlinks')
+    if instance != 'default':
+        # New identities never import the default workspace or legacy volumes.
+        destination.mkdir(parents=True, exist_ok=True)
+        destination.chmod(stat.S_IMODE(destination.stat().st_mode) | 0o2770)
+        print('Workspace: ' + str(destination))
+        return
     config = json.loads(docker('compose', 'config', '--format', 'json', capture_output=True).stdout)
     legacy = config['name'] + '_workspace'
     exists = subprocess.run(['docker', 'volume', 'inspect', legacy], capture_output=True).returncode == 0

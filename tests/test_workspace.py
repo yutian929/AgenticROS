@@ -60,6 +60,32 @@ class WorkspacePreparation(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, 'symlinks'):
             workspace.prepare()
 
+    def test_instances_keep_separate_files_without_legacy_import(self):
+        with patch.object(workspace.subprocess, 'run') as run, contextlib.redirect_stdout(io.StringIO()):
+            for name in ('account-a', 'account-b'):
+                with patch.dict(os.environ, AGENTICROS_INSTANCE=name):
+                    workspace.prepare()
+            target = self.root / 'runs/instances/account-a/workspace'
+            (target / 'adapter.py').write_text('retained')
+            with patch.dict(os.environ, AGENTICROS_INSTANCE='account-a'):
+                workspace.prepare()
+            run.assert_not_called()
+        self.assertEqual((target / 'adapter.py').read_text(), 'retained')
+        self.assertEqual(list((self.root / 'runs/instances/account-b/workspace').iterdir()), [])
+        self.assertFalse((self.root / 'runs/workspace').exists())
+
+    def test_instance_parent_symlink_is_rejected(self):
+        (self.root / 'runs').mkdir()
+        (self.root / 'runs/instances').symlink_to(self.root)
+        with patch.dict(os.environ, AGENTICROS_INSTANCE='account-a'):
+            with self.assertRaisesRegex(RuntimeError, 'symlinks'):
+                workspace.prepare()
+
+    def test_instance_path_traversal_is_rejected(self):
+        with patch.dict(os.environ, AGENTICROS_INSTANCE='../../outside'):
+            with self.assertRaisesRegex(RuntimeError, 'Invalid instance'):
+                workspace.prepare()
+
 
 if __name__ == '__main__':
     unittest.main()

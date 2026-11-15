@@ -35,7 +35,7 @@ services:
       ROS_LOG_DIR: /workspace/ros_logs
     volumes:
       - type: bind
-        source: ./runs/workspace
+        source: ./runs/${AGENTICROS_WORKSPACE_SUBDIR:-workspace}
         target: /workspace
         bind:
           create_host_path: false
@@ -55,4 +55,5 @@ networks:
 volumes:
   observations:
   codex-home:
+    name: ${COMPOSE_PROJECT_NAME:-agenticros}_codex-home${AGENTICROS_INSTANCE_SUFFIX:-}
   viewer-auth:
