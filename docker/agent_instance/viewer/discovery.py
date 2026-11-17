@@ -4,7 +4,7 @@ import re
 
 def robots(roster, instance_id):
     if roster.get('instance_id') != instance_id:
-        raise ValueError('Registry identity changed; refusing another instance')
+        raise ValueError('Registry identity changed; refusing another Agent instance')
     result = {}
     for item in roster.get('robots', []):
         robot, session, namespace = item['robot_id'], item['session_id'], item['namespace']

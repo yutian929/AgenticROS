@@ -5,7 +5,7 @@ from types import SimpleNamespace
 import unittest
 
 import numpy as np
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'docker/clients/simple_mujoco') if '__file__' in globals() and __file__ != '<stdin>' else '/opt/body')
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'docker/robot_instances/simple_mujoco') if '__file__' in globals() and __file__ != '<stdin>' else '/opt/body')
 from sensors import decode_image, project_depth, point_cloud_buffer
 
 

@@ -5,7 +5,7 @@ import subprocess
 import unittest
 from unittest.mock import Mock, patch
 
-spec = importlib.util.spec_from_file_location('instance_runtime', Path(__file__).resolve().parents[1]/'docker/instance/runtime.py')
+spec = importlib.util.spec_from_file_location('instance_runtime', Path(__file__).resolve().parents[1]/'docker/agent_instance/runtime.py')
 runtime = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runtime)
 
@@ -38,7 +38,7 @@ class Lifecycle(unittest.TestCase):
         process.wait.side_effect = [subprocess.TimeoutExpired('desktop', 45), 0]
         manager = runtime.Runtime()
         manager.processes['viewer'] = process
-        with self.assertRaisesRegex(RuntimeError, 'stopping instance'):
+        with self.assertRaisesRegex(RuntimeError, 'stopping Agent instance'):
             manager.stop('viewer')
         self.assertTrue(manager.stopping)
         process.kill.assert_called_once()

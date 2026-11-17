@@ -54,7 +54,7 @@ def prepare():
     runs = ROOT / 'runs'
     instance = os.environ.get('AGENTICROS_INSTANCE', 'default')
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}', instance):
-        raise RuntimeError('Invalid instance name')
+        raise RuntimeError('Invalid Agent instance name')
     destination = (runs / 'workspace' if instance == 'default' else
                    runs / 'instances' / instance / 'workspace')
     for path in [destination, *destination.parents]:

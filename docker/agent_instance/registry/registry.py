@@ -10,9 +10,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class Registry:
-    def __init__(self, instance, instance_id, domain, host, dds_port, prefix, join_token, ttl=6):
+    def __init__(self, instance, instance_id, domain, host, dds_port, prefix, join_token, ttl=6, transport='udp'):
         self.config = dict(instance=instance, instance_id=instance_id, domain_id=domain,
-                           discovery_host=host, discovery_port=dds_port, discovery_prefix=prefix)
+                           discovery_host=host, discovery_port=dds_port, discovery_prefix=prefix,
+                           discovery_transport=transport)
         self.join_token = join_token
         self.epoch = secrets.token_hex(16)
         self.ttl = ttl
@@ -23,7 +24,7 @@ class Registry:
         if not hmac.compare_digest(token, self.join_token):
             raise PermissionError('invalid join token')
         if body.get('instance') != self.config['instance']:
-            raise PermissionError('instance mismatch')
+            raise PermissionError('Agent instance mismatch')
         robot = body.get('robot_id', '')
         session = body.get('session_id', '')
         if not re.fullmatch(r'[a-z][a-z0-9_]{0,47}', robot) or not re.fullmatch(r'[0-9a-f]{12,32}', session):
@@ -31,7 +32,7 @@ class Registry:
         with self.lock:
             old = self.members.get(robot)
             if old and old['deadline'] > time.monotonic():
-                raise FileExistsError('robot_id already has an active client')
+                raise FileExistsError('robot_id already has an active Robot instance')
             lease = secrets.token_hex(32)
             self.members[robot] = dict(session_id=session, lease=lease,
                                        deadline=time.monotonic()+self.ttl)
@@ -45,7 +46,7 @@ class Registry:
                     or body.get('session_id') != member['session_id']
                     or not hmac.compare_digest(token, member['lease'])
                     or member['deadline'] <= time.monotonic()):
-                raise PermissionError('lease expired or identity changed; explicit client restart required')
+                raise PermissionError('lease expired or identity changed; explicit Robot instance restart required')
             member['deadline'] = time.monotonic()+self.ttl
             return dict(lease_seconds=self.ttl, epoch=self.epoch)
 
@@ -110,7 +111,15 @@ def main():
     registry = Registry(os.environ['AGENTICROS_INSTANCE'], os.environ['AGENTICROS_INSTANCE_ID'],
                         int(os.environ['ROS_DOMAIN_ID']), os.environ['AGENTICROS_DDS_HOST'],
                         int(os.environ['AGENTICROS_DDS_PORT']), os.environ['AGENTICROS_DDS_PREFIX'],
-                        os.environ['AGENTICROS_JOIN_TOKEN'])
+                        os.environ['AGENTICROS_JOIN_TOKEN'],
+                        transport=os.getenv('AGENTICROS_DDS_TRANSPORT', 'udp'))
+    if registry.config['discovery_transport'] == 'tcp':
+        # Retain discovery metadata across registry-process restarts inside this
+        # container. Memberships and control leases deliberately remain volatile.
+        from pathlib import Path
+        cache = Path('/tmp/agenticros-discovery')
+        cache.mkdir(exist_ok=True)
+        os.chdir(cache)
     rclpy.init()
     node = Node('instance_registry', namespace='/agenticros')
     pub = node.create_publisher(String, 'robots', 1)

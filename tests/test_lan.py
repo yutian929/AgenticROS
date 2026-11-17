@@ -25,8 +25,8 @@ def load(name, path):
     return module
 
 
-registry = load('registry', 'docker/server/registry.py')
-client = load('lan_client', 'docker/clients/simple_mujoco/lan.py')
+registry = load('registry', 'docker/agent_instance/registry/registry.py')
+client = load('lan_client', 'docker/robot_instances/simple_mujoco/registration.py')
 profile = load('lan_profile', 'docker/shared/lan_profile.py')
 launcher = load('lan_launcher', 'scripts/lan.py')
 
@@ -106,7 +106,7 @@ class ClientSafety(unittest.TestCase):
     def test_snapshot_download_whitelist_and_integrity(self):
         with tempfile.TemporaryDirectory() as temp:
             c = client.Client.__new__(client.Client)
-            c.root = Path(temp)
+            c.root = Path(temp).resolve()
             c.session = 'a'*12
             c.secret = b'secret'
             c.host = '127.0.0.1'
@@ -231,7 +231,7 @@ class Startup(unittest.TestCase):
             with self.assertRaises(ValueError):
                 launcher.ensure_server(config)
             run.assert_not_called()
-        with patch.object(launcher, 'health', side_effect=[OSError(), 'ok']), patch.object(launcher, 'run') as run, patch.object(launcher, 'ensure_image'), patch.object(launcher, 'prepare_workspace'):
+        with patch.object(launcher, 'health', side_effect=[OSError(), 'ok']), patch.object(launcher, 'run') as run, patch.object(launcher, 'ensure_image'), patch.object(launcher, 'prepare_workspace'), patch.object(launcher, 'check_host_network'):
             launcher.ensure_server(config)
             self.assertIn('--no-recreate', run.call_args.args[1])
             self.assertIn('--no-build', run.call_args.args[1])
@@ -294,6 +294,110 @@ class Startup(unittest.TestCase):
         with patch.object(launcher, 'lan_addresses', return_value=[('eth0','192.168.1.2'), ('eth1','10.0.0.2')]), patch.object(launcher.sys.stdin, 'isatty', return_value=False):
             with self.assertRaisesRegex(ValueError, 'AGENTICROS_HOST'):
                 launcher.detect_host()
+
+    def test_macos_interface_detection_uses_ipconfig(self):
+        with patch.object(launcher.sys, 'platform', 'darwin'), \
+                patch.object(launcher.socket, 'if_nameindex', return_value=[(1,'lo0'),(2,'en0'),(3,'en1'),(4,'utun0')]), \
+                patch.object(launcher.subprocess, 'run', side_effect=[
+                    argparse.Namespace(returncode=0, stdout='192.168.1.20\n'),
+                    argparse.Namespace(returncode=1, stdout='')]) as run:
+            self.assertEqual(launcher.lan_addresses(), [('en0','192.168.1.20')])
+            self.assertEqual(run.call_count, 2)
+
+    def test_saved_udp_linux_instance_is_preserved_and_mac_rejects_it(self):
+        with patch.object(launcher.sys, 'platform', 'linux'):
+            config = launcher.server_config('legacy', '127.0.0.1', transport='udp')
+            del config['AGENTICROS_DDS_TRANSPORT']
+            launcher.server_file('legacy').write_text(json.dumps(config))
+            self.assertEqual(launcher.server_config('legacy'), config)
+            with self.assertRaisesRegex(ValueError, 'saved transport'):
+                launcher.server_config('legacy', transport='tcp')
+        with patch.object(launcher.sys, 'platform', 'darwin'):
+            with self.assertRaisesRegex(ValueError, 'TCP Agent instance'):
+                launcher.server_config('legacy')
+        self.assertEqual(json.loads(launcher.server_file('legacy').read_text()), config)
+
+    def test_tcp_discovery_port_does_not_collide_with_registry(self):
+        with self.assertRaises(ValueError):
+            launcher.available_port(7447, [{'AGENTICROS_DDS_PORT':7447}], explicit=7447)
+        with self.assertRaises(ValueError):
+            launcher.server_config('conflicting-ports', '127.0.0.1', registry_port=17447,
+                                   discovery_port=17447, transport='tcp')
+        self.assertFalse(launcher.server_file('conflicting-ports').exists())
+        with self.assertRaisesRegex(ValueError, '1024..32767'):
+            launcher.server_config('high-tcp-port', '127.0.0.1', discovery_port=57161, transport='tcp')
+        self.assertFalse(launcher.server_file('high-tcp-port').exists())
+
+    def test_new_instances_default_to_tcp_on_both_platforms(self):
+        for platform in ('linux', 'darwin'):
+            with patch.object(launcher.sys, 'platform', platform):
+                self.assertEqual(launcher.server_config(platform, '127.0.0.1')['AGENTICROS_DDS_TRANSPORT'], 'tcp')
+
+    def test_same_host_loopback_join_selects_loopback(self):
+        self.assertEqual(launcher.detect_host('http://127.0.0.1:17447'), '127.0.0.1')
+
+    def test_macos_rejects_udp_server_before_saving_client(self):
+        config = self.server()
+        response = dict(instance='fleet', instance_id=config['AGENTICROS_INSTANCE_ID'])
+        with patch.object(launcher.sys, 'platform', 'darwin'), \
+                patch.object(launcher.urllib.request, 'urlopen', return_value=io.StringIO(json.dumps(response))):
+            with self.assertRaisesRegex(ValueError, 'TCP Agent instance'):
+                launcher.client_config(self.args(join=launcher.join_code(config)))
+        self.assertFalse((launcher.folder('fleet')/'lan/client-robot_a.json').exists())
+
+    def test_stale_server_image_is_detected_without_restarting_it(self):
+        config = self.server()
+        old_health = {'instance_id':config['AGENTICROS_INSTANCE_ID']}
+        with patch.object(launcher.urllib.request, 'urlopen', return_value=io.StringIO(json.dumps(old_health))), \
+                patch.object(launcher, 'run') as run:
+            with self.assertRaisesRegex(ValueError, 'rebuild the Agent instance image'):
+                launcher.ensure_server(config)
+            run.assert_not_called()
+
+    def test_tcp_profiles_bind_any_and_advertise_host_with_dynamic_peer_ports(self):
+        ns = {'f':'http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles'}
+        prefix = '01.02.03.04.05.06.07.08.09.0a.0b.0c'
+        for server in (False, True):
+            root = ET.fromstring(profile.profile('192.168.1.2',11811,prefix,server,'tcp','192.168.1.3'))
+            self.assertEqual(root.find('.//f:discoveryProtocol',ns).text, 'BACKUP' if server else 'SUPER_CLIENT')
+            self.assertEqual(root.find('.//f:wan_addr',ns).text,'192.168.1.3')
+            self.assertEqual(root.find(".//f:publisher[@profile_name='service']/f:qos/f:reliability/f:max_blocking_time/f:sec",ns).text,'3')
+            self.assertEqual(root.find(".//f:publisher[@profile_name='service']/f:qos/f:reliability/f:kind",ns).text,'RELIABLE')
+            self.assertEqual(root.find('.//f:listening_ports/f:port',ns).text,'11811' if server else '0')
+            self.assertIsNone(root.find('.//f:defaultUnicastLocatorList',ns))
+            self.assertEqual([e.text for e in root.findall('.//f:builtin/f:metatrafficUnicastLocatorList/f:locator/f:tcpv4/f:address',ns)],
+                             ['127.0.0.1', '192.168.1.2'] if server else [])
+            self.assertEqual({e.text for e in root.findall('.//f:transport_descriptor/f:type',ns)}, {'TCPv4','SHM'})
+            self.assertIsNone(root.find('.//f:udpv4',ns))
+        root = ET.fromstring(profile.profile('192.168.1.2',11811,prefix,transport='tcp',advertised_host='192.168.1.3'))
+        self.assertEqual(root.find('.//f:RemoteServer//f:tcpv4/f:address',ns).text,'192.168.1.2')
+        root = ET.fromstring(profile.profile('192.168.1.2',21811,prefix,transport='tcp'))
+        peer = root.find('.//f:RemoteServer//f:tcpv4',ns)
+        self.assertEqual(peer.find('f:physical_port',ns).text,'21811')
+        self.assertEqual(peer.find('f:port',ns).text,'7410')
+        self.assertEqual(peer.find('f:address',ns).text,'127.0.0.1')
+        with self.assertRaisesRegex(ValueError, '1024..32767'):
+            profile.profile('192.168.1.2',57161,prefix,transport='tcp')
+        with self.assertRaises(ValueError):
+            profile.profile('192.168.1.2',11811,prefix,transport='invalid')
+
+    def test_transient_network_probe_failure_only_retries_the_probe(self):
+        with patch.object(launcher, '_check_host_network_once', side_effect=[ValueError('not ready'), None]) as probe, \
+                patch.object(launcher, 'run') as run:
+            launcher.check_host_network('test-image')
+            self.assertEqual(probe.call_count, 2)
+            run.assert_not_called()
+
+    def test_disabled_desktop_network_fails_with_cleanup(self):
+        with patch.object(launcher.sys, 'platform', 'darwin'), \
+                patch.object(launcher.socket, 'socket') as socket_mock, \
+                patch.object(launcher.subprocess, 'run') as run:
+            listener = socket_mock.return_value.__enter__.return_value
+            listener.getsockname.return_value = ('127.0.0.1', 12345)
+            listener.accept.side_effect = TimeoutError()
+            with self.assertRaisesRegex(ValueError, 'Enable host networking'):
+                launcher.check_host_network('test-image')
+            self.assertEqual(run.call_args.args[0][:3], ['docker','rm','-f'])
 
     def test_named_shell_entry_automatically_routes_to_lan_and_preserves_arguments(self):
         fake = Path(self.temp.name)/'python3'

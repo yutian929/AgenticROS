@@ -1,14 +1,37 @@
 # 开发记录
 
-当前实现使用 Ubuntu 22.04 / ROS 2 Humble，已在 Linux AMD64 验证。
-仿真、ROS 观测发布及 RViz2/noVNC 均位于 `simple_mujoco` 容器，Agent 使用独立的 `agenticros` 容器。
+容器使用 Ubuntu 22.04 / ROS 2 Humble；早期 Linux AMD64 验证与本次 macOS Apple Silicon 验证分别记录如下。
+Agent instance 在一个容器内运行注册与发现服务、Agent 与 RViz2/noVNC；Robot instance 独立运行仿真与观测。
+旧单机模式仍保留独立 Agent 容器及带 RViz2 的 `simple_mujoco` 容器。
 
 ## 当前开发说明
 
-- `docker/clients/simple_mujoco/`：私有仿真、原始驱动、RGB-D 点云、评估器，以及公开 URDF、RViz 配置和容器图形进程管理。
-- `docker/agenticros/`：通用 ROS 工具、适配要求、setup-body skill 和 Codex 配置，不含环境专用接口或身体资料。
-- `docker/clients/simple_mujoco/interfaces/`：归仿真端所有的原始 ROS IDL，包名保留为 `agenticros_driver_interfaces`。
-- `docker/clients/simple_mujoco/body.md`：由仿真端通过 ROS 参数公开的设备说明，不复制进 Agent 镜像。
+Docker 源码按运行实例组织，主机角色不作为目录层级：
+
+```text
+docker/
+├── agent_instance/
+│   ├── Dockerfile
+│   ├── runtime.py          # 容器内进程管理
+│   ├── agent/              # Codex、账号配置、规则与技能
+│   ├── registry/           # 注册与发现服务
+│   └── viewer/             # RViz2 / noVNC
+├── robot_instances/
+│   └── simple_mujoco/      # 仿真、驱动、观测与公开接口
+│       └── registration.py # 注册、心跳与租约
+└── shared/                 # 共用 DDS 网络配置
+```
+
+构建目标、镜像标签、容器名、数据卷和 `runs/` 路径保持兼容。
+`agent_instance/agent/` 是 Agent 通用组件；完整 Agent instance 的构建入口是
+`docker/agent_instance/Dockerfile`，构建目标为 `instance`。
+Robot instance 的独立构建入口是 `docker/robot_instances/simple_mujoco/Dockerfile`。
+
+
+- `docker/robot_instances/simple_mujoco/`：私有仿真、原始驱动、RGB-D 点云、评估器，以及公开 URDF、RViz 配置和容器图形进程管理。
+- `docker/agent_instance/agent/`：通用 ROS 工具、适配要求、setup-body skill 和 Codex 配置，不含环境专用接口或身体资料。
+- `docker/robot_instances/simple_mujoco/interfaces/`：归仿真端所有的原始 ROS IDL，包名保留为 `agenticros_driver_interfaces`。
+- `docker/robot_instances/simple_mujoco/body.md`：由仿真端通过 ROS 参数公开的设备说明，不复制进 Agent 镜像。
 - `scripts/`、`tests/`：启动和验收工具，无预写适配答案。
 
 ```bash
@@ -126,7 +149,7 @@ ROS 接口包改名后，旧适配器中的导入名需更新为 `agenticros_dri
 已有代码和会话会保留，但重启后的身体 session、观测和适配验证状态必须重新核对。
 历史验证文档、日志和禁用源码指纹中的原始名称保留用于追溯，不代表当前运行配置。
 
-`scripts/environment.sh` 是统一选择入口，具体启动逻辑位于 `docker/clients/<名称>/start.sh`。
+`scripts/environment.sh` 是统一选择入口，具体启动逻辑位于 `docker/robot_instances/<名称>/start.sh`。
 当前仅提供 `simple_mujoco`，未知或未实现的环境名称会报错，不启动容器。
 设备登录不可用时，可在容器中通过 `codex login --with-api-key` 从 stdin 登录；不要把密钥写入仓库。
 
@@ -167,7 +190,7 @@ Key 不写入源码、公开 TOML 或命令行参数，启动 Codex 时仅通过
 需要单独账号登录时仍可运行 `bash scripts/docker-login.sh`。
 `agenticros status` 只检查本地配置或账号状态，不发起付费 API 校验。
 
-当前基础默认配置仍在 `docker/agenticros/codex.toml`，菜单选择通过包装器的运行参数覆盖模型与提供方。
+当前基础默认配置仍在 `docker/agent_instance/agent/codex.toml`，菜单选择通过包装器的运行参数覆盖模型与提供方。
 模型能力目录（尤其图像能力）可按提供方官方说明配置；菜单不会因文字/函数测试通过就宣称支持视觉。
 参见 [OpenAI 登录说明](https://learn.chatgpt.com/docs/auth?surface=cli)、
 [提供方配置](https://learn.chatgpt.com/docs/config-file/config-advanced)、
@@ -404,3 +427,48 @@ Codex 负责逐步决策与调用，按需生成可复用 ROS 功能节点；不
 
 未调用模型、未执行机器人动作、未重启运行中的仿真；未验收 Codex 自主开发节点、逐步决策行为或抓放成功。
 旧产物、认证和数据卷未删除，新建日常容器仍复用绑定工作区；空工作区自主验收另行运行。
+
+
+### 2026-11-16：macOS / Linux instance-client 适配
+
+保留 `bash scripts/agenticros.sh --instance <名称>` → `bash scripts/environment.sh simple_mujoco --join <连接码> --robot-id <名称>` 的启动顺序。
+Mac 通过系统 `ipconfig` 选择 IPv4，启动前实测 Docker Desktop 双向 host networking；临时探针可重试，服务启动和动作不重试。
+新 instance 默认 TCP，已有 Linux UDP 配置、身份和数据保持不变。Mac 加入旧 UDP instance 会在启动前明确报错。
+
+TCP 使用 Fast DDS `wan_addr` 映射宿主地址，并自动分配各 ROS participant 的监听端口；同机数据使用 SHM，Compose 设置 `ipc: host`。
+这会共享 Docker 宿主 IPC，适用于当前可信仿真部署，不构成容器间的安全隔离。
+发现端口限定为 1024..32767，避免测试中高端口重连失败的配置；发现记录使用 BACKUP 模式缓存在容器 `/tmp/agenticros-discovery/`。
+恢复发现记录不会恢复注册 epoch、控制租约或动作。Humble 的服务响应端点匹配等待从默认 100 ms 调整为 TCP 模式下的 3 秒，避免新查询的响应过早被丢弃。
+对应机制见 [Fast DDS TCP](https://fast-dds.docs.eprosima.com/en/2.6.x/fastdds/transport/tcp/tcp.html)、
+[发现记录恢复](https://fast-dds.docs.eprosima.com/en/2.6.x/fastdds/use_cases/wifi/discovery_server_use_case.html) 和
+[Humble 服务响应实现](https://github.com/ros2/rmw_fastrtps/blob/humble/rmw_fastrtps_shared_cpp/src/rmw_response.cpp)。
+
+本次在一台 Apple Silicon Mac、Docker Desktop 4.99.0 上完成：
+
+- `bash scripts/test.sh`：95 项通过；Python 语法、`git diff --check` 通过。
+- Mac 局域网 IPv4 + host IPC：完整双 client 集成通过，证据 `runs/instances/lan-test-31573afd/`。
+- TCP 三个独立 IP / 私有 IPC：完整集成通过，证据 `runs/instances/lan-test-92dd906d/`；每个测试容器有 512 MiB 私有共享内存，跨容器不能使用 SHM。执行命令为 `python3 scripts/check_lan.py --transport tcp --separate-ips --result-timeout 180`。
+- 原有 UDP 独立 IP 路径通过：`runs/instances/lan-test-5a545a83/`。两种协议均检查身份、快照哈希、并行动作、拒绝串用 session、取消回执、租约失效停止和重启后不自动恢复控制。
+- viewer / VNC 认证、桌面重启不重启 registry、会话锁、client 会话替换通过：`runs/instances/viewer-test-12351571/`。
+- 两个实际 Bash 入口依次启动通过：`runs/instances/mac-cli-55af9326/`；只进入登录菜单并退出，没有调用模型。
+- Agent 镜像审计扫描 61,946 个文件和 25 个私有源码指纹通过；六处运行时代码副本与源码哈希一致。
+
+最终汇总：`runs/mac-adaptation/result.json`。其他目录保留了排障过程中的失败配置，不能作为最终通过证据。
+本次测试容器均已停止并移除，运行容器数为 0；保留工作区、数据卷和证据，未提交或 push。
+没有使用第二台物理机器，因此尚未验收 Mac↔Linux / Mac↔Mac 的真实路由、防火墙及链路故障；本次也没有在独立 Linux 宿主重新运行。
+Docker 集成不代表 Codex 自主适配、任务成功或硬件验证。Mac 软件渲染可能慢于实时，测试等待上限不修改动作时长或租约，也不重发超时动作。
+
+### 2026-11-17：按 Agent / Robot instance 整理 Docker 目录
+
+将 Agent、注册服务、Viewer 和进程管理统一归入 `docker/agent_instance/`；
+机器人实现归入 `docker/robot_instances/`；`simple_mujoco/lan.py` 改名为 `registration.py` 并更新驱动导入。
+同步修改 Dockerfile、Compose、启动脚本、镜像审计、测试与文档路径；保留构建目标、镜像标签、容器名、数据卷和配置格式。
+
+验证：
+
+- 两类 LAN 镜像和旧单机 Compose 镜像均在本机 macOS 成功构建。
+- `bash scripts/test.sh`：95 项测试通过（88 项宿主机测试、7 项隔离容器测试）。
+- 通用 Agent 与完整 Agent instance 镜像隔离审计通过；后者扫描 61,946 个文件，核对 25 个私有源码指纹。
+- 新镜像双 Robot instance 的 Viewer 集成通过，包括注册发现、画面、可视化重启、会话锁与机器人 session 更新；无机器人运动指令。
+  证据：`runs/instances/viewer-test-683907e0/viewer-check.json`。
+- 测试容器均清理，最终运行容器数为 0；账号卷、观测卷与工作区保留。未做云端登录、Codex 自主任务或真实双机验收。

@@ -5,7 +5,7 @@ services:
     profiles: [simulation]
     build:
       context: .
-      dockerfile: docker/clients/simple_mujoco/Dockerfile
+      dockerfile: docker/robot_instances/simple_mujoco/Dockerfile
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       BODY_SEED: "${BODY_SEED:-0}"
@@ -29,7 +29,7 @@ services:
   agenticros:
     build:
       context: .
-      dockerfile: docker/agenticros/Dockerfile
+      dockerfile: docker/agent_instance/Dockerfile
       target: agent
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
@@ -42,7 +42,7 @@ services:
           create_host_path: false
       - codex-home:/home/agent/.codex
       - observations:/observations:ro
-      - ./docker/agenticros/codex.toml:/config/codex.toml:ro
+      - ./docker/agent_instance/agent/codex.toml:/config/codex.toml:ro
     networks: [robot]
     group_add: ["${AGENTICROS_WORKSPACE_GID:-1000}"]
     cap_drop: [ALL]

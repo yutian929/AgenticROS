@@ -17,7 +17,7 @@ def load(name, path):
     return module
 
 
-discovery = load('viewer_discovery', 'docker/viewer/discovery.py')
+discovery = load('viewer_discovery', 'docker/agent_instance/viewer/discovery.py')
 launcher = load('viewer_launcher', 'scripts/lan.py')
 
 
@@ -100,8 +100,8 @@ class Configuration(unittest.TestCase):
         self.assertEqual({m['target'] for m in instance['volumes']},
                          {'/viewer-auth', '/workspace', '/home/agent/.codex', '/config/codex.toml'})
         self.assertEqual(data['volumes']['viewer-auth']['name'], 'agenticros_viewer-auth-instance-test-viewer')
-        dockerfile = (ROOT/'docker/agenticros/Dockerfile').read_text()
-        for forbidden in ('docker/clients', 'mujoco', 'driver_ws', 'evaluator'):
+        dockerfile = (ROOT/'docker/agent_instance/Dockerfile').read_text()
+        for forbidden in ('docker/robot_instances', 'mujoco', 'driver_ws', 'evaluator'):
             self.assertNotIn(forbidden, dockerfile)
 
     def test_lan_camera_publication_does_not_use_synchronous_mode(self):

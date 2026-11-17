@@ -3,8 +3,10 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 usage() {
   echo 'Usage: bash scripts/environment.sh <environment>' >&2
+  echo 'Robot instance: add --join CODE --robot-id ID; resume with --instance AGENT_NAME --robot-id ID' >&2
+  echo 'Without options: legacy single-host environment.' >&2
   echo 'Available environments:' >&2
-  for startup in docker/clients/*/start.sh; do
+  for startup in docker/robot_instances/*/start.sh; do
     [[ -f "$startup" ]] || continue
     name=${startup%/start.sh}
     printf '  %s\n' "${name##*/}" >&2
@@ -14,7 +16,7 @@ if [[ $# -lt 1 || ! "${1:-}" =~ ^[a-z][a-z0-9_]*$ ]]; then
   usage
   exit 2
 fi
-startup="docker/clients/$1/start.sh"
+startup="docker/robot_instances/$1/start.sh"
 if [[ ! -f "$startup" ]]; then
   printf 'Unknown environment: %s\n' "$1" >&2
   usage

@@ -1,4 +1,4 @@
-"""One instance, independent registry/desktop processes, one interactive brain."""
+"""One Agent instance, independent registry/desktop processes, one interactive brain."""
 import fcntl
 import json
 import os
@@ -58,7 +58,7 @@ class Runtime:
                 # A failed desktop shutdown must not leave orphaned graphical services.
                 if name == 'viewer':
                     self.stopping = True
-                    raise RuntimeError('desktop did not stop; stopping instance')
+                    raise RuntimeError('desktop did not stop; stopping Agent instance')
 
     def status(self):
         return {name: dict(enabled=name in self.enabled, running=p.poll() is None, pid=p.pid)
@@ -71,7 +71,7 @@ class Runtime:
             name, operation = command.split('-')
             getattr(self, operation)(name)
             return self.status()
-        raise ValueError('unknown instance command')
+        raise ValueError('unknown Agent instance command')
 
     def serve(self):
         def stopping(*_):
@@ -92,7 +92,7 @@ class Runtime:
                     server = self.processes['server']
                     if 'server' in self.enabled and server.poll() is not None:
                         # Never silently change the registry epoch after a failure.
-                        raise RuntimeError('registry exited; explicit instance restart required')
+                        raise RuntimeError('registry exited; explicit Agent instance restart required')
                     try:
                         stream, _ = listener.accept()
                     except socket.timeout:
@@ -133,7 +133,7 @@ def attach(command):
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
-            raise RuntimeError('此 instance 已有一个 Codex 会话；请先退出原会话。') from None
+            raise RuntimeError('此 Agent instance 已有一个 Codex 会话；请先退出原会话。') from None
         env = os.environ.copy()
         env.pop('AGENTICROS_JOIN_TOKEN', None)
         with subprocess.Popen(command, env=env) as process:

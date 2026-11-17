@@ -18,10 +18,10 @@ def main():
     image_name = parser.parse_args().image
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()
-    private = list((ROOT / 'docker/clients/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/clients/simple_mujoco').glob('*.xml'))
+    private = list((ROOT / 'docker/robot_instances/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/robot_instances/simple_mujoco').glob('*.xml'))
     # Device definitions are public at runtime, but must not be preinstalled in Agent.
-    private += [ROOT / 'docker/clients/simple_mujoco/body.md']
-    private += [p for p in (ROOT / 'docker/clients/simple_mujoco/interfaces').rglob('*') if p.is_file()]
+    private += [ROOT / 'docker/robot_instances/simple_mujoco/body.md']
+    private += [p for p in (ROOT / 'docker/robot_instances/simple_mujoco/interfaces').rglob('*') if p.is_file()]
     forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
     forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
                              for p in private if p.stat().st_size})

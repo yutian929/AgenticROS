@@ -14,7 +14,7 @@ from unittest.mock import patch
 import urllib.error
 
 sys.dont_write_bytecode = True
-SOURCE = Path(__file__).resolve().parents[1] / 'docker/agenticros/connection.py'
+SOURCE = Path(__file__).resolve().parents[1] / 'docker/agent_instance/agent/connection.py'
 spec = importlib.util.spec_from_file_location('connection', SOURCE)
 connection = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(connection)

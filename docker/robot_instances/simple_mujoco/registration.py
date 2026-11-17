@@ -64,7 +64,8 @@ class Client:
         self.secret = secrets.token_bytes(32)
         self.root = Path(os.getenv('OBSERVATION_ROOT', '/observations')).resolve()
         from lan_profile import configure
-        configure(m['discovery_host'], m['discovery_port'], m['discovery_prefix'])
+        configure(m['discovery_host'], m['discovery_port'], m['discovery_prefix'],
+                  transport=m.get('discovery_transport', 'udp'), advertised_host=self.host)
         os.environ['ROS_DOMAIN_ID'] = str(m['domain_id'])
         self.http = self.artifact_server()
         threading.Thread(target=self.http.serve_forever, daemon=True).start()
@@ -82,7 +83,7 @@ class Client:
                     reply = post(self.server_url+'/heartbeat', {k: self.membership[k] for k in
                                  ('robot_id', 'session_id', 'epoch')}, self.membership['lease'])
                     if reply['epoch'] != self.membership['epoch']:
-                        raise ValueError('server restarted')
+                        raise ValueError('Agent instance registry restarted')
                     self.lease.renew(sent, reply['lease_seconds'])
                 except Exception as exc:
                     # Do not log URLs, tokens or request bodies. Preserve the

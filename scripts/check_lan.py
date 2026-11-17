@@ -29,7 +29,7 @@ namespace=next(x['namespace'] for x in roster['robots'] if x['robot_id']=='robot
 c=n.create_client(GetParameters,namespace+'/raw_body_driver/get_parameters')
 assert c.wait_for_service(timeout_sec=25)
 f=c.call_async(GetParameters.Request(names=['interface_sources']))
-rclpy.spin_until_future_complete(n,f,timeout_sec=10)
+rclpy.spin_until_future_complete(n,f,timeout_sec=45)
 assert f.done()
 s=json.loads(f.result().values[0].string_value)
 root=pathlib.Path('/workspace/ros_ws');pkg=root/'src'/s['package']
@@ -45,6 +45,7 @@ import hashlib,json,pathlib,time,uuid,urllib.request,os
 import rclpy
 from rclpy.action import ActionClient
 from std_srvs.srv import Trigger
+from std_msgs.msg import String
 from agenticros_driver_interfaces.srv import Snapshot
 from agenticros_driver_interfaces.action import Actuate
 from unique_identifier_msgs.msg import UUID
@@ -52,14 +53,20 @@ rclpy.init();n=rclpy.create_node('isolated_lan_probe')
 root=pathlib.Path('/workspace/evidence');root.mkdir(exist_ok=True)
 with urllib.request.urlopen(os.environ['AGENTICROS_REGISTRY_URL']+'/robots') as response: roster=json.load(response)
 namespaces={x['robot_id']:x['namespace'] for x in roster['robots'] if x['connected']}
+registry_epochs=set()
+subscription=n.create_subscription(String,'/agenticros/robots',lambda msg: registry_epochs.add(json.loads(msg.data)['epoch']),10)
 def wait(f,seconds=15):
  rclpy.spin_until_future_complete(n,f,timeout_sec=seconds)
  assert f.done(),'timeout: never resend';return f.result()
+services={}
 def call(robot,kind,typ):
- c=n.create_client(typ,namespaces[robot]+'/driver/'+kind)
- assert c.wait_for_service(timeout_sec=20),kind
- try:return wait(c.call_async(typ.Request()))
- finally:n.destroy_client(c)
+ # Keep query endpoints alive like a normal ROS client node; repeated polling
+ # must not generate unrelated discovery churn during the action under test.
+ key=(robot,kind)
+ if key not in services:services[key]=n.create_client(typ,namespaces[robot]+'/driver/'+kind)
+ c=services[key]
+ assert c.wait_for_service(timeout_sec=20),(robot,kind)
+ return wait(c.call_async(typ.Request()),45)
 def status(robot):return json.loads(call(robot,'status',Trigger).message)
 def send(robot,q,duration,session=None):
  c=ActionClient(n,Actuate,namespaces[robot]+'/driver/actuate');assert c.wait_for_server(timeout_sec=20)
@@ -67,7 +74,7 @@ def send(robot,q,duration,session=None):
  h=wait(c.send_goal_async(Actuate.Goal(session_id=session or s['session_id'],positions=[float(x) for x in q],duration=float(duration)),goal_uuid=UUID(uuid=list(key.bytes))))
  return c,h,key.hex
 def result(h):
- r=json.loads(wait(h.get_result_async(),40).result.receipt_json)
+ r=json.loads(wait(h.get_result_async(),__RESULT_TIMEOUT__).result.receipt_json)
  (root/(r['goal_id']+'-result.json')).write_text(json.dumps(r,indent=2));return r
 phase=__PHASE__
 if phase=='normal':
@@ -118,6 +125,12 @@ else:
  deadline=time.monotonic()+30
  while not (root/'registry-restarted').exists():
   assert time.monotonic()<deadline;time.sleep(.2)
+ # HTTP startup does not imply that TCP discovery has reconnected. Wait for
+ # the restarted registry's ROS publication before creating new query endpoints.
+ deadline=time.monotonic()+45
+ while not (registry_epochs-{roster['epoch']}):
+  assert time.monotonic()<deadline,'registry ROS graph did not recover'
+  rclpy.spin_once(n,timeout_sec=.2)
  for robot in ['robot_a','robot_b']:
   s=status(robot);assert not s['connected'] and s['stop_confirmed']
   c,h,_=send(robot,s['state']['joint_positions'],.5);assert not h.accepted;c.destroy()
@@ -140,8 +153,17 @@ def docker(*args, **kwargs):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--separate-ips', action='store_true',
-                        help='give the instance and both clients separate network namespaces and IPs')
+                        help='give the Agent instance and both Robot instances separate network namespaces and IPs')
+    parser.add_argument('--transport', choices=('udp', 'tcp'), default='udp')
+    parser.add_argument('--host', type=launcher.ipv4, default='127.0.0.1',
+                        help='advertised host IP for host-network tests (e.g. the Mac LAN IP)')
+    parser.add_argument('--result-timeout', type=int, default=120,
+                        help='test-only wall-clock wait; software rendering may run slower than simulation time')
     args = parser.parse_args()
+    if args.separate_ips and args.host != '127.0.0.1':
+        parser.error('--host cannot be combined with --separate-ips')
+    if not 1 <= args.result_timeout <= 600:
+        parser.error('--result-timeout must be 1..600 seconds')
     instance = 'lan-test-'+secrets.token_hex(4)
     root = ROOT/'runs/instances'/instance
     root.mkdir(parents=True)
@@ -165,7 +187,7 @@ def main():
             override = root/('network-'+key+'.yaml')
             content = 'services:\n'
             for service,address in services.items():
-                content += (f'  {service}:\n    network_mode: !reset null\n'
+                content += (f'  {service}:\n    network_mode: !reset null\n    ipc: private\n    shm_size: 512m\n'
                             f'    networks:\n      test_lan:\n        ipv4_address: {address}\n')
             content += 'networks:\n  test_lan:\n    external: true\n    name: '+network+'\n'
             override.write_text(content)
@@ -175,9 +197,13 @@ def main():
     def run(config, command, client=False):
         subprocess.run(compose(config,client)+command,env=launcher.environment(config),cwd=ROOT,check=True)
 
+    discovery_port = (11811 if network else
+                      launcher.available_port(11811, launcher.saved_configs(), maximum=32767)
+                      if args.transport == 'tcp' else free_port(True))
     config = dict(AGENTICROS_INSTANCE=instance, AGENTICROS_INSTANCE_ID=secrets.token_hex(16),
-                  AGENTICROS_DDS_HOST=addresses.get('server','127.0.0.1'), AGENTICROS_REGISTRY_PORT=7447 if network else free_port(),
-                  AGENTICROS_DDS_PORT=11811 if network else free_port(True), ROS_DOMAIN_ID=74,
+                  AGENTICROS_DDS_HOST=addresses.get('server',args.host), AGENTICROS_REGISTRY_PORT=7447 if network else free_port(),
+                  AGENTICROS_DDS_PORT=discovery_port, ROS_DOMAIN_ID=74,
+                  AGENTICROS_DDS_TRANSPORT=args.transport,
                   AGENTICROS_DDS_PREFIX='.'.join(f'{x:02x}' for x in secrets.token_bytes(12)),
                   AGENTICROS_JOIN_TOKEN=secrets.token_hex(32))
     launcher.write_new(launcher.server_file(instance), config)
@@ -191,13 +217,20 @@ def main():
         for robot in ('robot_a','robot_b'):
             c=dict(AGENTICROS_INSTANCE=instance,AGENTICROS_ROBOT_ID=robot,
                    AGENTICROS_SERVER=f"http://{config['AGENTICROS_DDS_HOST']}:{config['AGENTICROS_REGISTRY_PORT']}",
-                   AGENTICROS_CLIENT_HOST=addresses.get(robot,'127.0.0.1'),AGENTICROS_OBSERVATION_PORT=8800 if network else free_port(),
+                   AGENTICROS_CLIENT_HOST=addresses.get(robot,args.host),AGENTICROS_OBSERVATION_PORT=8800 if network else free_port(),
                    AGENTICROS_JOIN_TOKEN=config['AGENTICROS_JOIN_TOKEN'])
             launcher.write_new(root/'lan'/('client-'+robot+'.json'),c)
             clients.append(c);run(c,['up','-d','--no-recreate','--wait','client'],True)
+        # Fast DDS can fall back after XML parse errors; never mistake default
+        # UDP communication for a successful TCP integration.
+        for c, is_client in [(config, False)] + [(c, True) for c in clients]:
+            logs = subprocess.check_output(compose(c, is_client)+['logs', '--no-color'],
+                                           env=launcher.environment(c), cwd=ROOT, text=True)
+            assert 'XMLPARSER' not in logs, 'Fast DDS rejected the transport profile'
         actual=json.loads(docker('inspect',agent,capture_output=True).stdout)[0]
         assert actual['Config']['User']=='agent' and not actual['HostConfig']['Privileged']
         assert actual['HostConfig']['NetworkMode']==(network or 'host') and actual['HostConfig']['CapDrop']==['ALL']
+        assert actual['HostConfig']['IpcMode']==('private' if network else 'host')
         mounts={m['Destination']:m for m in actual['Mounts']}
         assert set(mounts)=={'/workspace','/home/agent/.codex','/config/codex.toml','/viewer-auth'}
         assert mounts['/workspace']['Source']==str(root/'workspace')
@@ -207,7 +240,7 @@ def main():
         docker('exec', agent, 'python3', '-c',
                "from pathlib import Path; s=Path('/tmp/agenticros-server.xml').read_text(); "
                "c=Path('/tmp/agenticros-lan.xml').read_text(); "
-               "assert '<discoveryProtocol>SERVER</discoveryProtocol>' in s; "
+               f"assert '<discoveryProtocol>{'BACKUP' if args.transport == 'tcp' else 'SERVER'}</discoveryProtocol>' in s; "
                "assert '<discoveryProtocol>SUPER_CLIENT</discoveryProtocol>' in c")
         if network:
             endpoints = {'server':actual}
@@ -219,18 +252,19 @@ def main():
             assert len({item['NetworkSettings']['SandboxKey'] for item in endpoints.values()})==3
             for key,item in endpoints.items():
                 assert item['HostConfig']['NetworkMode']==network
+                assert item['HostConfig']['IpcMode']=='private'
                 assert item['NetworkSettings']['Networks'][network]['IPAddress']==addresses[key]
             (root/'network-inspection.json').write_text(json.dumps({key:{
                 'ip':item['NetworkSettings']['Networks'][network]['IPAddress'],
-                'namespace':item['NetworkSettings']['SandboxKey']} for key,item in endpoints.items()},indent=2))
+                'namespace':item['NetworkSettings']['SandboxKey'],'ipc_mode':item['HostConfig']['IpcMode']} for key,item in endpoints.items()},indent=2))
         docker('exec','-i',agent,'/usr/local/bin/agent-entrypoint','python','-',input=BOOTSTRAP)
         command='source /workspace/ros_ws/install/setup.bash && python -'
         def probe(phase):
-            return PROBE.replace('__PHASE__',repr(phase))
+            return PROBE.replace('__PHASE__',repr(phase)).replace('__RESULT_TIMEOUT__',str(args.result_timeout))
         docker('exec','-i',agent,'/usr/local/bin/agent-entrypoint','bash','-c',command,input=probe('normal'))
         proc=subprocess.Popen(['docker','exec','-i',agent,'/usr/local/bin/agent-entrypoint','bash','-c',command],stdin=subprocess.PIPE,text=True)
         proc.stdin.write(probe('disconnect'));proc.stdin.close()
-        deadline=time.monotonic()+30
+        deadline=time.monotonic()+120
         while not (root/'workspace/evidence/disconnect-ready').exists():
             if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('disconnect probe did not start')
             time.sleep(.2)
@@ -243,22 +277,31 @@ def main():
         docker('exec',agent,'python3','/opt/instance/runtime.py','server-start')
         time.sleep(3)
         (root/'workspace/evidence/registry-restarted').write_text('ready')
-        assert proc.wait(timeout=50)==0
+        assert proc.wait(timeout=120)==0
         for c in clients:
             cid=subprocess.check_output(compose(c,True)+['ps','-q','client'],cwd=ROOT,env=launcher.environment(c),text=True).strip()
             data=json.loads(docker('exec',cid,'cat','/tmp/lan-health.json',capture_output=True).stdout)
             assert not data['connected']
         (root/'result.json').write_text(json.dumps({'docker_integration':'PASS','physical_hosts':1,
+            'transport':args.transport,
+            'advertised_host':config['AGENTICROS_DDS_HOST'],
             'network_namespaces':3 if network else 1,'addresses':addresses,
             'autonomous_adaptation':False,'task_evaluation':False,'restart_does_not_revive_clients':True},indent=2))
         print('PASS:',root/'result.json')
     finally:
         # Stop only these freshly created fixtures. Preserve all volumes and generated evidence.
+        for c, is_client, service, label in [(config, False, 'instance', 'instance')] + [
+                (c, True, 'client', c['AGENTICROS_ROBOT_ID']) for c in clients]:
+            logs = subprocess.run(compose(c, is_client)+['logs', '--no-color', service],
+                                  env=launcher.environment(c), cwd=ROOT, text=True, capture_output=True)
+            (root/(label+'-container.log')).write_text(logs.stdout+logs.stderr)
         for c in clients:
             run(c,['stop','client'],True)
             run(c,['rm','-f','client'],True)
         run(config,['stop','instance'])
         run(config,['rm','-f','instance'])
+        if network:
+            docker('network','rm',network,capture_output=True)
 
 
 if __name__=='__main__':

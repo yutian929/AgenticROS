@@ -59,7 +59,7 @@ class DockerLayout(unittest.TestCase):
         for target, mount in mounts.items():
             if target == '/config/codex.toml':
                 self.assertEqual(mount['type'], 'bind')
-                self.assertEqual(Path(mount['source']), ROOT / 'docker/agenticros/codex.toml')
+                self.assertEqual(Path(mount['source']), ROOT / 'docker/agent_instance/agent/codex.toml')
                 self.assertTrue(mount['read_only'])
             elif target == '/workspace':
                 self.assertEqual(mount['type'], 'bind')
@@ -68,9 +68,9 @@ class DockerLayout(unittest.TestCase):
                 self.assertFalse(mount['bind']['create_host_path'])
             else:
                 self.assertEqual(mount['type'], 'volume')
-        for line in (ROOT / 'docker/agenticros/Dockerfile').read_text().splitlines():
+        for line in (ROOT / 'docker/agent_instance/Dockerfile').read_text().splitlines():
             if line.startswith('COPY '):
-                self.assertTrue(all(s.startswith(('docker/agenticros/', 'docker/shared/', 'docker/server/', 'docker/viewer/', 'docker/instance/'))
+                self.assertTrue(all(s.startswith(('docker/agent_instance/', 'docker/shared/'))
                                     for s in line.split()[1:-1]))
 
     def test_environment_is_opt_in(self):
@@ -93,10 +93,10 @@ class DockerLayout(unittest.TestCase):
         self.assertEqual(config['networks']['robot']['name'], 'agenticros_robot')
 
     def test_no_supplied_adapter(self):
-        tree = ast.parse((ROOT / 'docker/clients/simple_mujoco/world.py').read_text())
+        tree = ast.parse((ROOT / 'docker/robot_instances/simple_mujoco/world.py').read_text())
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         self.assertFalse(names & {'move', 'grip', 'evaluate', 'locate_color'})
-        self.assertFalse(list((ROOT / 'docker/agenticros').rglob('body.py')))
+        self.assertFalse(list((ROOT / 'docker/agent_instance').rglob('body.py')))
         # Keep historical reference-code fingerprints even after removing its source.
         hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
         self.assertIn('examples/pick_place.py', hashes.values())
@@ -104,20 +104,20 @@ class DockerLayout(unittest.TestCase):
         self.assertTrue(all(len(h) == 64 for h in hashes))
 
     def test_agent_starts_without_device_knowledge(self):
-        dockerfile = (ROOT / 'docker/agenticros/Dockerfile').read_text()
+        dockerfile = (ROOT / 'docker/agent_instance/Dockerfile').read_text()
         self.assertNotIn('/opt/driver_ws', dockerfile)
         self.assertNotIn('colcon build', dockerfile)
         self.assertFalse((ROOT / 'docker/interfaces').exists())
-        self.assertFalse((ROOT / 'docker/agenticros/body.md').exists())
-        for path in (ROOT / 'docker/agenticros').rglob('*'):
+        self.assertFalse((ROOT / 'docker/agent_instance/agent/body.md').exists())
+        for path in (ROOT / 'docker/agent_instance').rglob('*'):
             if path.is_file() and '__pycache__' not in path.parts:
                 text = path.read_text()
                 for private_hint in ('/driver/', '/camera/', 'agenticros_driver_interfaces',
                                      '/opt/driver_ws', 'simple_mujoco'):
                     self.assertNotIn(private_hint, text, str(path))
-        bodyfile = (ROOT / 'docker/clients/simple_mujoco/Dockerfile').read_text()
-        self.assertIn('COPY docker/clients/simple_mujoco/interfaces ', bodyfile)
-        self.assertIn('COPY docker/clients/simple_mujoco/body.md ', bodyfile)
+        bodyfile = (ROOT / 'docker/robot_instances/simple_mujoco/Dockerfile').read_text()
+        self.assertIn('COPY docker/robot_instances/simple_mujoco/interfaces ', bodyfile)
+        self.assertIn('COPY docker/robot_instances/simple_mujoco/body.md ', bodyfile)
 
     def test_build_context(self):
         self.assertEqual((ROOT / '.dockerignore').read_text().splitlines(), ['**', '!docker/', '!docker/**'])

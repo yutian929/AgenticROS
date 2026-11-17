@@ -83,7 +83,7 @@ class WorkspacePreparation(unittest.TestCase):
 
     def test_instance_path_traversal_is_rejected(self):
         with patch.dict(os.environ, AGENTICROS_INSTANCE='../../outside'):
-            with self.assertRaisesRegex(RuntimeError, 'Invalid instance'):
+            with self.assertRaisesRegex(RuntimeError, 'Invalid Agent instance'):
                 workspace.prepare()
 
 

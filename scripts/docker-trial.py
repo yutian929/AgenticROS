@@ -40,7 +40,7 @@ def main():
     run(['docker', 'compose', 'run', '-d', '--no-deps', '--name', name,
          '-v', str(workspace) + ':/workspace', 'agenticros', 'sleep', 'infinity'], check=True)
     (evidence / 'trial.json').write_text(json.dumps(dict(container=name, workspace_path=str(workspace),
-        model_config=(ROOT / 'docker/agenticros/codex.toml').read_text()), indent=2))
+        model_config=(ROOT / 'docker/agent_instance/agent/codex.toml').read_text()), indent=2))
     print(f'Trial container: {name}\nPersistent workspace: {workspace}\nHost evidence: {evidence}', flush=True)
     run(['docker', 'exec', name, '/usr/local/bin/agent-entrypoint', 'sh', '-c',
          'test -d /workspace/ros_ws/src && test -z "$(ls -A /workspace/ros_ws/src)" && '

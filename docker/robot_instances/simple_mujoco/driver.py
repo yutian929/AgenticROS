@@ -264,7 +264,7 @@ class Driver(Node):
 def main():
     lan = None
     if os.getenv('AGENTICROS_SERVER'):
-        from lan import Client
+        from registration import Client
         lan = Client()
     rclpy.init()
     driver = Driver(lan)

@@ -4,10 +4,11 @@ services:
     container_name: agenticros-instance-${AGENTICROS_INSTANCE:?}
     build:
       context: .
-      dockerfile: docker/agenticros/Dockerfile
+      dockerfile: docker/agent_instance/Dockerfile
       target: instance
     image: agenticros-instance:lan
     network_mode: host
+    ipc: host
     environment:
       AGENTICROS_JOIN_TOKEN: ${AGENTICROS_JOIN_TOKEN:?}
       AGENTICROS_REGISTRY_PORT: ${AGENTICROS_REGISTRY_PORT:?}
@@ -21,6 +22,8 @@ services:
       AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
       AGENTICROS_INSTANCE_ID: ${AGENTICROS_INSTANCE_ID:?}
       AGENTICROS_DDS_HOST: ${AGENTICROS_DDS_HOST:?}
+      AGENTICROS_DDS_TRANSPORT: ${AGENTICROS_DDS_TRANSPORT:-udp}
+      AGENTICROS_ADVERTISE_HOST: ${AGENTICROS_DDS_HOST:?}
       AGENTICROS_DDS_PORT: ${AGENTICROS_DDS_PORT:?}
       AGENTICROS_DDS_PREFIX: ${AGENTICROS_DDS_PREFIX:?}
     command: [python3, /opt/instance/runtime.py, serve]
@@ -32,7 +35,7 @@ services:
         bind:
           create_host_path: false
       - codex-home:/home/agent/.codex
-      - ./docker/agenticros/codex.toml:/config/codex.toml:ro
+      - ./docker/agent_instance/agent/codex.toml:/config/codex.toml:ro
     group_add: ["${AGENTICROS_WORKSPACE_GID:-1000}"]
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]

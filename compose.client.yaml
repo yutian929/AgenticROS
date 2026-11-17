@@ -2,9 +2,10 @@ services:
   client:
     build:
       context: .
-      dockerfile: docker/clients/simple_mujoco/Dockerfile
+      dockerfile: docker/robot_instances/simple_mujoco/Dockerfile
     image: agenticros-simple_mujoco:lan
     network_mode: host
+    ipc: host
     environment:
       AGENTICROS_SERVER: ${AGENTICROS_SERVER:?}
       AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
