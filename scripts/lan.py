@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 import re
 import secrets
-import shlex
 import socket
 import struct
 import subprocess
@@ -70,6 +69,13 @@ def write_new(path, data):
 def environment(config):
     env = os.environ.copy()
     env.update({k: str(v) for k, v in config.items()})
+    # Host-network containers on the same machine can use loopback for HTTP.
+    # Keep the advertised address and persisted ownership unchanged for LAN peers.
+    server = config.get('AGENTICROS_SERVER')
+    if server:
+        address = urlsplit(server)
+        if address.hostname == config.get('AGENTICROS_CLIENT_HOST'):
+            env['AGENTICROS_SERVER'] = f'http://127.0.0.1:{address.port}'
     name = config['AGENTICROS_INSTANCE']
     env['AGENTICROS_WORKSPACE_SUBDIR'] = 'workspace' if name == 'default' else f'instances/{name}/workspace'
     env['AGENTICROS_INSTANCE_SUFFIX'] = '' if name == 'default' else '-instance-'+name
@@ -389,11 +395,7 @@ def read_join_code(code):
 
 
 def print_join(config):
-    print('\nAgent instance:', config['AGENTICROS_INSTANCE'], '  Registry URL:',
-          f"http://{config['AGENTICROS_DDS_HOST']}:{config['AGENTICROS_REGISTRY_PORT']}")
-    print('在 Client 主机的仓库目录执行（同一 Agent instance 下，每个 Robot instance 使用不同的 --robot-id）：')
-    print('bash scripts/environment.sh simple_mujoco --join '+shlex.quote(join_code(config))+' --robot-id robot_a')
-    print('连接码包含加入令牌，请只交给需要加入的 Client 主机操作者。\n', flush=True)
+    print('join码：' + join_code(config), flush=True)
 
 
 def check_server_identity(url, instance, identity):

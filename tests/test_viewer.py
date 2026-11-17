@@ -88,7 +88,7 @@ class Configuration(unittest.TestCase):
 
     def test_combined_instance_only_mounts_dedicated_data_and_generic_config(self):
         config = dict(AGENTICROS_INSTANCE='test-viewer', AGENTICROS_INSTANCE_ID='i',
-                      AGENTICROS_DDS_HOST='127.0.0.1', AGENTICROS_REGISTRY_PORT=17447,
+                      AGENTICROS_DDS_HOST='192.168.1.10', AGENTICROS_REGISTRY_PORT=17447,
                       AGENTICROS_DDS_PORT=12811, ROS_DOMAIN_ID=73,
                       AGENTICROS_DDS_PREFIX='01.02.03.04.05.06.07.08.09.0a.0b.0c', AGENTICROS_JOIN_TOKEN='secret')
         data = json.loads(subprocess.check_output(launcher.compose(config)+['config','--format','json'],
@@ -96,6 +96,7 @@ class Configuration(unittest.TestCase):
         self.assertEqual(set(data['services']), {'instance'})
         instance = data['services']['instance']
         self.assertEqual(instance['network_mode'], 'host')
+        self.assertEqual(instance['environment']['AGENTICROS_REGISTRY_URL'], 'http://127.0.0.1:17447')
         self.assertEqual(instance['environment']['ROS_DOMAIN_ID'], '73')
         self.assertEqual({m['target'] for m in instance['volumes']},
                          {'/viewer-auth', '/workspace', '/home/agent/.codex', '/config/codex.toml'})

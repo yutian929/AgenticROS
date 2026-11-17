@@ -247,6 +247,14 @@ class Startup(unittest.TestCase):
                 launcher.ensure_image(config, service, client=client)
                 run.assert_called_once_with(config, ['build', service], client=client)
 
+    def test_local_registry_transport_preserves_advertised_binding(self):
+        config = dict(AGENTICROS_INSTANCE='fleet', AGENTICROS_SERVER='http://192.168.1.10:7447',
+                      AGENTICROS_CLIENT_HOST='192.168.1.10')
+        self.assertEqual(launcher.environment(config)['AGENTICROS_SERVER'], 'http://127.0.0.1:7447')
+        self.assertEqual(config['AGENTICROS_SERVER'], 'http://192.168.1.10:7447')
+        config['AGENTICROS_CLIENT_HOST'] = '192.168.1.12'
+        self.assertEqual(launcher.environment(config)['AGENTICROS_SERVER'], config['AGENTICROS_SERVER'])
+
     def test_join_roundtrip_and_invalid_payloads(self):
         config = self.server()
         data = launcher.read_join_code(launcher.join_code(config))
@@ -256,8 +264,7 @@ class Startup(unittest.TestCase):
                 launcher.read_join_code(raw)
         with patch('sys.stdout', new_callable=io.StringIO) as output:
             launcher.print_join(config)
-        command = next(s for s in output.getvalue().splitlines() if s.startswith('bash '))
-        self.assertIn('--join '+launcher.join_code(config)+' --robot-id robot_a', command)
+        self.assertEqual(output.getvalue(), 'join码：' + launcher.join_code(config) + '\n')
 
     def test_join_creates_clients_reuses_config_and_refuses_rebinding(self):
         config = self.server()

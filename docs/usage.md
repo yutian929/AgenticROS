@@ -43,7 +43,8 @@ bash scripts/environment.sh simple_mujoco --join CONNECTION_CODE --robot-id robo
 
 新 Agent instance 默认 Fast DDS TCP；已有 Linux UDP 配置保持原协议。
 macOS 需要新建 TCP Agent instance，不能加入旧 UDP 实例。
-同机数据可走共享内存，跨机走 TCP。注册端口从 TCP 7447、发现端口从 11811、快照端口从 TCP 8800 起选择，以实际输出为准。
+Viewer 通过容器内回环地址访问注册服务；Robot instance 与注册服务使用同一主机 IP 时，启动器也让注册请求走回环地址。保存的连接码、对外地址及实例归属不变，远端 Robot instance 仍走局域网地址。
+同机 ROS 数据可走共享内存，跨机走 TCP。注册端口从 TCP 7447、发现端口从 11811、快照端口从 TCP 8800 起选择，以实际输出为准。
 TCP 数据还需要可信主机间双向动态 TCP 连接，仅开放注册与发现端口不够。
 这些网络配置不提供 DDS 身份认证、加密或恶意节点隔离，不能用于公网或真实机器人。
 
@@ -55,7 +56,7 @@ python3 scripts/lan.py status --instance account-a
 python3 scripts/lan.py server --instance account-a
 ```
 
-`info` 显示加入命令、Viewer 地址与密码；`status` 列出注册状态。
+`info` 显示 join码、Viewer 地址与密码；`status` 列出注册状态。
 `server` 只准备 Agent instance 的服务与可视化，不进入 Codex。
 注册成功不等于 ROS 数据已互通，仍需核对实际观测。
 
@@ -65,7 +66,7 @@ Viewer 默认绑定 Server 主机的回环地址。需要其他电脑访问时�
 AGENTICROS_VIEWER_BIND=192.168.1.10 bash scripts/agenticros.sh --instance account-a
 ```
 
-网页顶部选择机器人。当前仿真以图像、点云和 TF 展示场景；不同机器人的坐标系独立。
+网页顶部选择机器人。点击 **ROS interfaces**，可在 Topics、Services、Actions 三个页签查看发现到的名称和类型，列表每两秒更新；这里只查看接口，不调用服务或发送动作。当前仿真以图像、点云和 TF 展示场景；不同机器人的坐标系独立。
 可单独启停 Viewer，关闭 RViz 后也可点击网页中的 `Open / reset RViz`：
 
 ```bash

@@ -472,3 +472,13 @@ Docker 集成不代表 Codex 自主适配、任务成功或硬件验证。Mac �
 - 新镜像双 Robot instance 的 Viewer 集成通过，包括注册发现、画面、可视化重启、会话锁与机器人 session 更新；无机器人运动指令。
   证据：`runs/instances/viewer-test-683907e0/viewer-check.json`。
 - 测试容器均清理，最终运行容器数为 0；账号卷、观测卷与工作区保留。未做云端登录、Codex 自主任务或真实双机验收。
+
+### 2026-11-17：可视化接口浏览器
+
+Viewer 的 `ROS interfaces` 窗口按 Topics、Services、Actions 分页显示公开 ROS 图中的名称与类型，每两秒刷新并保留当前页签。
+服务通过 `get_service_names_and_types` 发现，动作通过 `rclpy.action.get_action_names_and_types` 发现，不安装设备专用接口包，也不调用服务或发送动作。
+列表是发现结果，不表示接口可达性、类型绑定已安装或控制语义已验证。
+
+验证：7 项 Viewer 单元测试、1 项容器 Qt 页签/刷新测试，以及新镜像双机器人集成通过。
+集成验证包含两台机器人的 observe 服务和 actuate 动作发现；证据为
+`runs/instances/viewer-test-0d7ac3cb/viewer-check.json`。已检查使用测试实例发现数据渲染的 Services、Actions 页签。

@@ -4,6 +4,7 @@
 Creates two fresh simulations, verifies live discovery, VNC authentication,
 repeat startup and session replacement. Stops its fixtures, preserving evidence.
 """
+import argparse
 import json
 from pathlib import Path
 import secrets
@@ -27,8 +28,11 @@ def wait_for(check, seconds=40):
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--host', type=lan.ipv4, default='127.0.0.1', help='local host IPv4 advertised by the test instances')
+    options = parser.parse_args()
     instance = 'viewer-test-' + secrets.token_hex(4)
-    config = lan.server_config(instance, '127.0.0.1')
+    config = lan.server_config(instance, options.host)
     root = lan.folder(instance)
     clients = []
 
@@ -53,13 +57,27 @@ def main():
         lan.ensure_server(config)
         for robot in ('robot_a', 'robot_b'):
             args = SimpleNamespace(join=lan.join_code(config), instance=None, robot_id=robot,
-                                   server=None, host='127.0.0.1', observation_port=None, stop=False)
+                                   server=None, host=options.host, observation_port=None, stop=False)
             client = lan.client_config(args)
             clients.append(client)
             lan.ensure_image(client, 'client', client=True)
             lan.run(client, ['up', '-d', '--no-build', '--pull', 'never', '--no-recreate', '--wait', 'client'], True)
         config = lan.ensure_viewer(config)
         current = wait_for(ready)
+        def interfaces_ready():
+            snapshot = state()
+            interfaces = snapshot.get('interfaces', {})
+            for namespace in snapshot.get('robots', {}).values():
+                if not any(name == namespace+'/driver/observe' for name, _ in interfaces.get('services', [])):
+                    return False
+                if not any(name == namespace+'/driver/actuate' for name, _ in interfaces.get('actions', [])):
+                    return False
+            return snapshot if len(snapshot.get('robots', {})) == 2 else False
+        current = wait_for(interfaces_ready)
+        subprocess.run(['docker', 'exec', '-i', container(), 'bash', '-c',
+                        'source /opt/ros/humble/setup.bash; python3 -'],
+                       input=(lan.ROOT/'tests/test_viewer_ui.py').read_text(), text=True, check=True)
+
         with urllib.request.urlopen('http://127.0.0.1:' + str(config['AGENTICROS_VIEWER_PORT']) + '/vnc.html', timeout=3) as response:
             assert b'noVNC' in response.read()
         with socket.create_connection(('127.0.0.1', config['AGENTICROS_VNC_PORT']), timeout=3) as stream:

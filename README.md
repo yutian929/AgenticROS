@@ -54,11 +54,11 @@ flowchart TB
 bash scripts/agenticros.sh --instance account-a
 ```
 
-按终端菜单登录 ChatGPT 账号或配置 API。脚本会打印 **Robot instance 加入命令、Viewer 地址和访问密码**。
+按终端菜单登录 ChatGPT 账号或配置 API。脚本会打印 **join码、Viewer 地址和访问密码**。
 
 ### 2. 启动 Robot instance
 
-在 Client 主机上（同机部署时另开终端），复制执行上一步输出的加入命令：
+在 Client 主机上（同机部署时另开终端），执行下面的命令，将 `CONNECTION_CODE` 替换为上一步输出的 join码：
 
 ```bash
 bash scripts/environment.sh simple_mujoco --join CONNECTION_CODE --robot-id robot_a
@@ -70,7 +70,7 @@ bash scripts/environment.sh simple_mujoco --join CONNECTION_CODE --robot-id robo
 
 ### 3. 查看画面并开始使用
 
-打开 Agent instance 输出的 Viewer 地址，输入密码，在顶部选择机器人查看 RViz2 画面。默认在 Server 主机浏览器打开。
+打开 Agent instance 输出的 Viewer 地址，输入密码，在顶部选择机器人查看 RViz2 画面。默认在 Server 主机浏览器打开。点击 **ROS interfaces** 可查看 Topics、Services 和 Actions。
 
 在 Codex 会话中输入：
 
@@ -88,7 +88,7 @@ bash scripts/environment.sh simple_mujoco --join CONNECTION_CODE --robot-id robo
 
 命令中的 `--instance account-a` 指 **Agent instance**，`--robot-id robot_a` 标识该 Agent instance 下的 **Robot instance**。`lan.py client` 是管理 Robot instance 的现有子命令。
 
-**查看连接状态、重新显示加入命令和 Viewer 信息**（在 Server 主机上）：
+**查看连接状态、重新显示 join码和 Viewer 信息**（在 Server 主机上）：
 
 ```bash
 python3 scripts/lan.py status --instance account-a
