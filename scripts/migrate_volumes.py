@@ -57,7 +57,7 @@ def main():
     config = json.loads(docker('compose', '--profile', 'simulation', 'config', '--format', 'json', capture_output=True).stdout)
     if args.from_project == config['name']:
         parser.error('Source and destination projects must differ')
-    image = config['services']['simple_mujoco'].get('image', config['name'] + '-simple_mujoco')
+    image = config['services']['cartesian_gripper'].get('image', config['name'] + '-cartesian_gripper')
     # Workspace is staged in a legacy volume, then prepare_workspace imports it to runs/.
     plan = [(key, args.from_project + '_' + key,
              config['name'] + '_workspace' if key == 'workspace' else config['volumes'][key]['name'])

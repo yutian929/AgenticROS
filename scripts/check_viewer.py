@@ -30,6 +30,7 @@ def wait_for(check, seconds=40):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', type=lan.ipv4, default='127.0.0.1', help='local host IPv4 advertised by the test instances')
+    parser.add_argument('--environment', choices=('cartesian_gripper', 'aloha_tabletop'), default='cartesian_gripper')
     options = parser.parse_args()
     instance = 'viewer-test-' + secrets.token_hex(4)
     config = lan.server_config(instance, options.host)
@@ -57,7 +58,7 @@ def main():
         lan.ensure_server(config)
         for robot in ('robot_a', 'robot_b'):
             args = SimpleNamespace(join=lan.join_code(config), instance=None, robot_id=robot,
-                                   server=None, host=options.host, observation_port=None, stop=False)
+                                   server=None, host=options.host, observation_port=None, stop=False, environment=options.environment)
             client = lan.client_config(args)
             clients.append(client)
             lan.ensure_image(client, 'client', client=True)
@@ -67,7 +68,9 @@ def main():
         def interfaces_ready():
             snapshot = state()
             interfaces = snapshot.get('interfaces', {})
-            for namespace in snapshot.get('robots', {}).values():
+            bases = list(snapshot.get('robots', {}).values())
+            namespaces = [base+arm for base in bases for arm in (('/left', '/right') if options.environment == 'aloha_tabletop' else ('',))]
+            for namespace in namespaces:
                 if not any(name == namespace+'/driver/observe' for name, _ in interfaces.get('services', [])):
                     return False
                 if not any(name == namespace+'/driver/actuate' for name, _ in interfaces.get('actions', [])):
@@ -123,7 +126,7 @@ def main():
         wait_for(lambda: 'robot_a' not in state().get('robots', {}), 20)
         lan.run(clients[0], ['up', '-d', '--no-build', '--pull', 'never', '--no-recreate', '--wait', 'client'], True)
         wait_for(lambda: state().get('robots', {}).get('robot_a') not in (None, old))
-        result = dict(instance=instance, web_port=config['AGENTICROS_VIEWER_PORT'],
+        result = dict(environment=options.environment, instance=instance, web_port=config['AGENTICROS_VIEWER_PORT'],
                       checks='PASS', motion_test=False, compressed_preview=True, state=state())
         (root / 'viewer-check.json').write_text(json.dumps(result, indent=2))
         print('PASS:', root / 'viewer-check.json')

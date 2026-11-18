@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Isolated two-client Docker integration, not autonomous adaptation or task evaluation.
 Creates fresh simulations and workspace, exercises only those bodies, preserves evidence/volumes.
-Requires images agenticros-{instance,simple_mujoco}:lan already built.
+Requires images agenticros-{instance,cartesian_gripper}:lan already built.
 """
 import argparse
 import ipaddress

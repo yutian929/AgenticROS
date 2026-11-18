@@ -95,7 +95,7 @@ def run(config, args, client=False):
 
 
 def ensure_image(config, service, client=False):
-    images = {'client': 'agenticros-simple_mujoco:lan', 'instance': 'agenticros-instance:lan'}
+    images = {'client': 'agenticros-'+config.get('AGENTICROS_ENVIRONMENT', 'cartesian_gripper')+':lan', 'instance': 'agenticros-instance:lan'}
     result = subprocess.run(['docker', 'image', 'inspect', images[service]],
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     if result.returncode:
@@ -421,6 +421,8 @@ def client_config(args):
         path = folder(args.instance)/'lan'/('client-'+args.robot_id+'.json')
         if path.exists():
             config = json.loads(path.read_text())
+            if getattr(args, 'environment', None) and args.environment != config.get('AGENTICROS_ENVIRONMENT', 'cartesian_gripper'):
+                raise ValueError('saved Robot instance uses another environment; use a new robot-id')
             if ((args.server and server_url(args.server) != config['AGENTICROS_SERVER'])
                     or (args.host and args.host != config['AGENTICROS_CLIENT_HOST'])
                     or (args.observation_port and args.observation_port != config['AGENTICROS_OBSERVATION_PORT'])
@@ -444,6 +446,7 @@ def client_config(args):
         else:
             check_server_identity(url, args.instance, None)
         config = dict(AGENTICROS_INSTANCE=args.instance, AGENTICROS_ROBOT_ID=args.robot_id,
+                      AGENTICROS_ENVIRONMENT=getattr(args, 'environment', None) or 'cartesian_gripper',
                       AGENTICROS_SERVER=url, AGENTICROS_CLIENT_HOST=args.host or detect_host(url),
                       AGENTICROS_OBSERVATION_PORT=available_port(8800, saved_configs(), explicit=args.observation_port),
                       AGENTICROS_JOIN_TOKEN=token)
@@ -485,6 +488,7 @@ def main():
     client.add_argument('--server', help='Agent instance registry URL (included in --join)')
     client.add_argument('--host', type=ipv4, help='Client host IPv4 reachable by the Server host')
     client.add_argument('--observation-port', type=port)
+    client.add_argument('--environment', choices=('cartesian_gripper', 'aloha_tabletop'))
     client.add_argument('--stop', action='store_true', help='stop this Robot instance, preserving its data')
     args = parser.parse_args()
     if sys.platform not in ('linux', 'darwin'):
@@ -497,7 +501,7 @@ def main():
         config = client_config(args)
         if not args.stop:
             ensure_image(config, 'client', client=True)
-            check_host_network('agenticros-simple_mujoco:lan')
+            check_host_network('agenticros-'+config.get('AGENTICROS_ENVIRONMENT', 'cartesian_gripper')+':lan')
         run(config, ['stop', 'client'] if args.stop else
             ['up', '-d', '--no-build', '--pull', 'never', '--no-recreate', '--wait', 'client'], client=True)
         print('Robot instance:', args.robot_id, '  Agent instance:', args.instance)

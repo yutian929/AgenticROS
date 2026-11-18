@@ -1,11 +1,11 @@
 # Project, network, images and persistent volumes share the AgenticROS namespace.
 name: agenticros
 services:
-  simple_mujoco:
+  cartesian_gripper:
     profiles: [simulation]
     build:
       context: .
-      dockerfile: docker/robot_instances/simple_mujoco/Dockerfile
+      dockerfile: docker/robot_instances/cartesian_gripper/Dockerfile
     environment:
       ROS_DOMAIN_ID: "${ROS_DOMAIN_ID:-42}"
       BODY_SEED: "${BODY_SEED:-0}"

@@ -8,6 +8,7 @@ RUN python3 -m venv --system-site-packages /opt/agent-venv && \
     /opt/agent-venv/bin/pip install --no-cache-dir openai-codex==0.168.0 numpy==1.26.4 pillow==11.3.0 scipy==1.15.3
 COPY docker/agent_instance/agent/contract.md /opt/agenticros/
 COPY docker/agent_instance/agent/skills /opt/agenticros/skills
+COPY docker/agent_instance/agent/agents /opt/agenticros/agents
 COPY docker/agent_instance/agent/AGENTS.md /opt/agenticros/AGENTS.md
 COPY docker/shared/lan_profile.py /opt/agenticros/lan_profile.py
 COPY docker/shared/fastdds.xml /etc/agenticros/fastdds.xml

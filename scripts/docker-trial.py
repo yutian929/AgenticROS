@@ -33,9 +33,9 @@ def main():
         print('BLOCKED: configure the container model connection with bash scripts/agenticros.sh.', file=sys.stderr)
         return 2
     # The body must already be healthy; do not reset an existing user's physical state.
-    body = run(['docker', 'compose', 'ps', '--format', 'json', 'simple_mujoco'], capture_output=True, check=True)
+    body = run(['docker', 'compose', 'ps', '--format', 'json', 'cartesian_gripper'], capture_output=True, check=True)
     if not body.stdout.strip():
-        raise RuntimeError('Start the environment first: bash scripts/environment.sh simple_mujoco')
+        raise RuntimeError('Start the environment first: bash scripts/environment.sh cartesian_gripper')
     name = trial
     run(['docker', 'compose', 'run', '-d', '--no-deps', '--name', name,
          '-v', str(workspace) + ':/workspace', 'agenticros', 'sleep', 'infinity'], check=True)

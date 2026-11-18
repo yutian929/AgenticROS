@@ -27,7 +27,7 @@ class DockerLayout(unittest.TestCase):
             self.assertEqual(set(mounts),
                              {'/workspace', '/home/agent/.codex', '/observations', '/config/codex.toml'})
             self.assertTrue(mounts['/observations']['read_only'])
-        self.assertEqual(first['services']['simple_mujoco'], second['services']['simple_mujoco'])
+        self.assertEqual(first['services']['cartesian_gripper'], second['services']['cartesian_gripper'])
         self.assertEqual(first['networks'], second['networks'])
         default = self.instance_config('default')
         self.assertEqual(default['volumes']['codex-home']['name'], 'agenticros_codex-home')
@@ -77,9 +77,9 @@ class DockerLayout(unittest.TestCase):
         config = json.loads(subprocess.check_output(
             ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'],
             cwd=ROOT, text=True))
-        self.assertEqual(set(config['services']), {'simple_mujoco', 'agenticros'})
-        self.assertEqual(config['services']['simple_mujoco']['profiles'], ['simulation'])
-        body = config['services']['simple_mujoco']
+        self.assertEqual(set(config['services']), {'cartesian_gripper', 'agenticros'})
+        self.assertEqual(config['services']['cartesian_gripper']['profiles'], ['simulation'])
+        body = config['services']['cartesian_gripper']
         self.assertEqual({m['target'] for m in body['volumes']}, {'/observations', '/viewer-auth'})
         self.assertEqual(len(body['ports']), 1)
         self.assertEqual(body['ports'][0]['target'], 8080)
@@ -93,7 +93,7 @@ class DockerLayout(unittest.TestCase):
         self.assertEqual(config['networks']['robot']['name'], 'agenticros_robot')
 
     def test_no_supplied_adapter(self):
-        tree = ast.parse((ROOT / 'docker/robot_instances/simple_mujoco/world.py').read_text())
+        tree = ast.parse((ROOT / 'docker/robot_instances/cartesian_gripper/world.py').read_text())
         names = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
         self.assertFalse(names & {'move', 'grip', 'evaluate', 'locate_color'})
         self.assertFalse(list((ROOT / 'docker/agent_instance').rglob('body.py')))
@@ -113,11 +113,11 @@ class DockerLayout(unittest.TestCase):
             if path.is_file() and '__pycache__' not in path.parts:
                 text = path.read_text()
                 for private_hint in ('/driver/', '/camera/', 'agenticros_driver_interfaces',
-                                     '/opt/driver_ws', 'simple_mujoco'):
+                                     '/opt/driver_ws', 'cartesian_gripper'):
                     self.assertNotIn(private_hint, text, str(path))
-        bodyfile = (ROOT / 'docker/robot_instances/simple_mujoco/Dockerfile').read_text()
-        self.assertIn('COPY docker/robot_instances/simple_mujoco/interfaces ', bodyfile)
-        self.assertIn('COPY docker/robot_instances/simple_mujoco/body.md ', bodyfile)
+        bodyfile = (ROOT / 'docker/robot_instances/cartesian_gripper/Dockerfile').read_text()
+        self.assertIn('COPY docker/robot_instances/cartesian_gripper/interfaces ', bodyfile)
+        self.assertIn('COPY docker/robot_instances/cartesian_gripper/body.md ', bodyfile)
 
     def test_build_context(self):
         self.assertEqual((ROOT / '.dockerignore').read_text().splitlines(), ['**', '!docker/', '!docker/**'])

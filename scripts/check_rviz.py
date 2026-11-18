@@ -98,8 +98,8 @@ n.destroy_node();rclpy.shutdown()
 
 def main():
     config = json.loads(docker('compose', '--profile', 'simulation', 'config', '--format', 'json', capture_output=True).stdout)
-    assert set(config['services']) == {'simple_mujoco', 'agenticros'}
-    port = config['services']['simple_mujoco']['ports'][0]
+    assert set(config['services']) == {'cartesian_gripper', 'agenticros'}
+    port = config['services']['cartesian_gripper']['ports'][0]
     assert port['host_ip'] == '127.0.0.1' and port['target'] == 8080
     base = 'http://127.0.0.1:' + str(port['published'])
     with urllib.request.urlopen(base + '/vnc.html', timeout=5) as response:
@@ -111,7 +111,7 @@ def main():
             assert exc.code == 404
         else:
             raise AssertionError('Private path exposed: ' + path)
-    container = docker('compose','ps','-q','simple_mujoco',capture_output=True).stdout.strip()
+    container = docker('compose','ps','-q','cartesian_gripper',capture_output=True).stdout.strip()
     actual=json.loads(docker('inspect',container,capture_output=True).stdout)[0]
     assert actual['Config']['User']=='body'
     assert actual['HostConfig']['CapDrop']==['ALL'] and actual['HostConfig']['ReadonlyRootfs']
@@ -119,7 +119,7 @@ def main():
     assert all(m['Type']=='volume' for m in actual['Mounts'])
     docker('exec',container,'/ros_entrypoint.sh','/opt/body-venv/bin/python','-c',PROBE)
     docker('exec',container,'/opt/body-venv/bin/python','/opt/agenticros/healthcheck.py')
-    print('PASS: RViz2, standard ROS observations and authenticated noVNC in simple_mujoco')
+    print('PASS: RViz2, standard ROS observations and authenticated noVNC in cartesian_gripper')
 
 
 if __name__=='__main__':

@@ -2,7 +2,7 @@
 
 容器使用 Ubuntu 22.04 / ROS 2 Humble；早期 Linux AMD64 验证与本次 macOS Apple Silicon 验证分别记录如下。
 Agent instance 在一个容器内运行注册与发现服务、Agent 与 RViz2/noVNC；Robot instance 独立运行仿真与观测。
-旧单机模式仍保留独立 Agent 容器及带 RViz2 的 `simple_mujoco` 容器。
+旧单机模式仍保留独立 Agent 容器及带 RViz2 的 `cartesian_gripper` 容器。
 
 ## 当前开发说明
 
@@ -17,7 +17,7 @@ docker/
 │   ├── registry/           # 注册与发现服务
 │   └── viewer/             # RViz2 / noVNC
 ├── robot_instances/
-│   └── simple_mujoco/      # 仿真、驱动、观测与公开接口
+│   └── cartesian_gripper/      # 仿真、驱动、观测与公开接口
 │       └── registration.py # 注册、心跳与租约
 └── shared/                 # 共用 DDS 网络配置
 ```
@@ -25,13 +25,13 @@ docker/
 构建目标、镜像标签、容器名、数据卷和 `runs/` 路径保持兼容。
 `agent_instance/agent/` 是 Agent 通用组件；完整 Agent instance 的构建入口是
 `docker/agent_instance/Dockerfile`，构建目标为 `instance`。
-Robot instance 的独立构建入口是 `docker/robot_instances/simple_mujoco/Dockerfile`。
+Robot instance 的独立构建入口是 `docker/robot_instances/cartesian_gripper/Dockerfile`。
 
 
-- `docker/robot_instances/simple_mujoco/`：私有仿真、原始驱动、RGB-D 点云、评估器，以及公开 URDF、RViz 配置和容器图形进程管理。
+- `docker/robot_instances/cartesian_gripper/`：私有仿真、原始驱动、RGB-D 点云、评估器，以及公开 URDF、RViz 配置和容器图形进程管理。
 - `docker/agent_instance/agent/`：通用 ROS 工具、适配要求、setup-body skill 和 Codex 配置，不含环境专用接口或身体资料。
-- `docker/robot_instances/simple_mujoco/interfaces/`：归仿真端所有的原始 ROS IDL，包名保留为 `agenticros_driver_interfaces`。
-- `docker/robot_instances/simple_mujoco/body.md`：由仿真端通过 ROS 参数公开的设备说明，不复制进 Agent 镜像。
+- `docker/robot_instances/cartesian_gripper/interfaces/`：归仿真端所有的原始 ROS IDL，包名保留为 `agenticros_driver_interfaces`。
+- `docker/robot_instances/cartesian_gripper/body.md`：由仿真端通过 ROS 参数公开的设备说明，不复制进 Agent 镜像。
 - `scripts/`、`tests/`：启动和验收工具，无预写适配答案。
 
 ```bash
@@ -102,7 +102,7 @@ DDS 未认证且 Agent 有出站网络；这是文件和进程隔离，不是防
 
 ### 容器内 RViz2 与浏览器观察
 
-`simple_mujoco` 内由非 root 进程管理器启动驱动、`robot_state_publisher`、Xvfb、Openbox、RViz2、x11vnc 和 websockify/noVNC。
+`cartesian_gripper` 内由非 root 进程管理器启动驱动、`robot_state_publisher`、Xvfb、Openbox、RViz2、x11vnc 和 websockify/noVNC。
 固定观测接口包括 `/driver/joint_states`、`/driver/state`、`/camera/color/image_raw`、
 `/camera/depth/image_raw`、`/camera/camera_info`、`/camera/depth/color/points`、`/robot_description`、`/tf` 和 `/tf_static`。
 点云与 RGB、深度、标定共用一次采集的时间戳，点云使用相机光学坐标系；不发布物体真值。
@@ -125,7 +125,7 @@ Mac 使用 Docker Desktop，Linux 使用 Docker Engine 或 Docker Desktop；跨�
 仿真只在动作期间推进。确认没有控制任务后，可显式重建场景：
 
 ```bash
-BODY_SEED=3 docker compose up -d --build --force-recreate --wait simple_mujoco
+BODY_SEED=3 docker compose up -d --build --force-recreate --wait cartesian_gripper
 ```
 
 重启生成新的 session ID，旧观测不能代表当前状态。
@@ -140,7 +140,7 @@ docker compose --profile simulation build
 python3 scripts/migrate_volumes.py --from-project OLD_PROJECT         # 查看复制计划
 python3 scripts/migrate_volumes.py --from-project OLD_PROJECT --apply # 复制并校验
 python3 scripts/prepare_workspace.py # 将已停止的旧工作区卷复制到 runs/workspace
-bash scripts/environment.sh simple_mujoco
+bash scripts/environment.sh cartesian_gripper
 ```
 
 迁移脚本拒绝运行中或非空目标卷，逐卷核对文件内容、权限和所有者，保留原卷作为备份；
@@ -150,7 +150,7 @@ ROS 接口包改名后，旧适配器中的导入名需更新为 `agenticros_dri
 历史验证文档、日志和禁用源码指纹中的原始名称保留用于追溯，不代表当前运行配置。
 
 `scripts/environment.sh` 是统一选择入口，具体启动逻辑位于 `docker/robot_instances/<名称>/start.sh`。
-当前仅提供 `simple_mujoco`，未知或未实现的环境名称会报错，不启动容器。
+当前仅提供 `cartesian_gripper`，未知或未实现的环境名称会报错，不启动容器。
 设备登录不可用时，可在容器中通过 `codex login --with-api-key` 从 stdin 登录；不要把密钥写入仓库。
 
 ### Agent 启动、登录与模型切换
@@ -202,7 +202,7 @@ Key 不写入源码、公开 TOML 或命令行参数，启动 Codex 时仅通过
 Docker 启动后，在项目目录恢复已有仿真容器并等待健康检查：
 
 ```bash
-docker compose up -d --no-build --no-recreate --wait simple_mujoco
+docker compose up -d --no-build --no-recreate --wait cartesian_gripper
 docker compose ps
 ```
 
@@ -482,3 +482,29 @@ Viewer 的 `ROS interfaces` 窗口按 Topics、Services、Actions 分页显示�
 验证：7 项 Viewer 单元测试、1 项容器 Qt 页签/刷新测试，以及新镜像双机器人集成通过。
 集成验证包含两台机器人的 observe 服务和 actuate 动作发现；证据为
 `runs/instances/viewer-test-0d7ac3cb/viewer-check.json`。已检查使用测试实例发现数据渲染的 Services、Actions 页签。
+
+### 2026-11-17：Cartesian 改名与 ALOHA 双臂环境
+
+分支 `codex/supervisor-arm-agents`。原 `simple_mujoco` 正式改名为 `cartesian_gripper`，同步启动入口、Compose、镜像名、测试及当前文档；历史记录保留旧名称。
+新增 `aloha_tabletop`，使用 MuJoCo Menagerie ALOHA 2 固定提交 `370c43965323c0944b433b202aac5058b5f907a9`，保留原模型与 BSD 许可，通过构建脚本生成任务场景。
+
+一个 Robot instance 包含同一物理世界的两臂，共用 session、坐标系与物理时钟，各有七维位置动作、状态、取消和 UUID 回执。
+物理线程持续运行；图像使用单独线程和缓存渲染器，避免软件渲染长时间占用物理锁。两侧当前共享俯视 RGB-D。
+未提供 IK、避障或完整任务程序；私有评估器目前只评红块放入红盘。
+
+Agent 增加主 agent 监督规则与 `arm-executor` 角色，由原生子 agent 工具执行分工；角色随入口复制到工作区。
+分配归属是协作协议，驱动仅保证单臂动作互斥，不是跨 agent 权限隔离。
+此次没有调用云端模型验证自主双臂任务、监督响应或异常恢复。
+
+验证与证据：
+
+- `bash scripts/test.sh`：97 项通过，日志 `runs/environment-tests-final.log`。
+- `python3 scripts/check_aloha.py`：隔离容器中实际双臂并行动作、同臂互斥、错误 session 拒绝、UUID 回执、取消并停止与 RGB-D 通过；证据 `runs/agenticros-aloha-check-0312dfcb/integration.json`。此入口自动移除自身测试容器。
+- `python3 scripts/check_viewer.py --environment aloha_tabletop`：两台 Robot instance 的注册、左右臂接口发现、Viewer 重启、会话锁及 session 替换通过；证据 `runs/instances/viewer-test-32cf962e/viewer-check.json`。
+- 新通用 Agent 镜像启动时角色文件与规则复制、Codex 配置加载通过；证据 `runs/supervisor-role-smoke.log`。该检查不代表模型已使用角色。
+- 两个环境镜像、通用 Agent 与完整 Agent instance 镜像构建成功；完整 instance 的角色复制和 Codex 0.168.0 启动检查通过。
+- 新通用 Agent 与完整 instance 的文件系统隔离审计通过，分别扫描 39,915 / 61,947 个文件和 37 个私有源码指纹；日志 `runs/supervisor-base-audit.log`、`runs/supervisor-instance-audit.log`。最终无残留容器。
+- Python 编译与 `git diff --check` 通过。
+
+按用户授权清理旧仿真/Agent 容器及旧环境镜像标签，保留账号、工作区、观测卷和 runs 证据。
+没有真实机器人操作、真实双机验收或 push。

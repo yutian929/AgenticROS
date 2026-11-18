@@ -33,8 +33,8 @@ AGENTICROS_HOST=192.168.1.10 bash scripts/agenticros.sh --instance account-a
 Robot instance 使用输出的完整连接码加入，不必另传 Server IP。同一 Agent instance 下，每个机器人使用不同 ID：
 
 ```bash
-bash scripts/environment.sh simple_mujoco --join CONNECTION_CODE --robot-id robot_a
-bash scripts/environment.sh simple_mujoco --join CONNECTION_CODE --robot-id robot_b
+bash scripts/environment.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
+bash scripts/environment.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_b
 ```
 
 连接码包含地址、实例身份与加入令牌，只交给相关操作者。
@@ -89,7 +89,7 @@ python3 scripts/lan.py stop-server --instance account-a
 
 ```bash
 bash scripts/agenticros.sh --instance account-a resume --last
-bash scripts/environment.sh simple_mujoco --instance account-a --robot-id robot_a
+bash scripts/environment.sh cartesian_gripper --instance account-a --robot-id robot_a
 ```
 
 重启 Robot instance 会重置仿真场景和 session，必须重新发现、核对身份与观测。
@@ -107,7 +107,7 @@ bash scripts/environment.sh simple_mujoco --instance account-a --robot-id robot_
 # Agent instance
 docker build --target instance -f docker/agent_instance/Dockerfile -t agenticros-instance:lan .
 # Robot instance
-docker build -f docker/robot_instances/simple_mujoco/Dockerfile -t agenticros-simple_mujoco:lan .
+docker build -f docker/robot_instances/cartesian_gripper/Dockerfile -t agenticros-cartesian_gripper:lan .
 ```
 
 构建后，先结束任务并停止对应实例，再重新启动。启动器会复用已有容器，不会自动替换在线或已创建的容器；
@@ -132,12 +132,12 @@ bash scripts/agenticros.sh --instance account-a
 不带 `--instance` 时保留旧版模式，启动顺序与命名实例模式不同：
 
 ```bash
-bash scripts/environment.sh simple_mujoco
+bash scripts/environment.sh cartesian_gripper
 bash scripts/agenticros.sh
 ```
 
 该模式由仿真容器提供 RViz2。恢复 Agent 会话使用 `bash scripts/agenticros.sh resume --last`；
-结束任务后使用 `docker compose stop simple_mujoco` 停止仿真。
+结束任务后使用 `docker compose stop cartesian_gripper` 停止仿真。
 默认工作区为 `runs/workspace/`。新用户建议使用 README 中的命名实例流程。
 
 旧单机实例可通过下列命令预览删除范围；去掉 `--dry-run` 会不可恢复地删除账号、配置、历史与工作区：
@@ -162,3 +162,15 @@ python3 scripts/check_viewer.py
 独立 IP 测试使用私有 IPC，不能替代真实 Mac ↔ Linux 双机的路由、防火墙和链路验收。
 `check_viewer.py` 不发出机器人运动指令；`check_lan.py` 会在新建测试仿真中验证动作、取消与断线停止。
 这些结果不代表 Codex 自主适配或任务评估通过。目录结构、隔离约束与历史结果见 [开发记录](development-record.md)。
+
+## 双臂环境验证
+
+`aloha_tabletop` 使用原生 MuJoCo 与固定版本的 Menagerie 模型；不依赖 robosuite。
+先按 README 启动 Agent instance，然后通过 `environment.sh aloha_tabletop --join CODE --robot-id aloha_a` 加入。
+同一个 `robot-id` 保存环境绑定，不能通过再次传入不同环境名称改变既有实例。
+
+维护者先构建 `agenticros-aloha_tabletop:lan` 镜像，再运行 `python3 scripts/check_aloha.py`。
+该脚本在无外部网络的临时容器执行 `tests/aloha_integration.py`，验证实际 ROS 双臂动作、拒绝并发、错误 session、取消和停止回执；证据写入 `runs/agenticros-aloha-check-*/`，结束后移除测试容器。
+此脚本包含小幅仿真运动，仅对新建测试场景使用，不用于运行中的任务。
+`python3 scripts/check_viewer.py --environment aloha_tabletop` 创建独立测试实例，验证 LAN、Viewer 与左右臂接口发现。
+图形观察使用 Agent instance 的 Viewer，ALOHA 不启动自己的桌面。

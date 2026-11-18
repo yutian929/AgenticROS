@@ -188,11 +188,11 @@ try:
                       'mounts': [{k: m[k] for k in ('Type', 'Destination', 'RW')} for m in actual['Mounts']]}))
 finally:
     subprocess.run(['docker', 'rm', '-f', name], check=False, capture_output=True)
-with urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['simple_mujoco']['ports'][0]['published']) + '/vnc.html') as response:
+with urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['cartesian_gripper']['ports'][0]['published']) + '/vnc.html') as response:
     assert b'noVNC' in response.read()
 for path in ('/evaluate', '/opt/body/world.py', '/snapshots/', '/api/state', '/api/cloud', '/viewer-auth/password'):
     try:
-        urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['simple_mujoco']['ports'][0]['published']) + path)
+        urllib.request.urlopen('http://127.0.0.1:' + str(config['services']['cartesian_gripper']['ports'][0]['published']) + path)
     except urllib.error.HTTPError as exc:
         assert exc.code == 404
     else:

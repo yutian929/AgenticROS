@@ -11,6 +11,8 @@ mkdir -p /workspace/.agents/skills/setup-body /workspace/evidence /workspace/ros
 cp /opt/agenticros/AGENTS.md /workspace/AGENTS.md
 cp /opt/agenticros/contract.md /workspace/contract.md
 cp /opt/agenticros/skills/setup-body/SKILL.md /workspace/.agents/skills/setup-body/SKILL.md
+mkdir -p /workspace/.codex/agents
+cp /opt/agenticros/agents/arm-executor.toml /workspace/.codex/agents/arm-executor.toml
 cp /config/codex.toml "$CODEX_HOME/config.toml"
 # No source checkout, reference adapter, host credentials, or Docker socket is mounted.
 exec "$@"

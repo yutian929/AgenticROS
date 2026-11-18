@@ -1,0 +1,11 @@
+# ALOHA tabletop public device documentation
+Simulation only. Both arms share ONE MuJoCo world, physics clock and session.
+Endpoints below are relative to the registered robot namespace.
+Each arm exposes /left/driver/actuate or /right/driver/actuate (aloha_driver_interfaces/action/Actuate), /left/driver/status or /right/driver/status (std_srvs/srv/Trigger), and /left/driver/observe or /right/driver/observe (aloha_driver_interfaces/srv/Snapshot).
+Goals contain current session_id, positions[7], duration (0.1..30 seconds).
+Order: waist, shoulder, elbow, forearm_roll, wrist_angle, wrist_rotate (radians), left_finger (metres). The opposite finger is mechanically coupled. Last value is finger travel, NOT full opening width.
+Limits: [-3.14158,3.14158], [-1.85005,1.25664], [-1.76278,1.6057], [-3.14158,3.14158], [-1.8675,2.23402], [-3.14158,3.14158], [0.002,0.037].
+Each arm accepts only one active goal. Different arms can execute concurrently. Both use the same base frame. No IK, path planner, collision avoidance or grasp controller is supplied. Interpolation happens in JOINT space. Do not equate limits with collision safety.
+Status and receipts contain measured state, session, goal UUID, execution degree, completion and stop confirmation. A completed servo operation is not proof of requested position or grasp success. Receipts survive only until process restart; never replay timed-out goals. Stop faults latch recovery_required. Cancel through ROS action cancellation and reconcile the receipt and live stopped state.
+Observe returns synchronized RGB, optical-Z metric depth, intrinsics/extrinsics and measured arm state. In LAN mode immutable artifacts use authenticated download URLs. Validate session and hashes. The 320x240 overhead stream uses a derived 45-degree vertical FOV pinhole camera; use the provided calibration. Camera topics show the same shared scene from the overhead camera; per-arm streams are equivalent views. Physics continues while agents think, paced near wall clock when CPU permits. Never infer wall time from sim_time.
+Missing control ownership, collision planning and task-specific capabilities must be implemented and verified before dependent tasks. The initial scene has two colored blocks and matching pads. Evaluation truth is private and not available over ROS.

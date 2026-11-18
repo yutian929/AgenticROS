@@ -26,7 +26,7 @@ def load(name, path):
 
 
 registry = load('registry', 'docker/agent_instance/registry/registry.py')
-client = load('lan_client', 'docker/robot_instances/simple_mujoco/registration.py')
+client = load('lan_client', 'docker/robot_instances/cartesian_gripper/registration.py')
 profile = load('lan_profile', 'docker/shared/lan_profile.py')
 launcher = load('lan_launcher', 'scripts/lan.py')
 
@@ -294,6 +294,15 @@ class Startup(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'identity'):
                 launcher.client_config(self.args(join=launcher.join_code(config)))
         self.assertFalse((launcher.folder('fleet')/'lan/client-robot_a.json').exists())
+
+    def test_environment_is_persisted_and_cannot_be_rebound(self):
+        code = launcher.join_code(self.server())
+        with patch.object(launcher, 'check_server_identity'), patch.object(launcher, 'detect_host', return_value='127.0.0.1'):
+            config = launcher.client_config(self.args(join=code, environment='aloha_tabletop'))
+            self.assertEqual(config['AGENTICROS_ENVIRONMENT'], 'aloha_tabletop')
+            self.assertEqual(launcher.client_config(self.args(instance='fleet')), config)
+            with self.assertRaisesRegex(ValueError, 'another environment'):
+                launcher.client_config(self.args(instance='fleet', environment='cartesian_gripper'))
 
     def test_host_detection_requires_selection_for_multiple_interfaces(self):
         with patch.object(launcher, 'lan_addresses', return_value=[('eth0','192.168.1.2')]):

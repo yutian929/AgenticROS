@@ -11,8 +11,8 @@ python3 -m unittest discover -s tests -p test_delete_instance.py -v
 python3 -m unittest discover -s tests -p test_capabilities.py -v
 # Override the body entrypoint: no driver starts and the live simulation is untouched.
 docker compose run --rm --no-deps -T --entrypoint /opt/body-venv/bin/python \
-  -e PYTHONPATH=/opt/body simple_mujoco - < tests/test_private_evaluator.py
+  -e PYTHONPATH=/opt/body cartesian_gripper - < tests/test_private_evaluator.py
 docker compose run --rm --no-deps -T --entrypoint /opt/body-venv/bin/python \
-  -e PYTHONPATH=/opt/body simple_mujoco - < tests/test_sensors.py
+  -e PYTHONPATH=/opt/body cartesian_gripper - < tests/test_sensors.py
 docker compose run --rm --no-deps -T --entrypoint /opt/body-venv/bin/python \
-  -e PYTHONPATH=/opt/agenticros simple_mujoco - < tests/test_desktop.py
+  -e PYTHONPATH=/opt/agenticros cartesian_gripper - < tests/test_desktop.py

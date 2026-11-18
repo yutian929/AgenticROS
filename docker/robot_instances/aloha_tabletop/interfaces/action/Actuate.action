@@ -1,0 +1,8 @@
+# One arm: six revolute joint setpoints (rad), then coupled finger travel (m).
+string session_id
+float64[7] positions
+float64 duration
+---
+string receipt_json
+---
+float64[7] positions

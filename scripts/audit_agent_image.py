@@ -18,10 +18,10 @@ def main():
     image_name = parser.parse_args().image
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()
-    private = list((ROOT / 'docker/robot_instances/simple_mujoco').glob('*.py')) + list((ROOT / 'docker/robot_instances/simple_mujoco').glob('*.xml'))
-    # Device definitions are public at runtime, but must not be preinstalled in Agent.
-    private += [ROOT / 'docker/robot_instances/simple_mujoco/body.md']
-    private += [p for p in (ROOT / 'docker/robot_instances/simple_mujoco/interfaces').rglob('*') if p.is_file()]
+    # Every environment stays private to the robot image, including ALOHA assets.
+    roots = ROOT / 'docker/robot_instances'
+    private = [p for p in roots.rglob('*') if p.is_file() and
+               (p.suffix in ('.py', '.xml', '.action', '.srv') or p.name == 'body.md')]
     forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
     forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
                              for p in private if p.stat().st_size})
@@ -43,6 +43,8 @@ def main():
                     if member.isfile():
                         assert not path.startswith('opt/device-public/'), path
                         assert 'agenticros_driver_interfaces' not in path, path
+                        assert 'aloha_driver_interfaces' not in path, path
+                        assert '/model/aloha' not in path, path
                         count += 1
                         if 0 < member.size < 2_000_000:
                             digest = hashlib.sha256(archive.extractfile(member).read()).hexdigest()

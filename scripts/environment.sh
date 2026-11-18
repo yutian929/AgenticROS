@@ -23,11 +23,8 @@ if [[ ! -f "$startup" ]]; then
   exit 2
 fi
 if [[ $# -gt 1 ]]; then
-  if [[ $1 != simple_mujoco ]]; then
-    echo 'LAN v1 currently supports simple_mujoco only' >&2
-    exit 2
-  fi
+  environment=$1
   shift
-  exec python3 scripts/lan.py client "$@"
+  exec python3 scripts/lan.py client --environment "$environment" "$@"
 fi
 exec bash "$startup"
