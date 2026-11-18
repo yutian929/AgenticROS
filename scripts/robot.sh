@@ -2,8 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 usage() {
-  echo 'Usage: bash scripts/environment.sh <environment>' >&2
-  echo 'Robot instance: add --join CODE --robot-id ID; resume with --instance AGENT_NAME --robot-id ID' >&2
+  echo 'Usage: bash scripts/robot.sh <environment>' >&2
+  echo 'Robot instance: add --join CODE --robot-id ID; resume with --agent_id AGENT_NAME --robot-id ID' >&2
   echo 'Without options: legacy single-host environment.' >&2
   echo 'Available environments:' >&2
   for startup in docker/robot_instances/*/start.sh; do
@@ -12,6 +12,10 @@ usage() {
     printf '  %s\n' "${name##*/}" >&2
   done
 }
+if [[ ${1:-} == --help || ${1:-} == -h ]]; then
+  usage
+  exit 0
+fi
 if [[ $# -lt 1 || ! "${1:-}" =~ ^[a-z][a-z0-9_]*$ ]]; then
   usage
   exit 2
@@ -25,6 +29,6 @@ fi
 if [[ $# -gt 1 ]]; then
   environment=$1
   shift
-  exec python3 scripts/lan.py client --environment "$environment" "$@"
+  exec python3 scripts/lan.py robot --environment "$environment" "$@"
 fi
 exec bash "$startup"

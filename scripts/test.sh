@@ -9,6 +9,7 @@ python3 -m unittest discover -s tests -p test_connection.py -v
 python3 -m unittest discover -s tests -p test_workspace.py -v
 python3 -m unittest discover -s tests -p test_delete_instance.py -v
 python3 -m unittest discover -s tests -p test_capabilities.py -v
+python3 -m unittest discover -s tests -p test_clean_runtime.py -v
 # Override the body entrypoint: no driver starts and the live simulation is untouched.
 docker compose run --rm --no-deps -T --entrypoint /opt/body-venv/bin/python \
   -e PYTHONPATH=/opt/body cartesian_gripper - < tests/test_private_evaluator.py

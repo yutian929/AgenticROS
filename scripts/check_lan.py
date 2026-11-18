@@ -165,7 +165,8 @@ def main():
     if not 1 <= args.result_timeout <= 600:
         parser.error('--result-timeout must be 1..600 seconds')
     instance = 'lan-test-'+secrets.token_hex(4)
-    root = ROOT/'runs/instances'/instance
+    agent_root = launcher.folder(instance)
+    root = ROOT/'runs/checks'/instance
     root.mkdir(parents=True)
     network = None
     addresses = {}
@@ -219,7 +220,7 @@ def main():
                    AGENTICROS_SERVER=f"http://{config['AGENTICROS_DDS_HOST']}:{config['AGENTICROS_REGISTRY_PORT']}",
                    AGENTICROS_CLIENT_HOST=addresses.get(robot,args.host),AGENTICROS_OBSERVATION_PORT=8800 if network else free_port(),
                    AGENTICROS_JOIN_TOKEN=config['AGENTICROS_JOIN_TOKEN'])
-            launcher.write_new(root/'lan'/('client-'+robot+'.json'),c)
+            launcher.write_new(launcher.client_file(instance, robot),c)
             clients.append(c);run(c,['up','-d','--no-recreate','--wait','client'],True)
         # Fast DDS can fall back after XML parse errors; never mistake default
         # UDP communication for a successful TCP integration.
@@ -233,7 +234,7 @@ def main():
         assert actual['HostConfig']['IpcMode']==('private' if network else 'host')
         mounts={m['Destination']:m for m in actual['Mounts']}
         assert set(mounts)=={'/workspace','/home/agent/.codex','/config/codex.toml','/viewer-auth'}
-        assert mounts['/workspace']['Source']==str(root/'workspace')
+        assert mounts['/workspace']['Source']==str(agent_root/'workspace')
         assert mounts['/workspace']['Type']=='bind' and not mounts['/config/codex.toml']['RW']
         assert mounts['/home/agent/.codex']['Type']=='volume'
         (root/'mounts.json').write_text(json.dumps(actual['Mounts'],indent=2))
@@ -265,18 +266,18 @@ def main():
         proc=subprocess.Popen(['docker','exec','-i',agent,'/usr/local/bin/agent-entrypoint','bash','-c',command],stdin=subprocess.PIPE,text=True)
         proc.stdin.write(probe('disconnect'));proc.stdin.close()
         deadline=time.monotonic()+120
-        while not (root/'workspace/evidence/disconnect-ready').exists():
+        while not (agent_root/'workspace/evidence/disconnect-ready').exists():
             if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('disconnect probe did not start')
             time.sleep(.2)
         docker('exec',agent,'python3','/opt/instance/runtime.py','server-stop')
         deadline=time.monotonic()+40
-        while not (root/'workspace/evidence/lease-lost-confirmed').exists():
+        while not (agent_root/'workspace/evidence/lease-lost-confirmed').exists():
             if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('lease loss was not reconciled')
             time.sleep(.2)
         # A recovered registry does not revive clients with an expired membership.
         docker('exec',agent,'python3','/opt/instance/runtime.py','server-start')
         time.sleep(3)
-        (root/'workspace/evidence/registry-restarted').write_text('ready')
+        (agent_root/'workspace/evidence/registry-restarted').write_text('ready')
         assert proc.wait(timeout=120)==0
         for c in clients:
             cid=subprocess.check_output(compose(c,True)+['ps','-q','client'],cwd=ROOT,env=launcher.environment(c),text=True).strip()

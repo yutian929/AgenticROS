@@ -2,20 +2,20 @@
 
 首次使用见 [README](../README.md)。以下命令均在仓库根目录执行。
 Server / Client 是主机角色；Agent instance / Robot instance 是运行实例。
-命令中的 `--instance` 指 Agent instance，`--robot-id` 标识其下的 Robot instance。
+命令中的 `--agent_id` 指 Agent instance，`--robot-id` 标识其下的 Robot instance。
 
 ## 多账号与会话
 
 不同 Agent instance 分别保存账号、配置、历史和工作区：
 
 ```bash
-bash scripts/agenticros.sh --instance account-a
-bash scripts/agenticros.sh --instance account-b
-bash scripts/agenticros.sh --instance account-a resume --last
-bash scripts/docker-login.sh --instance account-a
+bash scripts/agent.sh --agent_id account-a
+bash scripts/agent.sh --agent_id account-b
+bash scripts/agent.sh --agent_id account-a resume --last
+bash scripts/agent-login.sh --agent_id account-a
 ```
 
-名称使用小写字母、数字和连字符，首位不能为连字符，最长 48 字符；`--instance` 放在其他参数之前。
+名称使用小写字母、数字和连字符，首位不能为连字符，最长 48 字符；`--agent_id` 放在其他参数之前。
 首次启动按菜单选择 ChatGPT 或 API；后续可复用账号，也可进入菜单切换配置。
 模型默认配置见 [codex.toml](../docker/agent_instance/agent/codex.toml)。API 校验可能产生少量用量。
 每个 Agent instance 同时只允许一个交互控制会话。
@@ -27,14 +27,14 @@ Settings → Resources → Network → Enable host networking，然后 Apply & r
 启动器会检测双向 host networking。多网卡或 VPN 环境可明确指定 Server 主机地址：
 
 ```bash
-AGENTICROS_HOST=192.168.1.10 bash scripts/agenticros.sh --instance account-a
+AGENTICROS_HOST=192.168.1.10 bash scripts/agent.sh --agent_id account-a
 ```
 
 Robot instance 使用输出的完整连接码加入，不必另传 Server IP。同一 Agent instance 下，每个机器人使用不同 ID：
 
 ```bash
-bash scripts/environment.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
-bash scripts/environment.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_b
+bash scripts/robot.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
+bash scripts/robot.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_b
 ```
 
 连接码包含地址、实例身份与加入令牌，只交给相关操作者。
@@ -51,9 +51,9 @@ TCP 数据还需要可信主机间双向动态 TCP 连接，仅开放注册与�
 ## 查看状态与画面
 
 ```bash
-python3 scripts/lan.py info --instance account-a
-python3 scripts/lan.py status --instance account-a
-python3 scripts/lan.py server --instance account-a
+python3 scripts/lan.py info --agent_id account-a
+python3 scripts/lan.py status --agent_id account-a
+python3 scripts/lan.py start-agent --agent_id account-a
 ```
 
 `info` 显示 join码、Viewer 地址与密码；`status` 列出注册状态。
@@ -63,15 +63,15 @@ python3 scripts/lan.py server --instance account-a
 Viewer 默认绑定 Server 主机的回环地址。需要其他电脑访问时，在首次创建时指定：
 
 ```bash
-AGENTICROS_VIEWER_BIND=192.168.1.10 bash scripts/agenticros.sh --instance account-a
+AGENTICROS_VIEWER_BIND=192.168.1.10 bash scripts/agent.sh --agent_id account-a
 ```
 
 网页顶部选择机器人。点击 **ROS interfaces**，可在 Topics、Services、Actions 三个页签查看发现到的名称和类型，列表每两秒更新；这里只查看接口，不调用服务或发送动作。当前仿真以图像、点云和 TF 展示场景；不同机器人的坐标系独立。
 可单独启停 Viewer，关闭 RViz 后也可点击网页中的 `Open / reset RViz`：
 
 ```bash
-python3 scripts/lan.py viewer --instance account-a
-python3 scripts/lan.py stop-viewer --instance account-a
+python3 scripts/lan.py viewer --agent_id account-a
+python3 scripts/lan.py stop-viewer --agent_id account-a
 ```
 
 ## 停止、恢复与数据
@@ -80,23 +80,25 @@ python3 scripts/lan.py stop-viewer --instance account-a
 
 ```bash
 # 各 Client 主机
-python3 scripts/lan.py client --instance account-a --robot-id robot_a --stop
+python3 scripts/lan.py robot --agent_id account-a --robot-id robot_a --stop
 # Server 主机
-python3 scripts/lan.py stop-server --instance account-a
+python3 scripts/lan.py stop-agent --agent_id account-a
 ```
 
 退出 Codex 不会停止 Agent instance 容器。恢复时先启动 Agent instance，再恢复机器人：
 
 ```bash
-bash scripts/agenticros.sh --instance account-a resume --last
-bash scripts/environment.sh cartesian_gripper --instance account-a --robot-id robot_a
+bash scripts/agent.sh --agent_id account-a resume --last
+bash scripts/robot.sh cartesian_gripper --agent_id account-a --robot-id robot_a
 ```
 
 重启 Robot instance 会重置仿真场景和 session，必须重新发现、核对身份与观测。
 租约失效时机器人中止动作并拒绝新目标；通信恢复不会重发动作或自动恢复控制，需明确停止并重启机器人。
 
-命名实例的工作区在 `runs/instances/<名称>/workspace/`，连接配置在该实例的 `lan/` 目录。
-账号、观测与可视化密码使用专用数据卷。停止或移除容器不等于删除这些数据；不要使用 `down -v`。
+新实例的工作区在 `runs/agent_instances/<agent_id>/workspace/`，Agent 连接配置在同级 `lan/` 目录。
+Robot 配置和观测在 `runs/robot_instances/<agent_id>/<robot_id>/client.json` 与 `observations/`。
+账号与可视化密码使用专用数据卷。已有实例保留旧目录及观测卷，不会在线迁移。停止或移除容器不等于删除这些数据。
+`bash scripts/clean-runtime.sh` 可预览完整清理范围；加 `--yes` 会停止本项目任务并删除数据卷及整个 `runs/`，包括账号、历史和所有证据。加 `--images` 可另删项目镜像标签。清理后新建实例统一使用新目录。
 生成 ROS 包、能力清单和证据分别位于工作区中的 `ros_ws/src/`、`capabilities/manifest.json` 和 `evidence/`。
 
 ## 更新源码与镜像
@@ -122,28 +124,28 @@ docker build -f docker/robot_instances/cartesian_gripper/Dockerfile -t agenticro
 # 替换为自己的实例名称；旧 controller 使用 --rm，停止后自动移除
 docker stop agenticros-controller-account-a agenticros-lan-account-a-viewer-1 agenticros-lan-account-a-server-1
 docker rm agenticros-lan-account-a-viewer-1 agenticros-lan-account-a-server-1
-bash scripts/agenticros.sh --instance account-a
+bash scripts/agent.sh --agent_id account-a
 ```
 
 随后按上文恢复 Robot instance。保留全部数据卷与 `runs/`，账号、加入令牌和 Viewer 密码沿用原数据。
 
 ## 旧版单机入口
 
-不带 `--instance` 时保留旧版模式，启动顺序与命名实例模式不同：
+不带 `--agent_id` 时保留旧版模式，启动顺序与命名实例模式不同：
 
 ```bash
-bash scripts/environment.sh cartesian_gripper
-bash scripts/agenticros.sh
+bash scripts/robot.sh cartesian_gripper
+bash scripts/agent.sh
 ```
 
-该模式由仿真容器提供 RViz2。恢复 Agent 会话使用 `bash scripts/agenticros.sh resume --last`；
+该模式由仿真容器提供 RViz2。恢复 Agent 会话使用 `bash scripts/agent.sh resume --last`；
 结束任务后使用 `docker compose stop cartesian_gripper` 停止仿真。
-默认工作区为 `runs/workspace/`。新用户建议使用 README 中的命名实例流程。
+新默认工作区为 `runs/agent_instances/default/workspace/`，已有 `runs/workspace/` 仍兼容。新用户建议使用 README 中的命名实例流程。
 
 旧单机实例可通过下列命令预览删除范围；去掉 `--dry-run` 会不可恢复地删除账号、配置、历史与工作区：
 
 ```bash
-bash scripts/delete-instance.sh --instance account-a --dry-run
+bash scripts/delete-agent.sh --agent_id account-a --dry-run
 ```
 
 该脚本拒绝删除含 LAN 配置或仍被容器引用的实例，不用于删除当前命名 LAN 实例。
@@ -166,11 +168,11 @@ python3 scripts/check_viewer.py
 ## 双臂环境验证
 
 `aloha_tabletop` 使用原生 MuJoCo 与固定版本的 Menagerie 模型；不依赖 robosuite。
-先按 README 启动 Agent instance，然后通过 `environment.sh aloha_tabletop --join CODE --robot-id aloha_a` 加入。
+先按 README 启动 Agent instance，然后通过 `robot.sh aloha_tabletop --join CODE --robot-id aloha_a` 加入。
 同一个 `robot-id` 保存环境绑定，不能通过再次传入不同环境名称改变既有实例。
 
 维护者先构建 `agenticros-aloha_tabletop:lan` 镜像，再运行 `python3 scripts/check_aloha.py`。
-该脚本在无外部网络的临时容器执行 `tests/aloha_integration.py`，验证实际 ROS 双臂动作、拒绝并发、错误 session、取消和停止回执；证据写入 `runs/agenticros-aloha-check-*/`，结束后移除测试容器。
+该脚本在无外部网络的临时容器执行 `tests/aloha_integration.py`，验证实际 ROS 双臂动作、拒绝并发、错误 session、取消和停止回执；证据写入 `runs/checks/agenticros-aloha-check-*/`，结束后移除测试容器。
 此脚本包含小幅仿真运动，仅对新建测试场景使用，不用于运行中的任务。
 `python3 scripts/check_viewer.py --environment aloha_tabletop` 创建独立测试实例，验证 LAN、Viewer 与左右臂接口发现。
 图形观察使用 Agent instance 的 Viewer，ALOHA 不启动自己的桌面。

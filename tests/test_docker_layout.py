@@ -11,17 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 class DockerLayout(unittest.TestCase):
     def instance_config(self, name):
         return json.loads(subprocess.check_output([
-            'bash', '-c', 'source scripts/instance.sh >/dev/null; '
+            'bash', '-c', 'source scripts/agent-options.sh >/dev/null; '
             'docker compose --profile simulation config --format json',
-            'instance-test', '--instance', name], cwd=ROOT, text=True))
+            'instance-test', '--agent_id', name], cwd=ROOT, text=True))
 
     def test_named_instances_isolate_data_but_share_body(self):
-        first = self.instance_config('account-a')
-        second = self.instance_config('account-b')
-        for name, config in [('account-a', first), ('account-b', second)]:
+        first = self.instance_config('layout-test-a')
+        second = self.instance_config('layout-test-b')
+        for name, config in [('layout-test-a', first), ('layout-test-b', second)]:
             mounts = {m['target']: m for m in config['services']['agenticros']['volumes']}
             self.assertEqual(Path(mounts['/workspace']['source']),
-                             ROOT / 'runs/instances' / name / 'workspace')
+                             ROOT / 'runs/agent_instances' / name / 'workspace')
             self.assertEqual(config['volumes']['codex-home']['name'],
                              'agenticros_codex-home-instance-' + name)
             self.assertEqual(set(mounts),
@@ -34,16 +34,16 @@ class DockerLayout(unittest.TestCase):
 
     def test_instance_option_preserves_codex_arguments(self):
         result = subprocess.check_output([
-            'bash', '-c', 'source scripts/instance.sh >/dev/null; printf "%s\\n" "$@"',
-            'instance-test', '--instance', 'account-a', 'resume', '--last'], cwd=ROOT, text=True)
+            'bash', '-c', 'source scripts/agent-options.sh >/dev/null; printf "%s\\n" "$@"',
+            'instance-test', '--agent_id', 'layout-test-a', 'resume', '--last'], cwd=ROOT, text=True)
         self.assertEqual(result.splitlines(), ['resume', '--last'])
 
     def test_invalid_instances_fail_before_starting_containers(self):
         for name in ('../escape', '/tmp', '', '-bad', 'a' * 49):
-            result = subprocess.run(['bash', 'scripts/agenticros.sh', '--instance', name],
+            result = subprocess.run(['bash', 'scripts/agent.sh', '--agent_id', name],
                                     cwd=ROOT, capture_output=True)
             self.assertEqual(result.returncode, 2)
-        result = subprocess.run(['bash', 'scripts/docker-login.sh', '--instance'],
+        result = subprocess.run(['bash', 'scripts/agent-login.sh', '--agent_id'],
                                 cwd=ROOT, capture_output=True)
         self.assertEqual(result.returncode, 2)
 
@@ -63,7 +63,7 @@ class DockerLayout(unittest.TestCase):
                 self.assertTrue(mount['read_only'])
             elif target == '/workspace':
                 self.assertEqual(mount['type'], 'bind')
-                self.assertEqual(Path(mount['source']), ROOT / 'runs/workspace')
+                self.assertEqual(Path(mount['source']), ROOT / 'runs/agent_instances/default/workspace')
                 self.assertFalse(mount.get('read_only', False))
                 self.assertFalse(mount['bind']['create_host_path'])
             else:

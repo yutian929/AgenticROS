@@ -55,8 +55,8 @@ def prepare():
     instance = os.environ.get('AGENTICROS_INSTANCE', 'default')
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}', instance):
         raise RuntimeError('Invalid Agent instance name')
-    destination = (runs / 'workspace' if instance == 'default' else
-                   runs / 'instances' / instance / 'workspace')
+    legacy = runs / 'workspace' if instance == 'default' else runs / 'instances' / instance / 'workspace'
+    destination = legacy if legacy.parent.exists() and (legacy.exists() or (legacy.parent/'lan').exists()) else runs/'agent_instances'/instance/'workspace'
     for path in [destination, *destination.parents]:
         if path == ROOT:
             break
@@ -79,7 +79,7 @@ def prepare():
         if active:
             raise RuntimeError('旧工作区仍被运行中的 Agent 使用。请先退出旧 Agent，再重新启动；仿真无需停止。')
     runs.mkdir(exist_ok=True)
-    destination.mkdir(exist_ok=True)
+    destination.mkdir(parents=True, exist_ok=True)
     destination.chmod(stat.S_IMODE(destination.stat().st_mode) | 0o2770)
     if exists:
         # Import into a sibling directory; only replace the empty destination after verification.

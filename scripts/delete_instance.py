@@ -19,10 +19,11 @@ def delete_instance(instance, dry_run=False):
     if not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}', instance):
         raise RuntimeError('无效 Agent instance 名称。')
     suffix = '' if instance == 'default' else '-instance-' + instance
-    subdir = 'workspace' if instance == 'default' else f'instances/{instance}/workspace'
+    legacy = 'workspace' if instance == 'default' else f'instances/{instance}/workspace'
+    subdir = legacy if (ROOT/'runs'/legacy).exists() or ((ROOT/'runs'/legacy).parent/'lan').exists() else f'agent_instances/{instance}/workspace'
     workspace = ROOT / 'runs' / subdir
     target = workspace if instance == 'default' else workspace.parent
-    lan = (ROOT / 'runs' if instance == 'default' else workspace.parent) / 'lan'
+    lan = workspace.parent / 'lan'
     if lan.exists():
         raise RuntimeError('拒绝删除：该 Agent instance 包含 LAN 配置。请先单独停止并归档 Agent instance 和 Robot instance；此命令不删除 LAN 数据。')
     for path in [workspace, *workspace.parents]:

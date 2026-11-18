@@ -51,7 +51,7 @@ flowchart TB
 在 Server 主机上执行：
 
 ```bash
-bash scripts/agenticros.sh --instance account-a
+bash scripts/agent.sh --agent_id account-a
 ```
 
 按终端菜单登录 ChatGPT 账号或配置 API。脚本会打印 **join码、Viewer 地址和访问密码**。
@@ -61,7 +61,7 @@ bash scripts/agenticros.sh --instance account-a
 在 Client 主机上（同机部署时另开终端），执行下面的命令，将 `CONNECTION_CODE` 替换为上一步输出的 join码：
 
 ```bash
-bash scripts/environment.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
+bash scripts/robot.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
 ```
 
 将 `CONNECTION_CODE` 替换为完整连接码。连接码已包含 Server 主机地址，**不用再传 IP**；只交给需要加入的 Client 主机操作者。
@@ -86,22 +86,54 @@ bash scripts/environment.sh cartesian_gripper --join CONNECTION_CODE --robot-id 
 
 ## 常用操作
 
-命令中的 `--instance account-a` 指 **Agent instance**，`--robot-id robot_a` 标识该 Agent instance 下的 **Robot instance**。`lan.py client` 是管理 Robot instance 的现有子命令。
+用户入口按对象命名：`agent.sh` 启动 Agent，`robot.sh` 启动 Robot，`agent-login.sh` 单独登录 Agent，`delete-agent.sh` 删除旧单机 Agent 实例，`clean-runtime.sh` 清理整个项目的运行数据。
+原 `agenticros.sh`、`environment.sh`、`docker-login.sh`、`delete-instance.sh` 已改名；重复入口 `docker-chat.sh` 已移除。
+`agent-options.sh` 是供入口脚本加载的内部参数解析文件，不是启动命令。
+
+新实例的运行目录按归属保存：
+
+```text
+runs/
+  agent_instances/<agent_id>/
+    lan/                       # 注册配置、Viewer 配置
+    workspace/                 # Agent 生成的代码、证据、适配器
+  robot_instances/<agent_id>/<robot_id>/
+    client.json                # 环境与 Agent 绑定配置
+    observations/              # 图像、深度与快照
+  checks/<run_id>/             # 维护者测试结果
+```
+
+Agent 登录状态和会话历史仍在其专用 Docker 数据卷中。`--agent_id` 是新的正式参数，`--instance` 保留为兼容别名。
+已有实例会继续使用旧目录和旧观测卷，不会在线搬动正在运行的工作区；完整清理后重新启动即使用上述目录。
+
+**清理所有本项目运行产物**（不会自动执行）：
+
+```bash
+bash scripts/clean-runtime.sh                 # 只预览删除清单
+bash scripts/clean-runtime.sh --yes           # 停止并移除容器，删除数据卷、整个 runs/ 和 Python 缓存
+bash scripts/clean-runtime.sh --yes --images  # 另外删除本项目镜像标签
+```
+
+`--yes` 会删除登录状态、会话历史、适配器、观测和测试证据，正在运行的本项目任务也会停止。
+清理范围为本仓库挂载/Compose 资源及 `agenticros-`、`agenticros_`、历史 `rosbody-`、`rosbody_` 命名空间。
+源码、Git 历史及其他 Docker 项目保留；不执行全局 prune，共享 Docker 构建缓存保留。
+
+命令中的 `--agent_id account-a` 指 **Agent instance**，`--robot-id robot_a` 标识该 Agent instance 下的 **Robot instance**。`lan.py robot` 是管理 Robot instance 的现有子命令。
 
 **查看连接状态、重新显示 join码和 Viewer 信息**（在 Server 主机上）：
 
 ```bash
-python3 scripts/lan.py status --instance account-a
-python3 scripts/lan.py info --instance account-a
+python3 scripts/lan.py status --agent_id account-a
+python3 scripts/lan.py info --agent_id account-a
 ```
 
 **下次继续使用**：先在 Server 主机恢复会话，再在 Client 主机恢复 Robot instance，无需重新输入连接码。
 
 ```bash
 # Server 主机
-bash scripts/agenticros.sh --instance account-a resume --last
+bash scripts/agent.sh --agent_id account-a resume --last
 # Client 主机
-bash scripts/environment.sh cartesian_gripper --instance account-a --robot-id robot_a
+bash scripts/robot.sh cartesian_gripper --agent_id account-a --robot-id robot_a
 ```
 
 Robot instance 重启会重置仿真场景，继续任务前让 Codex 重新发现并核对 session。
@@ -110,9 +142,9 @@ Robot instance 重启会重置仿真场景，继续任务前让 Codex 重新发�
 
 ```bash
 # 在各 Client 主机上执行
-python3 scripts/lan.py client --instance account-a --robot-id robot_a --stop
+python3 scripts/lan.py robot --agent_id account-a --robot-id robot_a --stop
 # 在 Server 主机上执行
-python3 scripts/lan.py stop-server --instance account-a
+python3 scripts/lan.py stop-agent --agent_id account-a
 ```
 
 退出 Codex 不会停止容器；上述停止命令保留账号、配置和工作文件。
@@ -127,13 +159,13 @@ python3 scripts/lan.py stop-server --instance account-a
 ## 双臂桌面环境
 
 ```bash
-bash scripts/agenticros.sh --instance aloha-demo
-bash scripts/environment.sh aloha_tabletop --join CONNECTION_CODE --robot-id aloha_a
+bash scripts/agent.sh --agent_id aloha-demo
+bash scripts/robot.sh aloha_tabletop --join CONNECTION_CODE --robot-id aloha_a
 ```
 
 一个 `aloha_tabletop` Robot instance 包含同一物理世界里的两臂，不能把左右臂作为两个独立实例启动。
 左右臂接口位于该机器人 session 名称空间下的 `left/driver/`、`right/driver/`，共用坐标系与物理时钟。
-Viewer 可发现两侧传感器；两侧图像目前来自同一俯视相机。
+Viewer 按左腕、俯视、右腕横排显示三路相机，下方保留点云视图。腕部相机随对应机械臂移动。
 模型使用 MuJoCo Menagerie ALOHA 2，固定来源和许可见 `docker/robot_instances/aloha_tabletop/model/UPSTREAM`。
 目前提供关节位置伺服、RGB-D、状态、动作取消和回执。IK、避障和双臂任务能力需由 Agent 发现环境后生成并验证。
 这不表示已验证自主抓放或真实机器人；独立评估器目前仅判定红块放入红盘。

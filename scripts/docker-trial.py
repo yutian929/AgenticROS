@@ -22,7 +22,7 @@ def run(args, **kwargs):
 def main():
     os.environ['AGENTICROS_WORKSPACE_GID'] = str(os.getgid())
     trial = 'agenticros-trial-' + datetime.datetime.now().strftime('%Y%m%d-%H%M%S') + '-' + uuid.uuid4().hex[:6]
-    evidence = ROOT / 'runs' / trial
+    evidence = ROOT / 'runs' / 'checks' / trial
     workspace = evidence / 'workspace'
     workspace.mkdir(parents=True)
     workspace.chmod(0o2775)
@@ -30,12 +30,12 @@ def main():
                  '-v', str(workspace) + ':/workspace',
                  'agenticros', 'agenticros', 'status'])
     if login.returncode:
-        print('BLOCKED: configure the container model connection with bash scripts/agenticros.sh.', file=sys.stderr)
+        print('BLOCKED: configure the container model connection with bash scripts/agent.sh.', file=sys.stderr)
         return 2
     # The body must already be healthy; do not reset an existing user's physical state.
     body = run(['docker', 'compose', 'ps', '--format', 'json', 'cartesian_gripper'], capture_output=True, check=True)
     if not body.stdout.strip():
-        raise RuntimeError('Start the environment first: bash scripts/environment.sh cartesian_gripper')
+        raise RuntimeError('Start the environment first: bash scripts/robot.sh cartesian_gripper')
     name = trial
     run(['docker', 'compose', 'run', '-d', '--no-deps', '--name', name,
          '-v', str(workspace) + ':/workspace', 'agenticros', 'sleep', 'infinity'], check=True)

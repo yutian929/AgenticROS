@@ -64,6 +64,9 @@ class Simulation:
         self.world, self.arm = world, arm
         self.model, self.data, self.lock = world.model, world.data, world.lock
         self.session = world.session
+        self.camera_name = 'overhead_cam' if arm == 'overhead' else 'wrist_cam_'+arm
+        if arm == 'overhead':
+            return
         self.names = [arm+'/'+n for n in JOINTS]
         self.qids = [self.model.joint(n).qposadr[0] for n in self.names]
         self.vids = [self.model.joint(n).dofadr[0] for n in self.names]
@@ -76,6 +79,9 @@ class Simulation:
 
     def state(self):
         with self.lock:
+            if self.arm == 'overhead':
+                return dict(sim_time=float(self.data.time), frame='base',
+                            physics_fault=self.world.failure)
             left = self.data.site(self.arm+'/left_finger').xpos
             right = self.data.site(self.arm+'/right_finger').xpos
             return dict(sim_time=float(self.data.time), frame='base', arm=self.arm,
@@ -91,10 +97,10 @@ class Simulation:
             self.world.renderer = mujoco.Renderer(self.model, height=240, width=320)
         renderer = self.world.renderer
         with self.lock:
-            renderer.update_scene(self.data, camera='overhead_cam')
-            cam = self.model.camera('overhead_cam')
+            renderer.update_scene(self.data, camera=self.camera_name)
+            cam = self.model.camera(self.camera_name)
             focal = 120/math.tan(float(cam.fovy[0])*math.pi/360)
-            calibration = dict(width=320, height=240, K=[[focal,0,160],[0,focal,120],[0,0,1]],
+            calibration = dict(camera=self.arm, width=320, height=240, K=[[focal,0,160],[0,focal,120],[0,0,1]],
                                depth_units='metres along optical z',
                                optical_to_base_rotation=(self.data.cam_xmat[cam.id].reshape(3,3)@np.diag([1.,-1.,-1.])).tolist(),
                                optical_to_base_translation=self.data.cam_xpos[cam.id].tolist(),

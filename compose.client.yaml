@@ -18,7 +18,10 @@ services:
       # threads (including lease renewal) when a remote viewer subscribes.
       RMW_FASTRTPS_PUBLICATION_MODE: ASYNCHRONOUS
     volumes:
-      - observations:/observations
+      - type: ${AGENTICROS_OBSERVATION_MOUNT_TYPE:-volume}
+        source: ${AGENTICROS_OBSERVATION_SOURCE:-observations}
+        target: /observations
+    group_add: ["${AGENTICROS_WORKSPACE_GID:-1001}"]
     read_only: true
     tmpfs: [/tmp]
     cap_drop: [ALL]

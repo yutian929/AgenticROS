@@ -49,10 +49,26 @@ def port(value):
 
 
 def folder(instance):
-    path = ROOT/'runs' if instance == 'default' else ROOT/'runs/instances'/instance
+    instance_name(instance)
+    legacy = ROOT/'runs' if instance == 'default' else ROOT/'runs/instances'/instance
+    path = legacy if (legacy/'lan').exists() or (legacy/'workspace').exists() else ROOT/'runs/agent_instances'/instance
     if (ROOT/'runs').resolve() not in (path.resolve(), *path.resolve().parents):
         raise ValueError('Agent instance path escapes runs')
     return path
+
+
+def robot_folder(instance, robot):
+    instance_name(instance)
+    robot_name(robot)
+    path = ROOT/'runs/robot_instances'/instance/robot
+    if (ROOT/'runs').resolve() not in path.resolve().parents:
+        raise ValueError('Robot instance path escapes runs')
+    return path
+
+
+def client_file(instance, robot):
+    legacy = folder(instance)/'lan'/('client-'+robot+'.json')
+    return legacy if legacy.exists() else robot_folder(instance, robot)/'client.json'
 
 
 def server_file(instance):
@@ -77,7 +93,10 @@ def environment(config):
         if address.hostname == config.get('AGENTICROS_CLIENT_HOST'):
             env['AGENTICROS_SERVER'] = f'http://127.0.0.1:{address.port}'
     name = config['AGENTICROS_INSTANCE']
-    env['AGENTICROS_WORKSPACE_SUBDIR'] = 'workspace' if name == 'default' else f'instances/{name}/workspace'
+    env['AGENTICROS_WORKSPACE_SUBDIR'] = str((folder(name)/'workspace').relative_to(ROOT/'runs'))
+    if config.get('AGENTICROS_STORAGE_LAYOUT') == 'instances-v2':
+        env['AGENTICROS_OBSERVATION_MOUNT_TYPE'] = 'bind'
+        env['AGENTICROS_OBSERVATION_SOURCE'] = str(robot_folder(name, config['AGENTICROS_ROBOT_ID'])/'observations')
     env['AGENTICROS_INSTANCE_SUFFIX'] = '' if name == 'default' else '-instance-'+name
     env['AGENTICROS_WORKSPACE_GID'] = str(os.getgid())
     return env
@@ -91,7 +110,22 @@ def compose(config, client=False):
 
 
 def run(config, args, client=False):
+    if client and 'up' in args:
+        prepare_observations(config)
     subprocess.run(compose(config, client)+args, env=environment(config), cwd=ROOT, check=True)
+
+
+def prepare_observations(config):
+    if config.get('AGENTICROS_STORAGE_LAYOUT') != 'instances-v2':
+        return
+    path = robot_folder(config['AGENTICROS_INSTANCE'], config['AGENTICROS_ROBOT_ID'])/'observations'
+    for parent in [path, *path.parents]:
+        if parent == ROOT:
+            break
+        if parent.is_symlink():
+            raise ValueError('Observation path contains a symlink')
+    path.mkdir(parents=True, exist_ok=True)
+    path.chmod(path.stat().st_mode | 0o2770)
 
 
 def ensure_image(config, service, client=False):
@@ -189,8 +223,10 @@ def saved_configs():
     paths += list((ROOT/'runs/instances').glob('*/lan/server.json'))
     paths += list((ROOT/'runs/instances').glob('*/lan/client-*.json'))
     paths += list((ROOT/'runs/instances').glob('*/lan/viewer.json'))
+    paths += list((ROOT/'runs/agent_instances').glob('*/lan/*.json'))
+    paths += list((ROOT/'runs/robot_instances').glob('*/*/client.json'))
     return [json.loads(path.read_text()) for path in paths
-            if path.name in ('server.json', 'viewer.json') or path.name.startswith('client-')]
+            if path.name in ('server.json', 'viewer.json', 'client.json') or path.name.startswith('client-')]
 
 
 def available_port(start, configs, udp=False, explicit=None, maximum=65535):
@@ -368,7 +404,7 @@ def print_viewer(config):
     if result.returncode == 0:
         print('Viewer password:', result.stdout.strip(), flush=True)
     else:
-        print('Viewer is stopped; start with: python3 scripts/lan.py viewer --instance '+config['AGENTICROS_INSTANCE'], flush=True)
+        print('Viewer is stopped; start with: python3 scripts/lan.py viewer --agent_id '+config['AGENTICROS_INSTANCE'], flush=True)
 
 
 def join_code(config):
@@ -411,14 +447,14 @@ def client_config(args):
     join = read_join_code(args.join) if args.join else None
     if join:
         if args.instance and args.instance != join['instance']:
-            raise ValueError('Agent instance name (--instance) conflicts with join code')
+            raise ValueError('Agent instance name (--agent_id) conflicts with join code')
         if args.server and server_url(args.server) != join['server']:
             raise ValueError('--server conflicts with join code')
         args.instance, args.server = join['instance'], join['server']
     if not args.instance:
-        raise ValueError('provide --join CODE, or --instance naming the Agent instance for a saved Robot instance')
+        raise ValueError('provide --join CODE, or --agent_id naming the Agent instance for a saved Robot instance')
     with config_lock():
-        path = folder(args.instance)/'lan'/('client-'+args.robot_id+'.json')
+        path = client_file(args.instance, args.robot_id)
         if path.exists():
             config = json.loads(path.read_text())
             if getattr(args, 'environment', None) and args.environment != config.get('AGENTICROS_ENVIRONMENT', 'cartesian_gripper'):
@@ -446,6 +482,7 @@ def client_config(args):
         else:
             check_server_identity(url, args.instance, None)
         config = dict(AGENTICROS_INSTANCE=args.instance, AGENTICROS_ROBOT_ID=args.robot_id,
+                      AGENTICROS_STORAGE_LAYOUT='instances-v2',
                       AGENTICROS_ENVIRONMENT=getattr(args, 'environment', None) or 'cartesian_gripper',
                       AGENTICROS_SERVER=url, AGENTICROS_CLIENT_HOST=args.host or detect_host(url),
                       AGENTICROS_OBSERVATION_PORT=available_port(8800, saved_configs(), explicit=args.observation_port),
@@ -459,8 +496,8 @@ def client_config(args):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    server = sub.add_parser('server', help='start the Agent instance (registry, discovery and Viewer), without entering Codex')
-    server.add_argument('--instance', type=instance_name, default='default', help='Agent instance name (default: default)')
+    server = sub.add_parser('start-agent', aliases=['server'], help='start the Agent instance (registry, discovery and Viewer), without entering Codex')
+    server.add_argument('--agent_id', '--instance', dest='instance', type=instance_name, default='default', help='Agent instance name (default: default)')
     server.add_argument('--host', type=ipv4, default=os.getenv('AGENTICROS_HOST'), help='Server host IPv4 reachable by Client hosts')
     server.add_argument('--port', type=port)
     server.add_argument('--discovery-port', type=port)
@@ -477,13 +514,15 @@ def main():
             'stop-viewer': 'stop the Agent instance Viewer',
             'stop-server': 'stop the Agent instance container, preserving its data',
         }
-        p = sub.add_parser(command, help=descriptions[command])
-        p.add_argument('--instance', type=instance_name, default='default', help='Agent instance name (default: default)')
+        p = sub.add_parser('stop-agent' if command == 'stop-server' else command,
+                           aliases=['stop-server'] if command == 'stop-server' else [],
+                           help=descriptions[command])
+        p.add_argument('--agent_id', '--instance', dest='instance', type=instance_name, default='default', help='Agent instance name (default: default)')
         if command in ('agent', 'login'):
             p.add_argument('codex_args', nargs=argparse.REMAINDER)
-    client = sub.add_parser('client', help='start or stop a Robot instance on this Client host')
-    client.add_argument('--instance', type=instance_name, help='Agent instance to join; inferred from --join on first start')
-    client.add_argument('--join', help='Agent instance connection code printed by agenticros.sh')
+    client = sub.add_parser('robot', aliases=['client'], help='start or stop a Robot instance on this Client host')
+    client.add_argument('--agent_id', '--instance', dest='instance', type=instance_name, help='Agent instance to join; inferred from --join on first start')
+    client.add_argument('--join', help='Agent instance connection code printed by agent.sh')
     client.add_argument('--robot-id', type=robot_name, required=True, help='Robot instance ID, unique within its Agent instance')
     client.add_argument('--server', help='Agent instance registry URL (included in --join)')
     client.add_argument('--host', type=ipv4, help='Client host IPv4 reachable by the Server host')
@@ -491,6 +530,8 @@ def main():
     client.add_argument('--environment', choices=('cartesian_gripper', 'aloha_tabletop'))
     client.add_argument('--stop', action='store_true', help='stop this Robot instance, preserving its data')
     args = parser.parse_args()
+    args.command = {'start-agent': 'server', 'robot': 'client',
+                    'stop-agent': 'stop-server'}.get(args.command, args.command)
     if sys.platform not in ('linux', 'darwin'):
         parser.error('Agent instance / Robot instance mode requires Linux or macOS with Docker Desktop')
     if args.command == 'server':

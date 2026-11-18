@@ -19,7 +19,7 @@ from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import JointState, Image, CompressedImage, CameraInfo, PointCloud2, PointField
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
-from tf2_ros import StaticTransformBroadcaster
+from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 from rclpy.qos import qos_profile_sensor_data
 from std_srvs.srv import Trigger
 from aloha_driver_interfaces.action import Actuate
@@ -35,11 +35,92 @@ def valid_goal(positions, duration, limits):
             and np.all(q <= limits[:, 1]) and math.isfinite(duration) and .1 <= duration <= 30)
 
 
-class Driver(Node):
-    def __init__(self, world, arm, lan=None):
+class CameraPublisher(Node):
+    def __init__(self, world, camera, lan=None, node_name='camera_driver'):
         self.lan = lan
-        self.robot_namespace = (lan.membership['namespace'] if lan else '') + '/' + arm
-        super().__init__('raw_body_driver', namespace=self.robot_namespace or '/')
+        self.robot_namespace = (lan.membership['namespace'] if lan else '') + '/' + camera
+        super().__init__(node_name, namespace=self.robot_namespace)
+        self.sim = Simulation(world, camera)
+        self.render = world.render
+        self.pending_frame = None
+        self.rgb = self.create_publisher(Image, 'camera/color/image_raw', qos_profile_sensor_data)
+        self.rgb_compressed = self.create_publisher(CompressedImage, 'camera/color/image_raw/compressed', qos_profile_sensor_data)
+        self.depth = self.create_publisher(Image, 'camera/depth/image_raw', qos_profile_sensor_data)
+        self.camera_info = self.create_publisher(CameraInfo, 'camera/camera_info', qos_profile_sensor_data)
+        self.points = self.create_publisher(PointCloud2, 'camera/depth/color/points', qos_profile_sensor_data)
+        self.camera_tf = (StaticTransformBroadcaster(self) if camera == 'overhead' else TransformBroadcaster(self))
+        self.camera_tf_sent = False
+        self.create_service(Snapshot, 'driver/observe', self.observe,
+                            callback_group=ReentrantCallbackGroup())
+        self.create_timer(.5, self.camera)
+
+    def frame(self, name):
+        root = (self.lan.membership['namespace'].strip('/')+'/' if self.lan else '')
+        return root + (self.sim.arm+'/' if name == 'camera_optical_frame' else '') + name
+
+    def observe(self, request, response):
+        snapshot = self.render.submit(self.sim.snapshot, os.getenv('OBSERVATION_ROOT', '/observations')).result()
+        if self.lan:
+            snapshot = self.lan.export(snapshot)
+        response.snapshot_json = json.dumps(snapshot)
+        return response
+
+    def capture_frame(self):
+        rgb, depth, calibration, _ = self.sim.observe()
+        stamp = self.get_clock().now().to_msg()
+        stamp.sec = int(calibration['captured_at_unix'])
+        stamp.nanosec = int((calibration['captured_at_unix']-stamp.sec)*1e9)
+        if self.rgb_compressed.get_subscription_count():
+            buffer = io.BytesIO()
+            PILImage.fromarray(rgb).save(buffer, format='JPEG', quality=75)
+            compressed = CompressedImage(format='rgb8; jpeg compressed bgr8', data=buffer.getvalue())
+            compressed.header.stamp, compressed.header.frame_id = stamp, self.frame('camera_optical_frame')
+            self.rgb_compressed.publish(compressed)
+        for publisher, pixels, encoding, step in (
+                (self.rgb, rgb, 'rgb8', rgb.shape[1] * 3),
+                (self.depth, depth.astype('<f4'), '32FC1', depth.shape[1] * 4)):
+            msg = Image(height=pixels.shape[0], width=pixels.shape[1], encoding=encoding,
+                        is_bigendian=0, step=step, data=pixels.tobytes())
+            msg.header.stamp, msg.header.frame_id = stamp, self.frame('camera_optical_frame')
+            publisher.publish(msg)
+        k = np.asarray(calibration['K']).reshape(3, 3)
+        info = CameraInfo(width=calibration['width'], height=calibration['height'],
+                          distortion_model='plumb_bob', d=[0.] * 5,
+                          k=k.ravel().tolist(), r=np.eye(3).ravel().tolist(),
+                          p=np.column_stack((k, np.zeros(3))).ravel().tolist())
+        info.header.stamp, info.header.frame_id = stamp, self.frame('camera_optical_frame')
+        self.camera_info.publish(info)
+        buffer, count = point_cloud_buffer(depth, rgb, k)
+        cloud = PointCloud2(height=1, width=count, is_bigendian=False, is_dense=True,
+                            point_step=16, row_step=count * 16, data=buffer,
+                            fields=[PointField(name=name, offset=index * 4, count=1,
+                                               datatype=PointField.UINT32 if name == 'rgb' else PointField.FLOAT32)
+                                    for index, name in enumerate(('x', 'y', 'z', 'rgb'))])
+        cloud.header = info.header
+        self.points.publish(cloud)
+        if self.sim.arm != 'overhead' or not self.camera_tf_sent:
+            transform = TransformStamped()
+            transform.header.stamp, transform.header.frame_id = stamp, self.frame('base')
+            transform.child_frame_id = self.frame('camera_optical_frame')
+            t = calibration['optical_to_base_translation']
+            transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z = t
+            quaternion = np.empty(4)
+            mujoco.mju_mat2Quat(quaternion, np.asarray(calibration['optical_to_base_rotation']).ravel())
+            q = transform.transform.rotation
+            q.w, q.x, q.y, q.z = quaternion.tolist()
+            self.camera_tf.sendTransform(transform)
+            self.camera_tf_sent = True
+        # Health is sensor production, independent of any visualization process.
+        Path('/tmp/body-camera-ready').touch()
+
+    def camera(self):
+        if self.pending_frame is None or self.pending_frame.done():
+            self.pending_frame = self.render.submit(self.capture_frame)
+
+
+class Driver(CameraPublisher):
+    def __init__(self, world, arm, lan=None):
+        super().__init__(world, arm, lan, node_name='raw_body_driver')
         # Public device metadata is discovered over standard ROS parameter services.
         # No simulator source, scene state, evaluator or client program is exported.
         public = Path('/opt/device-public')
@@ -59,43 +140,26 @@ class Driver(Node):
         self.declare_parameter('interface_sources', json.dumps({
             'package': 'aloha_driver_interfaces', 'files': sources}),
             ParameterDescriptor(read_only=True, description='Public ROS interface package sources; build locally to use custom types'))
-        self.sim = Simulation(world, arm)
-        if lan:
-            self.sim.session = lan.session
         self.gate = threading.Lock()
         self.busy = self.recovery_required = False
         self.receipts = {}
         self.active_goal_id = None
         self.shutting_down = threading.Event()
-        self.render = world.render
-        self.pending_frame = None
         group = ReentrantCallbackGroup()
         self.action = ActionServer(self, Actuate, 'driver/actuate', self.execute,
                                    goal_callback=self.accept, handle_accepted_callback=self.accepted,
                                    cancel_callback=lambda _: CancelResponse.ACCEPT,
                                    callback_group=group)
         self.create_service(Trigger, 'driver/status', self.status, callback_group=group)
-        self.create_service(Snapshot, 'driver/observe', self.observe, callback_group=group)
         self.joints = self.create_publisher(JointState, 'driver/joint_states', 10)
-        self.rgb = self.create_publisher(Image, 'camera/color/image_raw', qos_profile_sensor_data)
-        self.rgb_compressed = self.create_publisher(CompressedImage, 'camera/color/image_raw/compressed', qos_profile_sensor_data)
-        self.depth = self.create_publisher(Image, 'camera/depth/image_raw', qos_profile_sensor_data)
-        self.camera_info = self.create_publisher(CameraInfo, 'camera/camera_info', qos_profile_sensor_data)
-        self.points = self.create_publisher(PointCloud2, 'camera/depth/color/points', qos_profile_sensor_data)
         self.telemetry = self.create_publisher(String, 'driver/state', 10)
-        self.camera_tf = StaticTransformBroadcaster(self)
-        self.camera_tf_sent = False
         self.create_timer(.1, self.publish)
-        self.create_timer(.5, self.camera)
 
     def measured_state(self):
         state = self.sim.state()
         if self.lan:
             state['frame'] = self.frame('base')
         return state
-
-    def frame(self, name):
-        return (self.lan.membership['namespace'].strip('/')+'/' if self.lan else '')+name
 
     def accept(self, request):
         with self.gate:
@@ -187,13 +251,6 @@ class Driver(Node):
         response.success, response.message = True, json.dumps(state)
         return response
 
-    def observe(self, request, response):
-        snapshot = self.render.submit(self.sim.snapshot, os.getenv('OBSERVATION_ROOT', '/observations')).result()
-        if self.lan:
-            snapshot = self.lan.export(snapshot)
-        response.snapshot_json = json.dumps(snapshot)
-        return response
-
     def publish(self):
         state = self.measured_state()
         msg = JointState()
@@ -208,55 +265,6 @@ class Driver(Node):
             telemetry['connected'] = self.lan.lease.valid()
         self.telemetry.publish(String(data=json.dumps(telemetry)))
 
-    def capture_frame(self):
-        rgb, depth, calibration, _ = self.sim.observe()
-        stamp = self.get_clock().now().to_msg()
-        if self.rgb_compressed.get_subscription_count():
-            buffer = io.BytesIO()
-            PILImage.fromarray(rgb).save(buffer, format='JPEG', quality=75)
-            compressed = CompressedImage(format='rgb8; jpeg compressed bgr8', data=buffer.getvalue())
-            compressed.header.stamp, compressed.header.frame_id = stamp, self.frame('camera_optical_frame')
-            self.rgb_compressed.publish(compressed)
-        for publisher, pixels, encoding, step in (
-                (self.rgb, rgb, 'rgb8', rgb.shape[1] * 3),
-                (self.depth, depth.astype('<f4'), '32FC1', depth.shape[1] * 4)):
-            msg = Image(height=pixels.shape[0], width=pixels.shape[1], encoding=encoding,
-                        is_bigendian=0, step=step, data=pixels.tobytes())
-            msg.header.stamp, msg.header.frame_id = stamp, self.frame('camera_optical_frame')
-            publisher.publish(msg)
-        k = np.asarray(calibration['K']).reshape(3, 3)
-        info = CameraInfo(width=calibration['width'], height=calibration['height'],
-                          distortion_model='plumb_bob', d=[0.] * 5,
-                          k=k.ravel().tolist(), r=np.eye(3).ravel().tolist(),
-                          p=np.column_stack((k, np.zeros(3))).ravel().tolist())
-        info.header.stamp, info.header.frame_id = stamp, self.frame('camera_optical_frame')
-        self.camera_info.publish(info)
-        buffer, count = point_cloud_buffer(depth, rgb, k)
-        cloud = PointCloud2(height=1, width=count, is_bigendian=False, is_dense=True,
-                            point_step=16, row_step=count * 16, data=buffer,
-                            fields=[PointField(name=name, offset=index * 4, count=1,
-                                               datatype=PointField.UINT32 if name == 'rgb' else PointField.FLOAT32)
-                                    for index, name in enumerate(('x', 'y', 'z', 'rgb'))])
-        cloud.header = info.header
-        self.points.publish(cloud)
-        if not self.camera_tf_sent:
-            transform = TransformStamped()
-            transform.header.stamp, transform.header.frame_id = stamp, self.frame('base')
-            transform.child_frame_id = self.frame('camera_optical_frame')
-            t = calibration['optical_to_base_translation']
-            transform.transform.translation.x, transform.transform.translation.y, transform.transform.translation.z = t
-            quaternion = np.empty(4)
-            mujoco.mju_mat2Quat(quaternion, np.asarray(calibration['optical_to_base_rotation']).ravel())
-            q = transform.transform.rotation
-            q.w, q.x, q.y, q.z = quaternion.tolist()
-            self.camera_tf.sendTransform(transform)
-            self.camera_tf_sent = True
-        # Health is sensor production, independent of any visualization process.
-        Path('/tmp/body-camera-ready').touch()
-
-    def camera(self):
-        if self.pending_frame is None or self.pending_frame.done():
-            self.pending_frame = self.render.submit(self.capture_frame)
 
 
 def main():
@@ -269,9 +277,10 @@ def main():
     if lan:
         world.session = lan.session
     drivers = [Driver(world, arm, lan) for arm in ('left', 'right')]
+    cameras = [CameraPublisher(world, 'overhead', lan)]
     evaluator = start_evaluator(drivers)
     executor = MultiThreadedExecutor(num_threads=8)
-    for driver in drivers:
+    for driver in [*drivers, *cameras]:
         executor.add_node(driver)
     try:
         executor.spin()
@@ -283,7 +292,7 @@ def main():
         executor.shutdown()
         evaluator.shutdown()
         evaluator.server_close()
-        for driver in drivers:
+        for driver in [*drivers, *cameras]:
             driver.destroy_node()
         world.close()
         if lan:

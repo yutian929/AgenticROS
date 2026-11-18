@@ -1,12 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
-source scripts/instance.sh
-if [[ $instance != default || -f runs/lan/server.json ]]; then
+source scripts/agent-options.sh
+if [[ $instance != default || -f runs/lan/server.json || -f runs/agent_instances/default/lan/server.json ]]; then
   if [[ $# -eq 0 ]]; then
     set -- --device-auth
   fi
-  exec python3 scripts/lan.py login --instance "$instance" -- "$@"
+  exec python3 scripts/lan.py login --agent_id "$instance" -- "$@"
 fi
 export AGENTICROS_WORKSPACE_GID="$(id -g)"
 python3 scripts/prepare_workspace.py

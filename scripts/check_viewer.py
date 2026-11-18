@@ -34,7 +34,8 @@ def main():
     options = parser.parse_args()
     instance = 'viewer-test-' + secrets.token_hex(4)
     config = lan.server_config(instance, options.host)
-    root = lan.folder(instance)
+    root = lan.ROOT/'runs/checks'/instance
+    root.mkdir(parents=True, exist_ok=True)
     clients = []
 
     def container():

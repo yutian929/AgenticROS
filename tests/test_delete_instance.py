@@ -113,7 +113,7 @@ class DeleteInstance(unittest.TestCase):
         self.assertNotIn('agenticros_codex-home', self.volumes)
 
     def test_shell_requires_explicit_name(self):
-        result = subprocess.run(['bash', str(ROOT / 'scripts/delete-instance.sh')],
+        result = subprocess.run(['bash', str(ROOT / 'scripts/delete-agent.sh')],
                                 capture_output=True)
         self.assertEqual(result.returncode, 2)
 

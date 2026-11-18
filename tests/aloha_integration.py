@@ -13,8 +13,12 @@ from std_srvs.srv import Trigger
 from unique_identifier_msgs.msg import UUID
 from aloha_driver_interfaces.action import Actuate
 from aloha_driver_interfaces.srv import Snapshot
-from driver import Driver
+from driver import Driver, CameraPublisher
 from world import World
+import numpy as np
+from sensor_msgs.msg import CameraInfo
+from tf2_msgs.msg import TFMessage
+from rclpy.qos import qos_profile_sensor_data
 
 
 def wait(future, timeout=30):
@@ -30,9 +34,10 @@ def main():
     rclpy.init()
     world = World()
     drivers = [Driver(world, arm) for arm in ('left', 'right')]
+    overhead = CameraPublisher(world, 'overhead')
     client = rclpy.create_node('aloha_integration')
     executor = MultiThreadedExecutor(num_threads=8)
-    for node in [*drivers, client]:
+    for node in [*drivers, overhead, client]:
         executor.add_node(node)
     thread = threading.Thread(target=executor.spin, daemon=True)
     thread.start()
@@ -43,7 +48,14 @@ def main():
             assert action.wait_for_server(timeout_sec=20)
         for status in statuses:
             assert status.wait_for_service(timeout_sec=20)
+        infos, transforms = {}, {}
+        for camera in ('left', 'overhead', 'right'):
+            client.create_subscription(CameraInfo, '/'+camera+'/camera/camera_info',
+                lambda msg, camera=camera: infos.update({camera: msg}), qos_profile_sensor_data)
+        client.create_subscription(TFMessage, '/tf',
+            lambda msg: transforms.update({t.child_frame_id:t for t in msg.transforms}), 100)
         time.sleep(2)
+        before = world.render.submit(drivers[1].sim.observe).result()[2]
         states = [json.loads(wait(s.call_async(Trigger.Request())).message) for s in statuses]
         assert states[0]['session_id'] == states[1]['session_id'] == world.session
         def send(index, session=None, duration=1.):
@@ -71,12 +83,24 @@ def main():
             assert receipt['stop_confirmed'], receipt
             state = json.loads(wait(statuses[i].call_async(Trigger.Request())).message)
             assert receipt['goal_id'] in state['receipts'] and not state['busy']
-        snapshot = client.create_client(Snapshot, '/left/driver/observe')
-        assert snapshot.wait_for_service(timeout_sec=10)
-        value = json.loads(wait(snapshot.call_async(Snapshot.Request()),60).snapshot_json)
-        assert Path(value['rgb_path']).is_file() and Path(value['depth_path']).is_file()
+        snapshots = {}
+        for camera in ('left', 'overhead', 'right'):
+            snapshot = client.create_client(Snapshot, '/'+camera+'/driver/observe')
+            assert snapshot.wait_for_service(timeout_sec=10)
+            value = json.loads(wait(snapshot.call_async(Snapshot.Request()),60).snapshot_json)
+            assert Path(value['rgb_path']).is_file() and Path(value['depth_path']).is_file()
+            assert value['calibration']['camera'] == camera
+            assert infos[camera].header.frame_id == camera+'/camera_optical_frame'
+            assert np.allclose(np.array(infos[camera].k).reshape(3,3), value['calibration']['K'])
+            snapshots[camera] = value
+        assert len({Path(v['rgb_path']).read_bytes() for v in snapshots.values()}) == 3
+        assert set(transforms) >= {'left/camera_optical_frame', 'right/camera_optical_frame'}
+        assert not np.allclose(before['optical_to_base_rotation'],
+                               snapshots['right']['calibration']['optical_to_base_rotation'], atol=1e-4)
+        assert np.allclose(snapshots['right']['calibration']['K'][0][0], 120/np.tan(np.deg2rad(29)))
+        value = snapshots['left']
         report = dict(shared_session=world.session, concurrent_arms=True, same_arm_rejected=True,
-                      stale_session_rejected=True, cancelled_and_stopped=True, receipts=receipts, snapshot=value)
+                      stale_session_rejected=True, cancelled_and_stopped=True, receipts=receipts, snapshot=value, cameras=snapshots)
         Path('/observations/integration.json').write_text(json.dumps(report,indent=2))
         print('PASS: shared world, concurrent arms, exclusion, stale session, UUID receipts, cancellation, RGB-D')
     finally:
@@ -85,6 +109,7 @@ def main():
         executor.shutdown(timeout_sec=10)
         for d in drivers:
             d.destroy_node()
+        overhead.destroy_node()
         client.destroy_node()
         world.close()
         rclpy.shutdown()

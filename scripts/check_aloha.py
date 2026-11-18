@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def main():
     name = 'agenticros-aloha-check-' + uuid.uuid4().hex[:8]
-    evidence = ROOT / 'runs' / name
+    evidence = ROOT / 'runs' / 'checks' / name
     evidence.mkdir(parents=True)
     subprocess.run([
         'docker', 'create', '--name', name, '--network', 'none',

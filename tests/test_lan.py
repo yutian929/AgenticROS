@@ -162,7 +162,7 @@ class Configuration(unittest.TestCase):
         self.assertEqual(agent['container_name'], 'agenticros-instance-test-fleet')
         mounts = {m['target']:m for m in agent['volumes']}
         self.assertEqual(set(mounts), {'/workspace','/home/agent/.codex','/config/codex.toml','/viewer-auth'})
-        self.assertEqual(Path(mounts['/workspace']['source']), ROOT/'runs/instances/test-fleet/workspace')
+        self.assertEqual(Path(mounts['/workspace']['source']), ROOT/'runs/agent_instances/test-fleet/workspace')
         self.assertTrue(mounts['/config/codex.toml']['read_only'])
         self.assertEqual(mounts['/home/agent/.codex']['type'], 'volume')
 
@@ -300,6 +300,11 @@ class Startup(unittest.TestCase):
         with patch.object(launcher, 'check_server_identity'), patch.object(launcher, 'detect_host', return_value='127.0.0.1'):
             config = launcher.client_config(self.args(join=code, environment='aloha_tabletop'))
             self.assertEqual(config['AGENTICROS_ENVIRONMENT'], 'aloha_tabletop')
+            self.assertEqual(launcher.client_file('fleet', 'robot_a'),
+                             launcher.ROOT/'runs/robot_instances/fleet/robot_a/client.json')
+            self.assertEqual(launcher.environment(config)['AGENTICROS_OBSERVATION_MOUNT_TYPE'], 'bind')
+            self.assertEqual(launcher.environment(config)['AGENTICROS_OBSERVATION_SOURCE'],
+                             str(launcher.ROOT/'runs/robot_instances/fleet/robot_a/observations'))
             self.assertEqual(launcher.client_config(self.args(instance='fleet')), config)
             with self.assertRaisesRegex(ValueError, 'another environment'):
                 launcher.client_config(self.args(instance='fleet', environment='cartesian_gripper'))
@@ -419,10 +424,15 @@ class Startup(unittest.TestCase):
         fake = Path(self.temp.name)/'python3'
         fake.write_text('#!/bin/sh\nprintf "%s\\n" "$@"\n')
         fake.chmod(0o700)
-        result = subprocess.check_output(['bash', 'scripts/agenticros.sh', '--instance', 'new-account',
+        result = subprocess.check_output(['bash', 'scripts/agent.sh', '--agent_id', 'new-account',
                                           'resume', '--last'], cwd=ROOT,
                                          env=dict(os.environ, PATH=str(fake.parent)+':'+os.environ['PATH']), text=True)
-        self.assertEqual(result.splitlines()[1:], ['scripts/lan.py','agent','--instance','new-account','--','resume','--last'])
+        self.assertEqual(result.splitlines()[1:], ['scripts/lan.py','agent','--agent_id','new-account','--','resume','--last'])
+        result = subprocess.check_output(['bash', 'scripts/robot.sh', 'aloha_tabletop',
+                                          '--join', 'test-code', '--robot-id', 'robot_a'], cwd=ROOT,
+                                         env=dict(os.environ, PATH=str(fake.parent)+':'+os.environ['PATH']), text=True)
+        self.assertEqual(result.splitlines(), ['scripts/lan.py', 'robot', '--environment', 'aloha_tabletop',
+                                              '--join', 'test-code', '--robot-id', 'robot_a'])
 
 
 if __name__ == '__main__':

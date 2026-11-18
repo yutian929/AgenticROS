@@ -52,7 +52,7 @@ class WorkspacePreparation(unittest.TestCase):
             run.side_effect = [subprocess.CompletedProcess([], 0, json.dumps({'name': 'test'})),
                                subprocess.CompletedProcess([], 1)]
             workspace.prepare()
-        mode = (self.root / 'runs/workspace').stat().st_mode
+        mode = (self.root / 'runs/agent_instances/default/workspace').stat().st_mode
         self.assertEqual(mode & 0o2770, 0o2770)
 
     def test_symlink_cannot_expose_another_host_directory(self):
@@ -65,18 +65,18 @@ class WorkspacePreparation(unittest.TestCase):
             for name in ('account-a', 'account-b'):
                 with patch.dict(os.environ, AGENTICROS_INSTANCE=name):
                     workspace.prepare()
-            target = self.root / 'runs/instances/account-a/workspace'
+            target = self.root / 'runs/agent_instances/account-a/workspace'
             (target / 'adapter.py').write_text('retained')
             with patch.dict(os.environ, AGENTICROS_INSTANCE='account-a'):
                 workspace.prepare()
             run.assert_not_called()
         self.assertEqual((target / 'adapter.py').read_text(), 'retained')
-        self.assertEqual(list((self.root / 'runs/instances/account-b/workspace').iterdir()), [])
+        self.assertEqual(list((self.root / 'runs/agent_instances/account-b/workspace').iterdir()), [])
         self.assertFalse((self.root / 'runs/workspace').exists())
 
     def test_instance_parent_symlink_is_rejected(self):
         (self.root / 'runs').mkdir()
-        (self.root / 'runs/instances').symlink_to(self.root)
+        (self.root / 'runs/agent_instances').symlink_to(self.root)
         with patch.dict(os.environ, AGENTICROS_INSTANCE='account-a'):
             with self.assertRaisesRegex(RuntimeError, 'symlinks'):
                 workspace.prepare()

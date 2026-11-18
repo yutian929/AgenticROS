@@ -22,6 +22,16 @@ launcher = load('viewer_launcher', 'scripts/lan.py')
 
 
 class Discovery(unittest.TestCase):
+    def test_camera_strip_keeps_images_out_of_rviz_and_leaves_room_above(self):
+        topics = [('/robot/'+side+'/camera/color/image_raw/compressed',
+                   ['sensor_msgs/msg/CompressedImage']) for side in ('left', 'overhead', 'right')]
+        view = discovery.configuration(topics, 'robot/base', image_strip=True)
+        images = [d for d in view['Visualization Manager']['Displays']
+                  if d['Class'] == 'rviz_default_plugins/Image']
+        self.assertEqual(len(images), 3)
+        self.assertFalse(any(d['Enabled'] for d in images))
+        self.assertGreaterEqual(view['Window Geometry']['Y'], 410)
+
     def test_roster_rejects_wrong_instance_and_tracks_live_sessions(self):
         namespace = '/robots/robot_a/s_'+'a'*12
         robot = dict(robot_id='robot_a', session_id='a'*12, namespace=namespace, connected=True)

@@ -508,3 +508,40 @@ Agent 增加主 agent 监督规则与 `arm-executor` 角色，由原生子 agent
 
 按用户授权清理旧仿真/Agent 容器及旧环境镜像标签，保留账号、工作区、观测卷和 runs 证据。
 没有真实机器人操作、真实双机验收或 push。
+
+### 2026-11-18：独立腕部相机与三画面 Viewer
+
+修复左右相机话题重复发布俯视画面的问题：`left/camera`、`right/camera` 分别绑定模型原有腕部相机，新增 `overhead/camera` 和 `/overhead/driver/observe`。
+三路使用独立光学坐标系、RGB-D 和 CameraInfo，腕部动态 TF 与图像使用同一次采集的外参及时间戳；俯视使用静态 TF。
+派生场景采用 320×240 方形像素相机，腕部垂直视场 58°，俯视 45°。三路顺序采集，不宣称跨相机同步。
+
+通用 Viewer 从公开 CompressedImage 话题发现多路相机，按名称横排显示；本环境顺序是左腕、俯视、右腕。下方保留 RViz 点云。
+它不依赖 ALOHA 模型或设备类型包，也不发送运动指令。
+
+隔离双臂集成测试通过，并新增三路不同图像、独立 frame、CameraInfo 与快照内参一致、腕部外参随运动改变的检查。
+证据：`runs/agenticros-aloha-check-fd235bbe/integration.json`。Viewer 单元测试 8 项通过。
+两类镜像重新构建；按用户要求重启 `aloha_a`，更新运行中的 Viewer 文件并仅重启 Viewer 进程，保留当前 Codex 会话、账号和工作区。
+已检查实际桌面三路画面，截图 `runs/three-cameras.png`。新 session 为 `9d6a7a4b372c`，旧 session 不再可用于控制。
+
+### 2026-11-18：实例产物目录与完整清理入口
+
+Agent 启动及 LAN 管理统一使用 `--agent_id`，保留 `--instance` 兼容别名，Robot 仍用 `--robot-id`。
+新建 Agent 的配置、工作区位于 `runs/agent_instances/<agent_id>/`；新建 Robot 的绑定配置、可直接查看的观测位于 `runs/robot_instances/<agent_id>/<robot_id>/`。
+维护者测试报告移至 `runs/checks/<run_id>/`，测试实例本身仍使用相同的 Agent/Robot 目录结构。
+旧实例继续使用既有目录、观测卷；不在线搬动当前 Codex 工作区。清理后新建实例全部使用新结构。
+
+新增 `bash scripts/clean-runtime.sh`：默认只列清单，`--yes` 才移除本项目容器、数据卷（含登录状态）、整个 runs 和 Python 缓存；`--images` 可选移除项目镜像标签。
+不执行全局 prune，不删除源码/Git，共享构建缓存保留。执行前拒绝其他容器共享选中卷，删除宿主目录前再检查容器引用，并拒绝 runs 符号链接。
+
+验证：102 项回归测试通过；实际 Docker 临时容器/卷/目录清理通过；新 Robot 观测 bind mount 写入并由宿主读取通过。
+双 Robot Viewer 集成通过，报告 `runs/checks/viewer-test-3bd82d8a/viewer-check.json`。
+对现有用户数据只运行清理预览，没有执行完整删除或迁移；`aloha-demo` 与 `aloha_a` 保持运行。
+
+### 2026-11-18：统一面向用户的入口命名
+
+启动入口改为 `scripts/agent.sh` 和 `scripts/robot.sh`；单独登录改为 `agent-login.sh`，旧单机 Agent 删除入口改为 `delete-agent.sh`。
+内部 shell 参数文件改为 `agent-options.sh`，移除只转发启动命令的历史 `docker-chat.sh`。
+LAN 管理公开命令改用 `robot`、`start-agent`、`stop-agent`，兼容原 `client`、`server`、`stop-server` 子命令。
+同步更新当前文档、帮助、脚本提示与测试；历史开发记录保留当时的命令。Compose 服务、账号卷及现有实例标识保持兼容。
+
+两类 shell 入口的参数转发检查、帮助检查和 102 项回归测试通过。此次没有重启运行环境，也没有执行清理。

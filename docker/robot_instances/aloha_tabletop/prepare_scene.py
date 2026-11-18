@@ -9,6 +9,11 @@ def prepare(root):
     for include in list(robot.getroot().findall('include')):
         if include.get('file') == 'keyframe_ctrl.xml':
             robot.getroot().remove(include)
+    for camera in robot.getroot().iter('camera'):
+        if camera.get('name', '').startswith('wrist_cam_'):
+            for key in ('focal', 'resolution', 'sensorsize'):
+                camera.attrib.pop(key, None)
+            camera.set('fovy', '58')
     robot.write(root / 'agenticros_aloha.xml')
     scene = ET.parse(root / 'scene.xml')
     scene.getroot().find('include').set('file', 'agenticros_aloha.xml')
