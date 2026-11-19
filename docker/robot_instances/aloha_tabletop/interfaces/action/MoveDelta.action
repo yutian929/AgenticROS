@@ -1,0 +1,13 @@
+# Increment about current TCP origin, expressed in base or starting tcp axes.
+string session_id
+string reference_frame
+geometry_msgs/Vector3 translation
+geometry_msgs/Quaternion rotation
+float64 duration
+---
+string receipt_json
+---
+geometry_msgs/Pose current_pose
+float64 position_error
+float64 orientation_error
+string phase

@@ -1,4 +1,4 @@
-"""One shared physics clock for both arms. No task controller or IK adapter."""
+"""One shared physics clock for both arms. No task-level controller."""
 from concurrent.futures import ThreadPoolExecutor
 import json
 import math
@@ -9,6 +9,7 @@ from pathlib import Path
 import mujoco
 import numpy as np
 from PIL import Image
+from cartesian import tcp_pose, matrix_quat
 
 JOINTS = ('waist', 'shoulder', 'elbow', 'forearm_roll', 'wrist_angle', 'wrist_rotate', 'left_finger')
 
@@ -31,6 +32,12 @@ class World:
             addr = self.model.jnt_qposadr[body.jntadr[0]]
             self.data.qpos[addr:addr+2] += rng.uniform(-.02, .02, 2)
         mujoco.mj_forward(self.model, self.data)
+        self.compensated_targets = {}
+        self.compensation = {}
+        for arm, offset in (('left', 0), ('right', 7)):
+            aids = list(range(offset, offset+6))
+            vids = [self.model.joint(arm+'/'+name).dofadr[0] for name in JOINTS[:6]]
+            self.compensation[arm] = (aids, vids, self.model.actuator_gainprm[aids, 0].copy())
         self.stop = threading.Event()
         self.failure = None
         self.render = ThreadPoolExecutor(max_workers=1)
@@ -43,6 +50,13 @@ class World:
             while not self.stop.is_set():
                 started = time.monotonic()
                 with self.lock:
+                    for arm, target in self.compensated_targets.items():
+                        aids, vids, gains = self.compensation[arm]
+                        # Native position servos need gravity/bias feed-forward for
+                        # accurate Cartesian setpoints. Do not compensate contacts.
+                        command = target[:6]+self.data.qfrc_bias[vids]/gains
+                        self.data.ctrl[aids] = np.clip(command, self.model.actuator_ctrlrange[aids, 0],
+                                                      self.model.actuator_ctrlrange[aids, 1])
                     mujoco.mj_step(self.model, self.data, nstep=5)
                     if not np.isfinite(self.data.qpos).all():
                         raise RuntimeError('nonfinite physics state')
@@ -73,8 +87,12 @@ class Simulation:
         self.aids = list(range(0, 7) if arm == 'left' else range(7, 14))
         self.limits = self.model.actuator_ctrlrange[self.aids].copy()
 
-    def set_target(self, target):
+    def set_target(self, target, compensate=False):
         with self.lock:
+            if compensate:
+                self.world.compensated_targets[self.arm] = np.asarray(target).copy()
+            else:
+                self.world.compensated_targets.pop(self.arm, None)
             self.data.ctrl[self.aids] = target
 
     def state(self):
@@ -84,11 +102,14 @@ class Simulation:
                             physics_fault=self.world.failure)
             left = self.data.site(self.arm+'/left_finger').xpos
             right = self.data.site(self.arm+'/right_finger').xpos
+            position, rotation = tcp_pose(self.model, self.data, self.arm)
             return dict(sim_time=float(self.data.time), frame='base', arm=self.arm,
-                        tcp_xyz=((left+right)/2).tolist(), gripper_width=float(np.linalg.norm(left-right)),
+                        tcp_quaternion_xyzw=matrix_quat(rotation).tolist(),
+                        tcp_frame=self.arm+'/tcp',
+                        tcp_xyz=position.tolist(), gripper_width=float(np.linalg.norm(left-right)),
                         joint_names=self.names, joint_positions=self.data.qpos[self.qids].tolist(),
                         joint_velocities=self.data.qvel[self.vids].tolist(), physics_fault=self.world.failure,
-                        orientation='six revolute joints; pose planning is not supplied')
+                        orientation='quaternion xyzw; axes of gripper_link; origin at finger-site midpoint')
 
     def observe(self):
         # Called only on the shared rendering worker. Copy the scene under the

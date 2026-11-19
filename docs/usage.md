@@ -180,3 +180,17 @@ python3 scripts/check_viewer.py
 此脚本包含小幅仿真运动，仅对新建测试场景使用，不用于运行中的任务。
 `python3 scripts/check_viewer.py --environment aloha_tabletop` 创建独立测试实例，验证 LAN、Viewer 与左右臂接口发现。
 图形观察使用 Agent instance 的 Viewer，ALOHA 不启动自己的桌面。
+
+### ALOHA 基础笛卡尔运动
+
+在机器人 session 名称空间下，两臂分别提供 `left/driver/move_pose`、`left/driver/move_delta` 和对应的 `right/driver/` 接口。
+类型为 `aloha_driver_interfaces/action/MovePose`、`MoveDelta`；从驱动的 `interface_sources` 参数取得最新定义并重新构建客户端绑定。
+两个 Action 都要求当前 `session_id`、`reference_frame`（`base` 或 `tcp`）及 `duration`（0.1～30 秒）。
+
+`MovePose.target` 为 Pose：base 表示绝对目标，tcp 表示相对于动作开始时 TCP 的目标。
+`MoveDelta.translation` 为 Vector3，`rotation` 为 Quaternion：base 按基座轴施加增量，tcp 按起始工具轴施加增量。增量旋转绕 TCP 原点进行，不绕基座原点公转。
+单位为米，四元数按 xyzw，零旋转必须填 `w: 1.0`。两类动作均保持夹爪命令，执行前预检笛卡尔路径的 IK、关节限位与采样关节速度；不检查碰撞、不自动绕障。
+反馈和回执包含基座下的实测 TCP 位姿、目标误差、执行阶段与停止确认；成功要求 3 mm / 0.03 rad 以内且关节速度低于 0.02 rad/s。
+规划、取消、超时和并发行为的完整约定见驱动公开说明。
+
+维护者运行 `python3 scripts/check_aloha.py --cartesian` 可在独立容器验证两臂、两种 Action 和两种参考系，以及不可达、非法请求、执行互斥、取消和租约失效。测试不会向既有 Robot instance 发动作。

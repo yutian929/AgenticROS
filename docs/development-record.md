@@ -545,3 +545,32 @@ LAN 管理公开命令改用 `robot`、`start-agent`、`stop-agent`，兼容原 
 同步更新当前文档、帮助、脚本提示与测试；历史开发记录保留当时的命令。Compose 服务、账号卷及现有实例标识保持兼容。
 
 两类 shell 入口的参数转发检查、帮助检查和 102 项回归测试通过。此次没有重启运行环境，也没有执行清理。
+
+### 2026-11-18：撤销 RViz 外的三画面区域
+
+按用户纠正移除 Viewer 自行订阅、解码和显示三路图像的区域。三路相机改由 RViz 内置 Image 面板显示，默认在 RViz 内从左到右排列左腕、俯视、右腕；保留原生可拖动 dock 和点云视图。
+保留腕部相机绑定、标定和动态 TF 修正。运行中的 account-a 仅更新 Viewer 并重启可视化进程，机器人 session `f5ca9cd057ee` 保持不变。
+8 项 Viewer 单元测试通过，并检查实际 RViz 三路画面，截图 `runs/checks/rviz-docks/viewer.png`。现有 Agent instance 镜像以只替换两份 Viewer 文件的增量构建更新，完整 Dockerfile 同样使用最新源码。
+
+### 2026-11-19：ALOHA move_pose / move_delta
+
+两臂新增 `driver/move_pose` 与 `driver/move_delta` Action，接受当前 session、base/tcp 参考系、米制位置/增量、xyzw 四元数与时长。
+move_pose(base) 为绝对目标；tcp 目标一次性相对于执行开始时的实测 TCP。base 增量的旋转绕当前 TCP 原点，而非基座原点。
+TCP 位置保持原有指尖参考点中点定义，新增 gripper_link 朝向、完整位姿状态与独立 TCP TF。
+
+使用 MuJoCo 模型的独立 MjData 做局部阻尼最小二乘 IK，对整条直线/姿态插值采样路径做预检，限制关节位置及采样目标速度。
+发现原位置伺服在重力下的静态误差后，为笛卡尔动作及其后续保持加入模型偏置力前馈；原 actuate 行为不变。
+实测 3 mm / 0.03 rad 到位容差与停止条件共同决定成功。所有动作共用单臂互斥，保留 UUID 回执、取消、租约失效、关机停止及恢复故障锁。
+未加入碰撞检查、自动绕障、全局 IK 搜索、联合交接或任务级控制，回执明确 `collision_checked=false`。
+
+验证：102 项回归测试通过；隔离 ROS 测试覆盖左右臂 × 两种 Action × 两种参考系的 8 组实际平移/旋转，及非法输入、过期 session、不可达、速度超限、规划取消、运动取消、双臂并行、跨 Action 互斥、关机和租约失效。
+笛卡尔证据 `runs/checks/agenticros-aloha-check-d2d4423a/integration.json`；原双臂/相机回归证据 `runs/checks/agenticros-aloha-check-78f30e99/integration.json`。
+汇总 `runs/checks/aloha-cartesian-validation/result.json`。新 Robot 镜像已构建，未重启用户运行中的 robot_b、未向其发送运动指令，未做自主抓取或交接验收。
+
+### 2026-11-19：ALOHA / Viewer 提交前复核
+
+核对测试镜像中的 driver.py、world.py、cartesian.py、viewer.py、discovery.py 与工作区源码完全一致。
+`scripts/test.sh` 的 112 项测试通过；隔离 Qt 测试 2 项通过，新增验证三相机原生 dock 状态可恢复到顶部区域。
+原双臂/相机集成通过：`runs/checks/agenticros-aloha-check-2cc83bb5/integration.json`。
+笛卡尔集成通过：`runs/checks/agenticros-aloha-check-ab6b3a39/integration.json`，覆盖两臂、两种动作、两种坐标系及异常/取消路径。
+本轮使用独立、无网络仿真容器，没有执行自主抓取或交接；Qt 布局测试不替代实际 Viewer 画面的视觉验收。

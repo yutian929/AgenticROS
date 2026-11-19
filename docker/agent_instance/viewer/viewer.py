@@ -8,7 +8,7 @@ import threading
 import time
 import urllib.request
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtWidgets
 import rclpy
 from rclpy.action import get_action_names_and_types
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, qos_profile_sensor_data
@@ -18,9 +18,43 @@ import yaml
 from discovery import robots, scoped_topics, fixed_frame, configuration
 
 
+def rviz_dock_layout(config):
+    """Store a native RViz/Qt dock layout; image rendering remains in RViz."""
+    names = [d['Name'] for d in config['Visualization Manager']['Displays']
+             if d['Class'] == 'rviz_default_plugins/Image' and d['Enabled']]
+    if len(names) < 2:
+        return
+    window = QtWidgets.QMainWindow()
+    window.setAttribute(QtCore.Qt.WA_DontShowOnScreen)
+    window.resize(1440, 740)
+    window.setCentralWidget(QtWidgets.QWidget())
+    panels = []
+    for name in ('Displays', 'Views'):
+        dock = QtWidgets.QDockWidget(name)
+        dock.setObjectName(name)
+        dock.setWidget(QtWidgets.QWidget())
+        window.addDockWidget(QtCore.Qt.LeftDockWidgetArea, dock)
+        panels.append(dock)
+    cameras = []
+    for name in names:
+        dock = QtWidgets.QDockWidget(name)
+        dock.setObjectName(name)
+        dock.setWidget(QtWidgets.QWidget())
+        window.addDockWidget(QtCore.Qt.TopDockWidgetArea, dock)
+        if cameras:
+            window.splitDockWidget(cameras[-1], dock, QtCore.Qt.Horizontal)
+        cameras.append(dock)
+    window.show()
+    window.resizeDocks(panels, [280, 280], QtCore.Qt.Horizontal)
+    window.resizeDocks(cameras, [220]*len(cameras), QtCore.Qt.Vertical)
+    window.resizeDocks(cameras, [350]*len(cameras), QtCore.Qt.Horizontal)
+    config['Window Geometry']['QMainWindow State'] = bytes(window.saveState().toHex()).decode()
+    window.close()
+    window.deleteLater()
+
+
 class Discovery(QtCore.QThread):
     updated = QtCore.pyqtSignal(object)
-    image_received = QtCore.pyqtSignal(str, bytes)
 
     def __init__(self):
         super().__init__()
@@ -37,7 +71,6 @@ class Discovery(QtCore.QThread):
                          reliability=ReliabilityPolicy.RELIABLE)
         node.create_subscription(TFMessage, '/tf_static', tf, qos)
         node.create_subscription(TFMessage, '/tf', tf, 100)
-        image_subscriptions = {}
         subscription, active, selected, next_poll = None, None, '', 0
         try:
             while not self.stop.is_set():
@@ -60,15 +93,6 @@ class Discovery(QtCore.QThread):
                 sensors = [(name, CompressedImage if 'sensor_msgs/msg/CompressedImage' in types else PointCloud2)
                            for name, types in scoped_topics(topics, self.selected) if self.selected
                            and ('sensor_msgs/msg/CompressedImage' in types or 'sensor_msgs/msg/PointCloud2' in types)]
-                image_topics = [name for name, kind in sensors if kind is CompressedImage]
-                desired_images = set(image_topics) if len(image_topics) > 1 else set()
-                for topic in list(image_subscriptions):
-                    if topic not in desired_images:
-                        node.destroy_subscription(image_subscriptions.pop(topic))
-                for topic in sorted(desired_images - image_subscriptions.keys()):
-                    image_subscriptions[topic] = node.create_subscription(CompressedImage, topic,
-                        lambda msg, topic=topic: self.image_received.emit(topic, bytes(msg.data)),
-                        qos_profile_sensor_data)
                 # Once a public TF or sensor header supplies the frame, stop the
                 # discovery subscription. RViz alone consumes the live image stream.
                 desired = sensors[0] if sensors and not fixed_frame(selected, edges, frames) else None
@@ -110,17 +134,10 @@ class Viewer(QtWidgets.QWidget):
         self.status = QtWidgets.QLabel('Waiting for clients…')
         layout.addWidget(self.status)
         layout.addWidget(QtWidgets.QLabel('Each robot uses its own coordinate frame. This viewer does not send robot commands.'))
-        self.camera_row = QtWidgets.QWidget()
-        self.camera_layout = QtWidgets.QHBoxLayout(self.camera_row)
-        self.camera_layout.setContentsMargins(0, 0, 0, 0)
-        self.camera_labels, self.camera_topics = {}, []
-        self.camera_row.hide()
-        layout.addWidget(self.camera_row)
         self.process, self.signature, self.latest = None, None, {}
         self.interfaces_dialog = None
         self.discovery = Discovery()
         self.discovery.updated.connect(self.receive)
-        self.discovery.image_received.connect(self.receive_image)
         self.discovery.start()
         self.timer = QtCore.QTimer(self)
         self.timer.timeout.connect(self.heartbeat)
@@ -156,8 +173,6 @@ class Viewer(QtWidgets.QWidget):
         self.discovery.selected = namespace
         topics = scoped_topics(self.latest.get('topics', []), namespace) if namespace else []
         frame = fixed_frame(namespace, self.latest.get('edges', []), self.latest.get('frames', [])) if namespace else ''
-        image_topics = [topic for topic, types in topics if 'sensor_msgs/msg/CompressedImage' in types]
-        self.configure_cameras(image_topics if len(image_topics) > 1 else [], namespace)
         signature = json.dumps([namespace, topics, frame])
         if signature == self.signature and not force:
             return
@@ -167,44 +182,11 @@ class Viewer(QtWidgets.QWidget):
             self.status.setText(self.latest.get('error') or ('Waiting for sensor frames…' if namespace else 'Waiting for clients…'))
             return
         path = Path('/tmp/current.rviz')
-        path.write_text(yaml.safe_dump(configuration(topics, frame, image_strip=bool(self.camera_topics)), sort_keys=False))
+        config = configuration(topics, frame)
+        rviz_dock_layout(config)
+        path.write_text(yaml.safe_dump(config, sort_keys=False))
         self.process = subprocess.Popen(['rviz2', '-d', str(path), '--ros-args', '-r', '__node:=instance_rviz'])
         self.status.setText(name+'  |  '+namespace+'  |  Frame: '+frame)
-
-    def configure_cameras(self, topics, namespace):
-        if topics == self.camera_topics:
-            return
-        self.camera_topics = topics
-        self.camera_labels = {}
-        while self.camera_layout.count():
-            item = self.camera_layout.takeAt(0)
-            item.widget().deleteLater()
-        for topic in topics:
-            panel = QtWidgets.QWidget()
-            column = QtWidgets.QVBoxLayout(panel)
-            column.setContentsMargins(0, 0, 0, 0)
-            title = topic.removeprefix(namespace+'/').removesuffix('/color/image_raw/compressed')
-            heading = QtWidgets.QLabel(title)
-            heading.setAlignment(QtCore.Qt.AlignCenter)
-            column.addWidget(heading)
-            image = QtWidgets.QLabel('Waiting for image...')
-            image.setAlignment(QtCore.Qt.AlignCenter)
-            image.setMinimumSize(1, 240)
-            image.setStyleSheet('background: #101720;')
-            column.addWidget(image)
-            self.camera_layout.addWidget(panel, 1)
-            self.camera_labels[topic] = image
-        self.camera_row.setVisible(bool(topics))
-        self.resize(1440, 410 if topics else 125)
-
-    def receive_image(self, topic, data):
-        label = self.camera_labels.get(topic)
-        if label is None:
-            return
-        image = QtGui.QPixmap()
-        if image.loadFromData(data):
-            label.setPixmap(image.scaled(label.size(), QtCore.Qt.KeepAspectRatio,
-                                         QtCore.Qt.SmoothTransformation))
 
     def show_interfaces(self):
         if self.interfaces_dialog is None:
@@ -244,7 +226,7 @@ class Viewer(QtWidgets.QWidget):
     def heartbeat(self):
         data = dict(instance=os.environ['AGENTICROS_INSTANCE'], robots=self.latest.get('robots', {}),
                     selected=self.selector.currentText(), rviz_pid=self.process.pid if self.process and self.process.poll() is None else None,
-                    error=self.latest.get('error',''), camera_topics=self.camera_topics,
+                    error=self.latest.get('error',''),
                     interfaces={key: self.latest.get(key, []) for key in ('topics', 'services', 'actions')})
         path = Path('/tmp/viewer-status.tmp')
         path.write_text(json.dumps(data))

@@ -61,7 +61,7 @@ bash scripts/agent.sh --agent_id account-a
 在 Client 主机上（同机部署时另开终端），执行下面的命令，将 `CONNECTION_CODE` 替换为上一步输出的 join码：
 
 ```bash
-bash scripts/robot.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
+bash scripts/robot.sh cartesian_gripper --robot-id robot_a --join CONNECTION_CODE
 ```
 
 将 `CONNECTION_CODE` 替换为完整连接码。连接码已包含 Server 主机地址，**不用再传 IP**；只交给需要加入的 Client 主机操作者。
@@ -165,9 +165,12 @@ bash scripts/robot.sh aloha_tabletop --join CONNECTION_CODE --robot-id aloha_a
 
 一个 `aloha_tabletop` Robot instance 包含同一物理世界里的两臂，不能把左右臂作为两个独立实例启动。
 左右臂接口位于该机器人 session 名称空间下的 `left/driver/`、`right/driver/`，共用坐标系与物理时钟。
-Viewer 按左腕、俯视、右腕横排显示三路相机，下方保留点云视图。腕部相机随对应机械臂移动。
+三路相机使用 RViz 内置 Image 面板显示，默认按左腕、俯视、右腕排列，并保留点云视图。腕部相机随对应机械臂移动。
 模型使用 MuJoCo Menagerie ALOHA 2，固定来源和许可见 `docker/robot_instances/aloha_tabletop/model/UPSTREAM`。
-目前提供关节位置伺服、RGB-D、状态、动作取消和回执。IK、避障和双臂任务能力需由 Agent 发现环境后生成并验证。
+目前提供关节位置伺服、`move_pose`、`move_delta`、RGB-D、完整 TCP 位姿、动作取消和回执。
+两臂的笛卡尔动作均支持 `base` 和起始 `tcp` 参考系，包含局部数值 IK、路径预检与末端误差验证；不包含碰撞检测或自动绕障。
+`move_pose(base)` 是绝对位姿，`move_pose(tcp)` 是相对于起始 TCP 的目标；`move_delta` 按指定坐标轴施加平移与绕 TCP 原点的旋转增量。
+姿态使用四元数 xyzw，长度用米，成功容差为 3 mm / 0.03 rad。接口及限制通过运行时 `device_documentation` 和 `interface_sources` 参数公开。
 这不表示已验证自主抓放或真实机器人；独立评估器目前仅判定红块放入红盘。
 
 旧环境已经正式改名为 `cartesian_gripper`，旧 `simple_mujoco` 命令不再支持。
@@ -178,6 +181,6 @@ Viewer 按左腕、俯视、右腕横排显示三路相机，下方保留点云�
 主会话按 `AGENTS.md` 分配每个臂的子目标，并继续观测和协调；`arm-executor` 自定义子 agent 负责单臂闭环执行。
 角色文件在启动时复制到 `/workspace/.codex/agents/arm-executor.toml`。启动或恢复节点不会自动恢复运动。
 用户下达仿真任务即包含范围内的能力开发、分阶段试验和失败恢复。主 agent 先发现接口并建立执行反馈，再协调各臂开发与运动，无需用户逐步批准；缺少现成能力时应继续实现和验证。
-交接可先尝试一臂保持、另一臂接取的顺序策略；确实需要同步控制时再开发联合 ROS 能力。此配置不提供 IK 或完整任务脚本。
+交接可先尝试一臂保持、另一臂接取的顺序策略；确实需要同步控制时再开发联合 ROS 能力。角色配置不包含完整任务脚本；ALOHA 的基础笛卡尔运动由环境提供。
 分配归属目前由协作协议约束，驱动只强制每臂一个在执行的 action；尚无跨 agent 的控制权限强制隔离。
 双臂自主任务成功、监督响应延迟和异常恢复效果仍须单独验收，不能用 ROS 集成测试结果替代。

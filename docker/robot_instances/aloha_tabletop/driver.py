@@ -1,4 +1,4 @@
-"""Raw position-servo ROS driver; deliberately no move/grip standard adapter."""
+"""Joint and Cartesian position actions with shared per-arm ownership."""
 import json
 import io
 import math
@@ -17,16 +17,18 @@ from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
 from rclpy.node import Node
 from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import JointState, Image, CompressedImage, CameraInfo, PointCloud2, PointField
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Pose
 from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster, TransformBroadcaster
 from rclpy.qos import qos_profile_sensor_data
 from std_srvs.srv import Trigger
-from aloha_driver_interfaces.action import Actuate
+from aloha_driver_interfaces.action import Actuate, MovePose, MoveDelta
 from aloha_driver_interfaces.srv import Snapshot
 from world import Simulation, World
 from evaluator import start_evaluator
 from sensors import point_cloud_buffer
+from cartesian import (CartesianPath, resolve_target, tcp_pose, matrix_quat, pose_error,
+                       POSITION_TOLERANCE, ORIENTATION_TOLERANCE)
 
 
 def valid_goal(positions, duration, limits):
@@ -125,7 +127,8 @@ class Driver(CameraPublisher):
         # No simulator source, scene state, evaluator or client program is exported.
         public = Path('/opt/device-public')
         sources = {name: (public / 'interfaces' / name).read_text() for name in (
-            'package.xml', 'CMakeLists.txt', 'action/Actuate.action', 'srv/Snapshot.srv')}
+            'package.xml', 'CMakeLists.txt', 'action/Actuate.action', 'action/MovePose.action',
+            'action/MoveDelta.action', 'srv/Snapshot.srv')}
         documentation = (public / 'body.md').read_text()
         if lan:
             documentation = documentation.replace('`/driver/', '`'+self.robot_namespace+'/driver/').replace('`/camera/', '`'+self.robot_namespace+'/camera/')
@@ -150,6 +153,17 @@ class Driver(CameraPublisher):
                                    goal_callback=self.accept, handle_accepted_callback=self.accepted,
                                    cancel_callback=lambda _: CancelResponse.ACCEPT,
                                    callback_group=group)
+        self.pose_action = ActionServer(self, MovePose, 'driver/move_pose',
+            lambda handle: self.execute_cartesian(handle, False),
+            goal_callback=lambda request: self.accept_cartesian(request, False),
+            handle_accepted_callback=self.accepted, cancel_callback=lambda _: CancelResponse.ACCEPT,
+            callback_group=group)
+        self.delta_action = ActionServer(self, MoveDelta, 'driver/move_delta',
+            lambda handle: self.execute_cartesian(handle, True),
+            goal_callback=lambda request: self.accept_cartesian(request, True),
+            handle_accepted_callback=self.accepted, cancel_callback=lambda _: CancelResponse.ACCEPT,
+            callback_group=group)
+        self.tcp_tf = TransformBroadcaster(self)
         self.create_service(Trigger, 'driver/status', self.status, callback_group=group)
         self.joints = self.create_publisher(JointState, 'driver/joint_states', 10)
         self.telemetry = self.create_publisher(String, 'driver/state', 10)
@@ -159,25 +173,129 @@ class Driver(CameraPublisher):
         state = self.sim.state()
         if self.lan:
             state['frame'] = self.frame('base')
+            state['tcp_frame'] = self.frame(self.sim.arm+'/tcp')
         return state
 
     def accept(self, request):
+        return self.reserve(request, valid_goal(request.positions, request.duration, self.sim.limits))
+
+    def reserve(self, request, valid):
         with self.gate:
             if (self.shutting_down.is_set() or request.session_id != self.sim.session
                     or (self.lan and not self.lan.lease.valid())
                     or self.busy or self.recovery_required
-                    or self.sim.world.failure or not valid_goal(request.positions, request.duration, self.sim.limits)):
+                    or self.sim.world.failure or not valid):
                 return GoalResponse.REJECT
             self.busy = True
         return GoalResponse.ACCEPT
+
+    @staticmethod
+    def cartesian_values(request, delta):
+        position = request.translation if delta else request.target.position
+        rotation = request.rotation if delta else request.target.orientation
+        return [position.x, position.y, position.z], [rotation.x, rotation.y, rotation.z, rotation.w]
+
+    def accept_cartesian(self, request, delta):
+        try:
+            translation, rotation = self.cartesian_values(request, delta)
+            resolve_target((np.zeros(3), np.eye(3)), translation, rotation, request.reference_frame, delta)
+            valid = math.isfinite(request.duration) and .1 <= request.duration <= 30
+        except (ValueError, TypeError):
+            valid = False
+        return self.reserve(request, valid)
+
+    def interruption(self, handle):
+        if handle.is_cancel_requested:
+            return 'cancelled'
+        if self.shutting_down.is_set():
+            return 'shutdown'
+        if self.sim.world.failure:
+            return 'physics_fault'
+        if self.lan and not self.lan.lease.valid():
+            return 'lease_lost'
+        return None
+
+    @staticmethod
+    def pose_message(pose):
+        result = Pose()
+        result.position.x, result.position.y, result.position.z = map(float, pose[0])
+        q = result.orientation
+        q.x, q.y, q.z, q.w = map(float, matrix_quat(pose[1]))
+        return result
+
+    def current_pose(self):
+        with self.sim.lock:
+            return tcp_pose(self.sim.model, self.sim.data, self.sim.arm)
+
+    def execute_cartesian(self, handle, delta):
+        action_type = MoveDelta if delta else MovePose
+        executed, stopped, complete, reason = 'none', False, False, 'planning'
+        target = None
+        extra = dict(operation='move_delta' if delta else 'move_pose',
+                     reference_frame=handle.request.reference_frame, target_frame=self.frame('base'),
+                     position_tolerance=POSITION_TOLERANCE, orientation_tolerance=ORIENTATION_TOLERANCE,
+                     collision_checked=False)
+        def feedback(phase):
+            pose = self.current_pose()
+            ep, er = pose_error(pose, target)
+            handle.publish_feedback(action_type.Feedback(current_pose=self.pose_message(pose),
+                position_error=ep, orientation_error=er, phase=phase))
+            return ep, er
+        try:
+            planner = CartesianPath(self.sim)
+            translation, rotation = self.cartesian_values(handle.request, delta)
+            target = resolve_target(planner.start, translation, rotation, handle.request.reference_frame, delta)
+            extra.update(start_sim_time=planner.sample_time,
+                         start_tcp_xyz=planner.start[0].tolist(),
+                         start_tcp_quaternion_xyzw=matrix_quat(planner.start[1]).tolist(),
+                         target_tcp_xyz=target[0].tolist(), target_tcp_quaternion_xyzw=matrix_quat(target[1]).tolist())
+            feedback('planning')
+            path, dt = planner.plan(target, handle.request.duration, lambda: self.interruption(handle))
+            if np.max(np.abs(np.asarray(self.measured_state()['joint_positions'])[:6]-planner.initial[:6])) > .03:
+                raise ValueError('start_state_changed')
+            for point in path:
+                reason = self.interruption(handle)
+                if reason:
+                    raise InterruptedError(reason)
+                self.sim.set_target(point, compensate=True)
+                executed = 'some'
+                feedback('executing')
+                time.sleep(dt)
+            deadline = time.monotonic()+3
+            while time.monotonic() < deadline:
+                reason = self.interruption(handle)
+                if reason:
+                    raise InterruptedError(reason)
+                ep, er = feedback('settling')
+                stopped = max(abs(v) for v in self.measured_state()['joint_velocities']) < .02
+                if stopped and ep <= POSITION_TOLERANCE and er <= ORIENTATION_TOLERANCE:
+                    complete, reason = True, 'reached'
+                    break
+                time.sleep(.02)
+            if not complete:
+                reason = 'target_tolerance_not_reached'
+                stopped = self.hold(compensate=True)
+        except InterruptedError as exc:
+            reason = str(exc)
+            stopped = self.hold(compensate=True)
+        except Exception as exc:
+            reason = type(exc).__name__+': '+str(exc)
+            try:
+                stopped = self.hold(compensate=True)
+            except Exception:
+                stopped = False
+        if target is not None:
+            ep, er = pose_error(self.current_pose(), target)
+            extra.update(position_error=ep, orientation_error=er)
+        return self.finish(handle, action_type, complete, executed, stopped, reason, extra)
 
     def accepted(self, handle):
         with self.gate:
             self.active_goal_id = bytes(handle.goal_id.uuid).hex()
         handle.execute()
 
-    def hold(self):
-        self.sim.set_target(self.measured_state()['joint_positions'])
+    def hold(self, compensate=False):
+        self.sim.set_target(self.measured_state()['joint_positions'], compensate=compensate)
         deadline = time.monotonic() + 2.
         while time.monotonic() < deadline:
             if self.sim.world.failure:
@@ -218,12 +336,16 @@ class Driver(CameraPublisher):
                 stopped = self.hold()
             except Exception:
                 stopped = False
+        return self.finish(handle, Actuate, complete, executed, stopped, reason)
+
+    def finish(self, handle, action_type, complete, executed, stopped, reason, extra=None):
         receipt = dict(complete=complete, executed=executed, stop_confirmed=stopped,
-                       reason=reason, arm=self.sim.arm, state=self.measured_state(), goal_id=gid, session_id=self.sim.session)
+                       reason=reason, arm=self.sim.arm, state=self.measured_state(), goal_id=bytes(handle.goal_id.uuid).hex(), session_id=self.sim.session)
+        receipt.update(extra or {})
         if self.lan:
             receipt.update(self.lan.identity())
         with self.gate:
-            self.receipts[gid] = receipt
+            self.receipts[receipt['goal_id']] = receipt
             self.recovery_required = not stopped
             self.busy = False
             self.active_goal_id = None
@@ -233,7 +355,7 @@ class Driver(CameraPublisher):
             handle.succeed()
         else:
             handle.abort()
-        return Actuate.Result(receipt_json=json.dumps(receipt))
+        return action_type.Result(receipt_json=json.dumps(receipt))
 
     def status(self, request, response):
         with self.gate:
@@ -257,6 +379,14 @@ class Driver(CameraPublisher):
         msg.header.stamp = self.get_clock().now().to_msg()
         msg.name, msg.position, msg.velocity = state['joint_names'], state['joint_positions'], state['joint_velocities']
         self.joints.publish(msg)
+        transform = TransformStamped()
+        transform.header.stamp = msg.header.stamp
+        transform.header.frame_id = self.frame('base')
+        transform.child_frame_id = self.frame(self.sim.arm+'/tcp')
+        t, q = transform.transform.translation, transform.transform.rotation
+        t.x, t.y, t.z = state['tcp_xyz']
+        q.x, q.y, q.z, q.w = state['tcp_quaternion_xyzw']
+        self.tcp_tf.sendTransform(transform)
         with self.gate:
             telemetry = dict(session_id=self.sim.session, busy=self.busy,
                              recovery_required=self.recovery_required, state=state)

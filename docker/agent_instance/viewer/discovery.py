@@ -29,12 +29,11 @@ def fixed_frame(namespace, transforms, sensor_frames):
     return next(iter(roots or frames), '')
 
 
-def configuration(topics, frame, image_strip=False):
+def configuration(topics, frame):
     displays = [dict(Class='rviz_default_plugins/Grid', Name='Grid', Enabled=True,
                      **{'Cell Size': 0.1, 'Plane Cell Count': 20}),
                 dict(Class='rviz_default_plugins/TF', Name='TF', Enabled=True,
                      **{'Show Names': False, 'Marker Scale': 0.1})]
-    image_enabled = False
     for name, types in topics:
         topic = {'Value': name, 'Reliability Policy': 'Best Effort', 'Durability Policy': 'Volatile',
                  'History Policy': 'Keep Last', 'Depth': 1}
@@ -42,9 +41,10 @@ def configuration(topics, frame, image_strip=False):
             compressed = 'sensor_msgs/msg/CompressedImage' in types and name.endswith('/compressed')
             if 'sensor_msgs/msg/Image' in types and any(n == name+'/compressed' for n, _ in topics):
                 continue
-            displays.append(dict(Class='rviz_default_plugins/Image', Name=name, Enabled=compressed and not image_enabled and not image_strip,
+            label = name.removeprefix('/'+frame.rsplit('/', 1)[0]+'/')
+            label = label.removesuffix('/color/image_raw/compressed')
+            displays.append(dict(Class='rviz_default_plugins/Image', Name=label, Enabled=compressed,
                                  Topic=topic, **{'Normalize Range': True}))
-            image_enabled = image_enabled or compressed
         elif 'sensor_msgs/msg/PointCloud2' in types:
             displays.append(dict(Class='rviz_default_plugins/PointCloud2', Name=name, Enabled=True,
                                  Topic=topic, **{'Queue Size': 1, 'Style': 'Flat Squares', 'Size (m)': 0.008,
@@ -61,4 +61,4 @@ def configuration(topics, frame, image_strip=False):
                 'Views': {'Current': {'Class': 'rviz_default_plugins/Orbit', 'Target Frame': frame,
                                      'Distance': 1.5, 'Pitch': 0.65, 'Yaw': 5.1,
                                      'Focal Point': {'X': 0, 'Y': 0, 'Z': 0.1}}}},
-            'Window Geometry': {'Width': 1440, 'Height': 460 if image_strip else 740, 'X': 0, 'Y': 420 if image_strip else 140}}
+            'Window Geometry': {'Width': 1440, 'Height': 740, 'X': 0, 'Y': 140}}

@@ -1,0 +1,13 @@
+# base: absolute TCP pose. tcp: target relative to TCP sampled at action start.
+string session_id
+string reference_frame
+geometry_msgs/Pose target
+float64 duration
+---
+string receipt_json
+---
+# Measured TCP pose in base, metres and quaternion xyzw.
+geometry_msgs/Pose current_pose
+float64 position_error
+float64 orientation_error
+string phase
