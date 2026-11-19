@@ -434,6 +434,21 @@ class Startup(unittest.TestCase):
         self.assertEqual(result.splitlines(), ['scripts/lan.py', 'robot', '--environment', 'aloha_tabletop',
                                               '--join', 'test-code', '--robot-id', 'robot_a'])
 
+    def test_agent_start_installs_rules_after_lock_without_rebuilding(self):
+        config = {'AGENTICROS_INSTANCE': 'account-a'}
+        entrypoint = '/workspace/.agenticros/rules/test/entrypoint.sh'
+        with patch.object(launcher, 'stage_agent_rules', return_value=entrypoint), \
+                patch.object(launcher, 'run') as run, \
+                patch.dict(os.environ, AGENTICROS_MODEL_API_KEY='test'):
+            cmd = launcher.agent_command(config, ['agenticros', 'start'], ['resume', '--last'], False)
+        self.assertEqual(cmd[cmd.index('instance'):], [
+            'instance', 'python3', '/opt/instance/runtime.py', 'attach', 'bash', entrypoint,
+            'agenticros', 'start', 'resume', '--last'])
+        self.assertIn('-T', cmd)
+        self.assertIn('AGENTICROS_MODEL_API_KEY', cmd)
+        self.assertNotIn('test', cmd)
+        run.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

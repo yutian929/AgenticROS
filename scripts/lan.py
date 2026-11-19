@@ -294,6 +294,26 @@ def prepare_workspace(config):
                    env=environment(config), check=True)
 
 
+def stage_agent_rules(config):
+    workspace = folder(config['AGENTICROS_INSTANCE']) / 'workspace'
+    return subprocess.check_output([
+        sys.executable, 'docker/agent_instance/agent/rules.py', 'stage', str(workspace)],
+        cwd=ROOT, text=True).strip()
+
+
+def agent_command(config, action, extra, interactive):
+    entrypoint = stage_agent_rules(config)
+    cmd = compose(config) + ['exec']
+    if not interactive:
+        cmd += ['-T']
+    if os.getenv('AGENTICROS_MODEL_API_KEY'):
+        cmd += ['-e', 'AGENTICROS_MODEL_API_KEY']
+    # Acquire the existing brain lock BEFORE installing rules. A second attach
+    # must not change the active session's instructions. Works with old images.
+    return cmd + ['instance', 'python3', '/opt/instance/runtime.py', 'attach',
+                  'bash', entrypoint, *action, *extra]
+
+
 def validate_platform_transport(transport):
     if transport not in ('udp', 'tcp'):
         raise ValueError('unsupported Agent instance DDS transport')
@@ -571,14 +591,8 @@ def main():
             extra = args.codex_args
             if extra[:1] == ['--']:
                 extra = extra[1:]
-            cmd = compose(config)+['exec']
-            if not sys.stdin.isatty():
-                cmd += ['-T']
-            if os.getenv('AGENTICROS_MODEL_API_KEY'):
-                cmd += ['-e', 'AGENTICROS_MODEL_API_KEY']
             action = ['codex', 'login'] if args.command == 'login' else ['agenticros', 'start']
-            cmd += ['instance', '/usr/local/bin/agent-entrypoint', 'python3',
-                    '/opt/instance/runtime.py', 'attach', *action, *extra]
+            cmd = agent_command(config, action, extra, sys.stdin.isatty())
             print_join(config)
             print_viewer(config)
             os.chdir(ROOT)

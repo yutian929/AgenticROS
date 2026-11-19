@@ -103,6 +103,10 @@ Robot 配置和观测在 `runs/robot_instances/<agent_id>/<robot_id>/client.json
 
 ## 更新源码与镜像
 
+**仅修改 Agent 规则无需重建镜像。** `AGENTS.md`、`contract.md`、`skills/` 和 `agents/` 会在
+`agent.sh` 启动或恢复会话前自动同步，已有容器同样适用。退出当前会话后重新运行原命令即可，
+无需重启机器人；详见 [Agent 规则更新](agent-rules.md)。以下构建步骤用于程序和依赖的更新。
+
 已有镜像默认复用，不会因源码变化自动更新。按所在主机的角色构建所需镜像：
 
 ```bash

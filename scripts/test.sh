@@ -7,6 +7,7 @@ python3 -m unittest discover -s tests -p test_viewer.py -v
 python3 -m unittest discover -s tests -p test_instance.py -v
 python3 -m unittest discover -s tests -p test_connection.py -v
 python3 -m unittest discover -s tests -p test_workspace.py -v
+python3 -m unittest discover -s tests -p test_agent_rules.py -v
 python3 -m unittest discover -s tests -p test_delete_instance.py -v
 python3 -m unittest discover -s tests -p test_capabilities.py -v
 python3 -m unittest discover -s tests -p test_clean_runtime.py -v

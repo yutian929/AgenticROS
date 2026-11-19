@@ -10,6 +10,7 @@ COPY docker/agent_instance/agent/contract.md /opt/agenticros/
 COPY docker/agent_instance/agent/skills /opt/agenticros/skills
 COPY docker/agent_instance/agent/agents /opt/agenticros/agents
 COPY docker/agent_instance/agent/AGENTS.md /opt/agenticros/AGENTS.md
+COPY docker/agent_instance/agent/rules.py docker/agent_instance/agent/entrypoint.sh /opt/agenticros/
 COPY docker/shared/lan_profile.py /opt/agenticros/lan_profile.py
 COPY docker/shared/fastdds.xml /etc/agenticros/fastdds.xml
 COPY docker/agent_instance/agent/entrypoint.sh /usr/local/bin/agent-entrypoint
