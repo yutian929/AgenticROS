@@ -1,0 +1,147 @@
+[
+  {
+    "phase": "cold_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 1933.6942080000003,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold_direct",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 4255.334375,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "state",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1788.5266249999993,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "image",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 3910.3156670000026,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1378.479917,
+    "returncode": 0,
+    "discovery_ms": 1211.1741669999994,
+    "response_ms": 4.109500000001987
+  },
+  {
+    "phase": "warm_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 753.7634580000017,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": true,
+    "error": null,
+    "total_ms": 1692.370209,
+    "returncode": 0,
+    "discovery_ms": 1505.0361670000002,
+    "response_ms": 2.9759580000003893
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1972.0490419999983,
+    "returncode": 0,
+    "discovery_ms": 1788.943333999999,
+    "response_ms": 3.312540999999669
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "existing_subscription",
+    "success": true,
+    "error": null,
+    "total_ms": 5807.926291000002,
+    "previous_sessions": [
+      "14215e5d9fac"
+    ],
+    "new_sessions": [
+      "6c4ab31b0ba8"
+    ]
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 611.5496669999984,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1405.3738339999952,
+    "returncode": 0,
+    "discovery_ms": 1187.0998339999942,
+    "response_ms": 12.120875000000808
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "list",
+    "robot": null,
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 3953.681916999997,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 12752.636916999996,
+    "returncode": 124,
+    "discovery_ms": null,
+    "response_ms": null
+  }
+]

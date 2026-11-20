@@ -1,0 +1,147 @@
+[
+  {
+    "phase": "cold_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 1497.0191660000012,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold_direct",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 4042.28075,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "state",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1454.1323330000005,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "image",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 2370.9212499999985,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1313.1204160000002,
+    "returncode": 0,
+    "discovery_ms": 1140.9345000000003,
+    "response_ms": 2.473458000000761
+  },
+  {
+    "phase": "warm_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 746.3823749999996,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1669.8929579999983,
+    "returncode": 0,
+    "discovery_ms": 1483.8693330000012,
+    "response_ms": 1.999041999997786
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": true,
+    "error": null,
+    "total_ms": 1736.1416659999982,
+    "returncode": 0,
+    "discovery_ms": 1527.7542910000009,
+    "response_ms": 3.644833999999264
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "existing_subscription",
+    "success": true,
+    "error": null,
+    "total_ms": 5872.451625,
+    "previous_sessions": [
+      "ec7f5030db3d"
+    ],
+    "new_sessions": [
+      "838b0faffe4c"
+    ]
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 841.4151249999975,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1378.2438750000026,
+    "returncode": 0,
+    "discovery_ms": 1185.0816250000023,
+    "response_ms": 2.8918749999959914
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "list",
+    "robot": null,
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 3991.904083999998,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 12588.748041000003,
+    "returncode": 124,
+    "discovery_ms": null,
+    "response_ms": null
+  }
+]

@@ -1,0 +1,260 @@
+[
+  {
+    "phase": "cold",
+    "operation": "image",
+    "samples": 3,
+    "successes": 3,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 6096.4869160000035,
+      "p95": 8279.865999999998,
+      "maximum": 8279.865999999998
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "service",
+    "samples": 3,
+    "successes": 3,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 3671.018625000002,
+      "p95": 4948.245333999999,
+      "maximum": 4948.245333999999
+    },
+    "discovery_ms": {
+      "n": 3,
+      "p50": 2452.2583749999994,
+      "p95": 2975.681792000003,
+      "maximum": 2975.681792000003
+    },
+    "response_ms": {
+      "n": 3,
+      "p50": 469.559457999992,
+      "p95": 2388.012500000002,
+      "maximum": 2388.012500000002
+    }
+  },
+  {
+    "phase": "cold",
+    "operation": "state",
+    "samples": 3,
+    "successes": 3,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 9703.781332999995,
+      "p95": 10821.635166,
+      "maximum": 10821.635166
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold_daemon",
+    "operation": "list",
+    "samples": 3,
+    "successes": 0,
+    "errors": {
+      "discovery_failure": 3,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 1722.5769170000015,
+      "p95": 1776.8740829999956,
+      "maximum": 1776.8740829999956
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold_direct",
+    "operation": "list",
+    "samples": 3,
+    "successes": 0,
+    "errors": {
+      "discovery_failure": 3,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 4388.777749999999,
+      "p95": 4801.752750000006,
+      "maximum": 4801.752750000006
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "samples": 6,
+    "successes": 4,
+    "errors": {
+      "discovery_failure": 1,
+      "request_timeout": 1,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 6,
+      "p50": 4192.238582999991,
+      "p95": 12901.348999999997,
+      "maximum": 12901.348999999997
+    },
+    "discovery_ms": {
+      "n": 5,
+      "p50": 3540.4733329999945,
+      "p95": 3947.675540999995,
+      "maximum": 3947.675540999995
+    },
+    "response_ms": {
+      "n": 4,
+      "p50": 3.2861669999988408,
+      "p95": 15.073416999996425,
+      "maximum": 15.073416999996425
+    }
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "list",
+    "samples": 3,
+    "successes": 0,
+    "errors": {
+      "discovery_failure": 3,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 4218.862083999994,
+      "p95": 4629.552125000004,
+      "maximum": 4629.552125000004
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "service",
+    "samples": 3,
+    "successes": 0,
+    "errors": {
+      "discovery_failure": 3,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 12533.798250000018,
+      "p95": 12725.773333000006,
+      "maximum": 12725.773333000006
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "existing_subscription",
+    "samples": 1,
+    "successes": 1,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 1,
+      "p50": 8031.938125000011,
+      "p95": 8031.938125000011,
+      "maximum": 8031.938125000011
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "list",
+    "samples": 3,
+    "successes": 3,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 971.0372499999949,
+      "p95": 1039.4819159999997,
+      "maximum": 1039.4819159999997
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "service",
+    "samples": 3,
+    "successes": 3,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 6920.207291999986,
+      "p95": 9810.334958999989,
+      "maximum": 9810.334958999989
+    },
+    "discovery_ms": {
+      "n": 3,
+      "p50": 3378.1572910000077,
+      "p95": 9569.055042000002,
+      "maximum": 9569.055042000002
+    },
+    "response_ms": {
+      "n": 3,
+      "p50": 4.765542000001233,
+      "p95": 3428.3750829999917,
+      "maximum": 3428.3750829999917
+    }
+  },
+  {
+    "phase": "warm_daemon",
+    "operation": "list",
+    "samples": 3,
+    "successes": 3,
+    "errors": {
+      "discovery_failure": 0,
+      "request_timeout": 0,
+      "server_failure": 0
+    },
+    "total_ms": {
+      "n": 3,
+      "p50": 834.6490419999952,
+      "p95": 1001.9546669999926,
+      "maximum": 1001.9546669999926
+    },
+    "discovery_ms": null,
+    "response_ms": null
+  }
+]

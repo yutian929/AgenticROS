@@ -1,0 +1,11 @@
+[
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 501.1022079997929,
+    "response_ms": 504.36104199980036
+  }
+]

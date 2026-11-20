@@ -1,3 +1,10 @@
+FROM ros:humble-ros-base-jammy AS fastdds
+RUN apt-get -o Dir::Etc::sourceparts=- -o Dir::Etc::sourcelist=/etc/apt/sources.list update && \
+    apt-get install -y --no-install-recommends build-essential cmake curl patch libasio-dev libtinyxml2-dev libssl-dev libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
+COPY docker/shared/fastdds /build/fastdds
+RUN bash /build/fastdds/build.sh
+
 FROM ros:humble-ros-base-jammy AS dependencies
 SHELL ["/bin/bash", "-c"]
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -13,6 +20,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 FROM dependencies AS server
+COPY --from=fastdds /opt/fastdds/lib/libfastrtps.so.2.6.12 /opt/ros/humble/lib/
+COPY --from=fastdds /opt/fastdds/share/agenticros /usr/share/agenticros/fastdds
+COPY --from=fastdds /opt/fastdds/share/fastrtps/LICENSE /usr/share/agenticros/fastdds/LICENSE
+RUN ln -sf libfastrtps.so.2.6.12 /opt/ros/humble/lib/libfastrtps.so.2.6 && \
+    ln -sf libfastrtps.so.2.6 /opt/ros/humble/lib/libfastrtps.so
 COPY docker/agent_instance/agent/contract.md /opt/agenticros/
 COPY docker/agent_instance/agent/skills /opt/agenticros/skills
 COPY docker/agent_instance/agent/agents /opt/agenticros/agents
@@ -34,7 +46,7 @@ WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/agent-entrypoint"]
 
 
-COPY docker/agent_instance/registry/registry.py docker/shared/lan_profile.py /opt/agenticros-server/
+COPY docker/agent_instance/discovery.py docker/shared/lan_profile.py /opt/agenticros-server/
 COPY docker/agent_instance/viewer/*.py docker/agent_instance/viewer/*.sh docker/agent_instance/viewer/openbox.xml /opt/viewer/
 COPY docker/shared/lan_profile.py /opt/viewer/lan_profile.py
 COPY docker/agent_instance/runtime.py docker/agent_instance/ros_client.py /opt/instance/

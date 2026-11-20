@@ -6,7 +6,6 @@ import signal
 import subprocess
 import threading
 import time
-import urllib.request
 
 from PyQt5 import QtCore, QtWidgets
 import rclpy
@@ -17,7 +16,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage, PointCloud2
 from tf2_msgs.msg import TFMessage
 import yaml
-from discovery import robots, scoped_topics, fixed_frame, configuration
+from discovery import scoped_topics, fixed_frame, configuration
 
 
 def rviz_dock_layout(config):
@@ -67,19 +66,18 @@ class Discovery(QtCore.QThread):
         rclpy.init()
         node = rclpy.create_node('server_viewer')
         edges, frames = set(), set()
-        directory = {'roster': {}, 'at': 0, 'sessions': {}}
-        def roster_message(msg):
-            roster=json.loads(msg.data)
-            sessions={r['robot_id']:r['session_id'] for r in roster.get('robots',[])}
-            if sessions != directory['sessions']:
-                edges.clear(); frames.clear()
-            directory.update(roster=roster, at=time.monotonic(), sessions=sessions)
-        node.create_subscription(String, '/agenticros/robots', roster_message, 10)
+        states, state_subs, known_sessions = {}, {}, {}
+        def state_message(name,msg):
+            try:
+                data=json.loads(msg.data)
+                if isinstance(data,dict) and 'session_id' in data and 'state' in data:
+                    states[name]=(time.monotonic(),data['session_id'])
+            except (ValueError,TypeError):pass
         def tf(message):
             edges.update((t.header.frame_id, t.child_frame_id) for t in message.transforms)
         qos = QoSProfile(depth=100, durability=DurabilityPolicy.TRANSIENT_LOCAL,
                          reliability=ReliabilityPolicy.RELIABLE)
-        node.create_subscription(TFMessage, '/tf_static', tf, qos)
+        static_tf = node.create_subscription(TFMessage, '/tf_static', tf, qos)
         node.create_subscription(TFMessage, '/tf', tf, 100)
         subscription, active, selected, next_poll = None, None, '', 0
         try:
@@ -88,13 +86,24 @@ class Discovery(QtCore.QThread):
                 if time.monotonic() < next_poll:
                     continue
                 next_poll = time.monotonic()+2
-                try:
-                    roster = robots(directory['roster'])
-                    age=time.monotonic()-directory['at']
-                    error = 'Registry status stale; showing last known robots' if age > 3 else ''
-                except Exception as exc:
-                    roster, error = {}, 'Registry unavailable: '+type(exc).__name__
                 topics = node.get_topic_names_and_types()
+                roster, sessions = {}, {}
+                for name,types in topics:
+                    parts=name.split('/')
+                    if len(parts)<4 or parts[1]!='robots':continue
+                    robot=parts[2];roster[robot]='/robots/'+robot
+                    if 'std_msgs/msg/String' in types and name not in state_subs:
+                        state_subs[name]=node.create_subscription(String,name,lambda msg,name=name:state_message(name,msg),qos_profile_sensor_data)
+                for name,(at,session) in list(states.items()):
+                    if time.monotonic()-at<3:sessions.setdefault(name.split('/')[2],set()).add(session)
+                sessions={robot:next(iter(values)) for robot,values in sessions.items() if len(values)==1}
+                if any(robot in known_sessions and known_sessions[robot]!=session for robot,session in sessions.items()):
+                    edges.clear();frames.clear()
+                    # Re-read transient-local transforms after clearing old-session data.
+                    node.destroy_subscription(static_tf)
+                    static_tf = node.create_subscription(TFMessage, '/tf_static', tf, qos)
+                known_sessions.update(sessions)
+                error='ROS graph discovery; live state pending' if set(roster)-set(sessions) else ''
                 services = node.get_service_names_and_types()
                 actions = get_action_names_and_types(node)
                 if selected != self.selected:
@@ -113,7 +122,7 @@ class Discovery(QtCore.QThread):
                     if desired:
                         subscription = node.create_subscription(desired[1], desired[0],
                             lambda msg: frames.add(msg.header.frame_id), qos_profile_sensor_data)
-                self.updated.emit(dict(robots=roster, sessions=directory['sessions'], topics=topics, services=services, actions=actions, edges=list(edges), frames=list(frames), error=error))
+                self.updated.emit(dict(robots=roster, sessions=sessions, topics=topics, services=services, actions=actions, edges=list(edges), frames=list(frames), error=error))
         except ExternalShutdownException:
             pass
         finally:
@@ -147,6 +156,7 @@ class Viewer(QtWidgets.QWidget):
         layout.addWidget(self.status)
         layout.addWidget(QtWidgets.QLabel('Each robot uses its own coordinate frame. This viewer does not send robot commands.'))
         self.process, self.signature, self.latest = None, None, {}
+        self.render_sessions = {}
         self.interfaces_dialog = None
         self.discovery = Discovery()
         self.discovery.updated.connect(self.receive)
@@ -188,10 +198,17 @@ class Viewer(QtWidgets.QWidget):
         config = configuration(topics, frame) if namespace and frame else {}
         # Service/action discovery and subscriber-only graph changes do not alter
         # the rendered view. Never restart RViz for those unrelated changes.
-        signature = json.dumps([namespace, self.latest.get('sessions',{}).get(name), config], sort_keys=True)
+        session = self.latest.get('sessions',{}).get(name)
+        previous_session = self.render_sessions.get(name)
+        session_changed = session is not None and previous_session is not None and session != previous_session
+        if session is not None:
+            self.render_sessions[name] = session
+        # First telemetry and freshness expiry are not robot restarts. Retain
+        # the known identity until a different session is actually observed.
+        signature = json.dumps([namespace, config], sort_keys=True)
         if namespace and frame:
             self.status.setText(name+'  |  '+namespace+'  |  Frame: '+frame+'  |  '+self.latest.get('error',''))
-        if signature == self.signature and not force:
+        if signature == self.signature and not force and not session_changed:
             return
         print(json.dumps(dict(event='rviz_reconfigure',namespace=namespace,frame=frame,session=self.latest.get('sessions',{}).get(name),displays=[d['Name'] for d in config.get('Visualization Manager',{}).get('Displays',[])])),flush=True)
         self.stop_rviz()

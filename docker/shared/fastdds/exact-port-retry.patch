@@ -1,0 +1,70 @@
+--- a/src/cpp/rtps/transport/TCPChannelResource.h
++++ b/src/cpp/rtps/transport/TCPChannelResource.h
+@@ -67,6 +67,7 @@
+     bool waiting_for_keep_alive_;
+     // Must be accessed after lock pending_logical_mutex_
+     std::map<TCPTransactionId, uint16_t> negotiating_logical_ports_;
++    std::map<uint16_t, std::chrono::steady_clock::time_point> retry_logical_at_;
+     std::map<TCPTransactionId, uint16_t> last_checked_logical_port_;
+     std::vector<uint16_t> pending_logical_output_ports_; // Must be accessed after lock pending_logical_mutex_
+     std::vector<uint16_t> logical_output_ports_;
+--- a/src/cpp/rtps/transport/TCPChannelResource.cpp
++++ b/src/cpp/rtps/transport/TCPChannelResource.cpp
+@@ -103,6 +103,11 @@
+             logical_output_ports_.begin(),
+             logical_output_ports_.end());
+     logical_output_ports_.clear();
++    if (parent_->GetMaxLogicalPort() == 0)
++    {
++        negotiating_logical_ports_.clear();
++        retry_logical_at_.clear();
++    }
+ }
+ 
+ bool TCPChannelResource::is_logical_port_opened(
+@@ -177,6 +182,24 @@
+         RTCPMessageManager* rtcp_manager)
+ {
+     std::lock_guard<std::recursive_mutex> scopedLock(pending_logical_mutex_);
++    // Exact-port mode: retry a rejected negotiation after remote initialization.
++    // Keep pending ports across disconnects; never replay application data here.
++    if (parent_->GetMaxLogicalPort() == 0)
++    {
++        if (port == 0 || is_logical_port_opened_nts(port)) { return; }
++        if (std::find(pending_logical_output_ports_.begin(), pending_logical_output_ports_.end(), port)
++                == pending_logical_output_ports_.end())
++        { pending_logical_output_ports_.push_back(port); }
++        const auto now = std::chrono::steady_clock::now();
++        const bool negotiating = std::any_of(negotiating_logical_ports_.begin(), negotiating_logical_ports_.end(),
++                [port](const std::pair<const TCPTransactionId, uint16_t>& entry) { return entry.second == port; });
++        if (connection_established() && !negotiating && now >= retry_logical_at_[port])
++        {
++            retry_logical_at_[port] = now + std::chrono::milliseconds(100);
++            negotiating_logical_ports_[rtcp_manager->sendOpenLogicalPortRequest(this, port)] = port;
++        }
++        return;
++    }
+     // Already opened?
+     if (std::find(logical_output_ports_.begin(), logical_output_ports_.end(), port) == logical_output_ports_.end())
+     {
+@@ -238,7 +261,8 @@
+             else
+             {
+                 scopedLock.unlock();
+-                prepare_send_check_logical_ports_req(port, rtcp_manager);
++                if (parent_->GetMaxLogicalPort() != 0)
++                { prepare_send_check_logical_ports_req(port, rtcp_manager); }
+             }
+         }
+         else
+--- a/src/cpp/rtps/transport/TCPTransportInterface.cpp
++++ b/src/cpp/rtps/transport/TCPTransportInterface.cpp
+@@ -1375,6 +1375,8 @@
+     {
+         uint16_t logical_port = IPLocator::getLogicalPort(remote_locator);
+ 
++        if (configuration()->max_logical_port == 0)
++        { channel->add_logical_port(logical_port, rtcp_message_manager_.get()); }
+         if (channel->is_logical_port_added(logical_port))
+         {
+             // If tcp_negotiation_timeout is setted, wait until logical port is opened or timeout. Negative timeout means

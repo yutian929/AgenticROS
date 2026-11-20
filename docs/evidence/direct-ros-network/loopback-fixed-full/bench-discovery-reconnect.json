@@ -1,0 +1,20 @@
+[
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_a",
+    "success": true,
+    "discovery_ms": 0.33266700029344065,
+    "response_ms": 3.1647499999962747
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": true,
+    "discovery_ms": 0.05108400000608526,
+    "response_ms": 565.2977919999103
+  }
+]

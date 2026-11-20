@@ -1,0 +1,101 @@
+[
+  {
+    "layer": "ros_data",
+    "phase": "restart_initial",
+    "success": true,
+    "discovery_ms": 0.005167001290828921,
+    "response_ms": 56.90020800102502
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.027584001145442016,
+    "response_ms": 0.9441250003874302
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": false,
+    "discovery_ms": 0.08066699956543744,
+    "error": "request_timeout",
+    "response_ms": 2000.4364589985926
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.08704199899511877,
+    "response_ms": 1.331207999101025
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.03583300167520065,
+    "response_ms": 0.8699170011823298
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.01170799987448845,
+    "response_ms": 0.7868330012570368
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.010791998647619039,
+    "response_ms": 0.5865000002813758
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.009291999958804809,
+    "response_ms": 0.6358749997161794
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.01195799995912239,
+    "response_ms": 0.6725000002916204
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.011874999472638592,
+    "response_ms": 0.6151249999675201
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.01049999991664663,
+    "response_ms": 0.6355410005198792
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.014167000699671917,
+    "response_ms": 0.5867500003660098
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.009916000635712408,
+    "response_ms": 0.5330420008249348
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.013041000784141943,
+    "response_ms": 0.5812089984829072
+  }
+]

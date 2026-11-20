@@ -24,8 +24,7 @@ BOOTSTRAP = r'''
 import json,pathlib,subprocess,rclpy,os,urllib.request
 from rcl_interfaces.srv import GetParameters
 rclpy.init();n=rclpy.create_node('public_interface_bootstrap')
-with urllib.request.urlopen(os.environ['AGENTICROS_REGISTRY_URL']+'/robots') as response: roster=json.load(response)
-namespace=next(x['namespace'] for x in roster['robots'] if x['robot_id']=='robot_a' and x['process_alive'])
+namespace='/robots/robot_a'
 c=n.create_client(GetParameters,namespace+'/raw_body_driver/get_parameters')
 assert c.wait_for_service(timeout_sec=25)
 f=c.call_async(GetParameters.Request(names=['interface_sources']))
@@ -51,10 +50,7 @@ from agenticros_driver_interfaces.action import Actuate
 from unique_identifier_msgs.msg import UUID
 rclpy.init();n=rclpy.create_node('isolated_lan_probe')
 root=pathlib.Path('/workspace/evidence');root.mkdir(exist_ok=True)
-with urllib.request.urlopen(os.environ['AGENTICROS_REGISTRY_URL']+'/robots') as response: roster=json.load(response)
-namespaces={x['robot_id']:x['namespace'] for x in roster['robots'] if x['process_alive']}
-registry_epochs=set()
-subscription=n.create_subscription(String,'/agenticros/robots',lambda msg: registry_epochs.add(json.loads(msg.data)['epoch']),10)
+namespaces={robot:'/robots/'+robot for robot in ('robot_a','robot_b')}
 def wait(f,seconds=15):
  rclpy.spin_until_future_complete(n,f,timeout_sec=seconds)
  assert f.done(),'timeout: never resend';return f.result()
@@ -83,7 +79,7 @@ if phase=='normal':
  states={robot:status(robot) for robot in ['robot_a','robot_b']}
  assert states['robot_a']['session_id']!=states['robot_b']['session_id']
  for robot,s in states.items():
-  assert s['robot_id']==robot and s['control_lease_valid'] and s['stop_confirmed'] and not s['busy']
+  assert s['robot_id']==robot and s['stop_confirmed'] and not s['busy']
   shot=json.loads(call(robot,'observe',Snapshot).snapshot_json)
   assert shot['session_id']==s['session_id'] and shot['robot_id']==robot
   assert shot['state']['frame']==namespaces[robot].strip('/')+'/base'
@@ -119,23 +115,64 @@ if phase=='normal':
  (root/'normal.json').write_text(json.dumps({'two_robots':True,'cross_session_rejected':True,'exclusive_actions':True,'cancel_reconciled':True,'remote_snapshots':True}))
 else:
  s=status('robot_a');assert s['stop_confirmed'];q=s['state']['joint_positions'][:];q[2]+=.01
- c,h,key=send('robot_a',q,30);assert h.accepted
+ latest={};last_state_at=[0.]
+ def state_received(msg):
+  latest.update(json.loads(msg.data));last_state_at[0]=time.monotonic()
+ sub=n.create_subscription(String,namespaces['robot_a']+'/driver/state',state_received,10)
+ deadline=time.monotonic()+10
+ while not latest:
+  assert time.monotonic()<deadline; rclpy.spin_once(n,timeout_sec=.1)
+ started=time.monotonic();c,h,key=send('robot_a',q,30);assert h.accepted
+ # Establish the result request before deliberately stopping discovery.
+ future=h.get_result_async()
+ rclpy.spin_until_future_complete(n,future,timeout_sec=1)
  (root/'disconnect-ready').write_text(key)
- r=result(h);assert not r['complete'] and r['reason']=='lease_lost' and r['stop_confirmed'];c.destroy()
- (root/'lease-lost-confirmed').write_text('stopped')
- deadline=time.monotonic()+30
- while not (root/'registry-restarted').exists():
-  assert time.monotonic()<deadline;time.sleep(.2)
- # HTTP startup does not imply that TCP discovery has reconnected. Wait for
- # the restarted registry's ROS publication before creating new query endpoints.
+ # Existing state subscription distinguishes execution from result delivery.
+ while not future.done() and time.monotonic()-started<120:
+  rclpy.spin_until_future_complete(n,future,timeout_sec=.5)
+  (root/'outage-progress.json').write_text(json.dumps(dict(elapsed_seconds=time.monotonic()-started,goal_id=key,result_received=future.done(),state_age_seconds=time.monotonic()-last_state_at[0],state=latest),indent=2))
+ assert future.done(),'result timeout: never resend'
+ r=json.loads(future.result().result.receipt_json)
+ (root/(key+'-result.json')).write_text(json.dumps(r,indent=2))
+ assert r['complete'] and r['stop_confirmed'];c.destroy()
+ (root/'discovery-outage-completed').write_text(key)
  deadline=time.monotonic()+45
- while not (registry_epochs-{roster['epoch']}):
-  assert time.monotonic()<deadline,'registry ROS graph did not recover'
-  rclpy.spin_once(n,timeout_sec=.2)
- for robot in ['robot_a','robot_b']:
-  s=status(robot);assert not s['control_lease_valid'] and s['stop_confirmed']
-  c,h,_=send(robot,s['state']['joint_positions'],.5);assert not h.accepted;c.destroy()
- (root/'disconnect.json').write_text(json.dumps({'lease_loss_stopped':True,'new_goals_rejected':True}))
+ while not (root/'discovery-restarted').exists():
+  assert time.monotonic()<deadline;time.sleep(.2)
+ # Graph caches can report a service before the restarted discovery service
+ # has rebuilt both response endpoints. Sample that recovery window explicitly.
+ # Only this read-only status probe is retried; no goal/result/cancel is replayed.
+ rows=[]
+ try:
+  for robot in ['robot_a','robot_b']:
+   endpoint=(robot,'status')
+   if endpoint not in services:services[endpoint]=n.create_client(Trigger,namespaces[robot]+'/driver/status')
+   client=services[endpoint];deadline=time.monotonic()+30
+   while True:
+    row=dict(layer='ros_data',phase='discovery_restart',operation='status',robot=robot,success=False)
+    started=time.monotonic()
+    available=client.wait_for_service(timeout_sec=2)
+    row['discovery_ms']=(time.monotonic()-started)*1000
+    if not available:row['error']='discovery_failure'
+    else:
+     started=time.monotonic();future=client.call_async(Trigger.Request())
+     rclpy.spin_until_future_complete(n,future,timeout_sec=2)
+     row['response_ms']=(time.monotonic()-started)*1000
+     if not future.done():
+      row['error']='request_timeout';client.remove_pending_request(future)
+     else:
+      response=future.result()
+      row['success']=response.success
+      if not response.success:row['error']='server_failure'
+      else:
+       s=json.loads(response.message);assert s['stop_confirmed'] and s['control_available']
+    rows.append(row)
+    (root/'bench-discovery-reconnect.json').write_text(json.dumps(rows,indent=2))
+    if row['success']:break
+    assert time.monotonic()<deadline,'cached status client did not recover'
+    rclpy.spin_once(n,timeout_sec=.25)
+ finally:(root/'bench-discovery-reconnect.json').write_text(json.dumps(rows,indent=2))
+ (root/'disconnect.json').write_text(json.dumps({'accepted_action_completed_without_server':True,'control_not_lease_gated':True,'cached_status_clients_recovered':True}))
 n.destroy_node();rclpy.shutdown()
 print(phase+' PASS',flush=True)
 '''
@@ -148,9 +185,11 @@ def docker(*args, **kwargs):
 def main():
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--server-image',default='agenticros-server:single')
+    parser.add_argument('--robot-image',help='diagnostic image override')
     parser.add_argument('--transport',choices=('tcp','udp'),default='tcp')
     parser.add_argument('--environment',choices=('cartesian_gripper','aloha_tabletop'),default='cartesian_gripper')
     parser.add_argument('--viewer-only',action='store_true')
+    parser.add_argument('--keep',action='store_true',help='retain disposable fixture for diagnostics')
     parser.add_argument('--samples',type=int,default=50)
     parser.add_argument('--cold-samples',type=int,default=10)
     args=parser.parse_args()
@@ -163,11 +202,10 @@ def main():
     info=json.loads(docker('network','inspect',network,capture_output=True).stdout)[0]
     subnet=ipaddress.IPv4Network(info['IPAM']['Config'][0]['Subnet'])
     addresses={k:str(subnet.network_address+i) for k,i in [('server',10),('robot_a',11),('robot_b',12)]}
-    config=dict(AGENTICROS_DDS_HOST=addresses['server'],AGENTICROS_REGISTRY_PORT=7447,
+    config=dict(AGENTICROS_DDS_HOST=addresses['server'],
                 AGENTICROS_DDS_PORT=11811,ROS_DOMAIN_ID=74,AGENTICROS_DDS_TRANSPORT=args.transport,
                 AGENTICROS_DDS_PREFIX=launcher.PREFIX,AGENTICROS_VIEWER_PORT=8080,
                 AGENTICROS_VNC_PORT=5900,AGENTICROS_VIEWER_BIND='127.0.0.1',
-                AGENTICROS_REGISTRY_URL='http://127.0.0.1:7447',
                 FASTRTPS_DEFAULT_PROFILES_FILE='/tmp/agenticros-lan.xml',
                 RMW_FASTRTPS_PUBLICATION_MODE='ASYNCHRONOUS')
     agent=name+'-server';clients=[]
@@ -195,12 +233,12 @@ def main():
             time.sleep(1)
         for robot in ['robot_a','robot_b']:
             container=name+'-'+robot; clients.append(container)
-            env=dict(AGENTICROS_SERVER='http://'+addresses['server']+':7447',AGENTICROS_ROBOT_ID=robot,
+            env=dict(AGENTICROS_ROBOT_ID=robot,
                      AGENTICROS_CLIENT_HOST=addresses[robot],AGENTICROS_OBSERVATION_PORT=8800,
                      RMW_FASTRTPS_PUBLICATION_MODE='ASYNCHRONOUS',ROS_DOMAIN_ID=74,AGENTICROS_DDS_HOST=addresses['server'],
                      AGENTICROS_DDS_PORT=11811,AGENTICROS_DDS_PREFIX=launcher.PREFIX,AGENTICROS_DDS_TRANSPORT=args.transport,
                      AGENTICROS_ADVERTISE_HOST=addresses[robot],FASTRTPS_DEFAULT_PROFILES_FILE='/tmp/agenticros-lan.xml')
-            start(container,'agenticros-'+args.environment+':single',env,['type=volume,src='+name+'-'+robot+'-observations,dst=/observations'])
+            start(container,args.robot_image or 'agenticros-'+args.environment+':single',env,['type=volume,src='+name+'-'+robot+'-observations,dst=/observations'])
         deadline=time.monotonic()+60
         for container in clients:
             while True:
@@ -258,14 +296,13 @@ def main():
             if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('restart probe failed')
             time.sleep(.2)
         docker('stop','-t','10',clients[0],capture_output=True)
-        time.sleep(7)  # unique identity lease must expire; never displace a live robot
         docker('start',clients[0],capture_output=True)
         assert proc.wait(timeout=90)==0
         # Restart only the communication worker: journal blocks UUID replay.
         docker('exec',agent,'python3','/opt/instance/runtime.py','clients-reload')
         time.sleep(1)
         run_script(resident, '5 restart')
-        # Kill identity lease service during a fresh simulated action, then restore.
+        # Stop fixed discovery during a finite simulated action; local execution continues.
         script=PROBE.replace('__PHASE__',repr('disconnect')).replace('__RESULT_TIMEOUT__','120')
         proc=subprocess.Popen(['docker','exec','-i',agent,'/usr/local/bin/agent-entrypoint','bash','-c',
                                'source /workspace/ros_ws/install/setup.bash && python -'],stdin=subprocess.PIPE,text=True)
@@ -275,12 +312,14 @@ def main():
             if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('disconnect probe failed')
             time.sleep(.2)
         docker('exec',agent,'python3','/opt/instance/runtime.py','server-stop')
-        deadline=time.monotonic()+40
-        while not (workspace/'evidence/lease-lost-confirmed').exists():
-            if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('lease loss not reconciled')
+        # Simulated duration is not a wall-time execution deadline. Match the
+        # bounded result wait, with a small allowance for saving evidence.
+        deadline=time.monotonic()+125
+        while not (workspace/'evidence/discovery-outage-completed').exists():
+            if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('action result missing during discovery outage; see outage-progress.json')
             time.sleep(.2)
         docker('exec',agent,'python3','/opt/instance/runtime.py','server-start')
-        (workspace/'evidence/registry-restarted').write_text('ready')
+        (workspace/'evidence/discovery-restarted').write_text('ready')
         assert proc.wait(timeout=120)==0
         (root/'result.json').write_text(json.dumps(dict(result='PASS',physical_hosts=1,containers=3,
             transport=args.transport,autonomous_adaptation=False,task_evaluation=False),indent=2))
@@ -291,8 +330,8 @@ def main():
         for container in [agent,*clients]:
             log=subprocess.run(['docker','logs',container],text=True,capture_output=True)
             (root/(container+'.log')).write_text(log.stdout+log.stderr)
-            subprocess.run(['docker','rm','-f',container],capture_output=True)
-        subprocess.run(['docker','network','rm',network],capture_output=True)
+            if not args.keep:subprocess.run(['docker','rm','-f',container],capture_output=True)
+        if not args.keep:subprocess.run(['docker','network','rm',network],capture_output=True)
         print('Evidence retained: '+str(root),flush=True)
 
 if __name__=='__main__':main()

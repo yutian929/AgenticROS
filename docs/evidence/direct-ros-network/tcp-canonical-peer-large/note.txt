@@ -1,0 +1,1 @@
+Expanded high-churn test, three discovery restarts requested. First restart recovered, later restart stalled; one concurrent status RPC timed out after discovery. Interrupted after repeated discovery failures. Not accepted as reliable deployment.

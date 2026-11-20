@@ -1,0 +1,14 @@
+    PID %CPU COMMAND
+    165  113 rviz2 -d /tmp/current.rviz --ros-args -r __node:=server_rviz
+     74  6.9 python3 /opt/viewer/viewer.py
+     22  4.0 python3 /opt/agenticros-server/registry.py
+     24  2.3 python3 /opt/instance/ros_client.py serve
+   1320  1.1 /usr/bin/python3 -c from ros2cli.daemon.daemonize import main; main() --name ros2-daemon --ros-domain-id 76 --rmw-implementation rmw_fastrtps_cpp
+     46  1.0 Xvfb :5900 -screen 0 1440x900x24 -nolisten tcp +extension GLX +render -noreset
+     23  0.3 python3 /opt/viewer/desktop.py
+     72  0.3 x11vnc -display :5900 -rfbport 5900 -localhost -rfbauth /viewer-auth/passwd -forever -shared -noxdamage -noshm -nolookup -quiet
+     73  0.1 /usr/bin/python3 /usr/bin/websockify --web /usr/share/novnc 127.0.0.1:8080 127.0.0.1:5900
+      1  0.0 /sbin/docker-init -- /usr/local/bin/agent-entrypoint python3 /opt/instance/runtime.py serve
+      7  0.0 python3 /opt/instance/runtime.py serve
+     71  0.0 openbox --config-file /opt/viewer/openbox.xml
+   2096  0.0 ps -eo pid,pcpu,args --sort=-pcpu

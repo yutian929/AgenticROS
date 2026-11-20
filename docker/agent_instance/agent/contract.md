@@ -13,7 +13,7 @@
 
 优先用 `agenticros-ros graph/status/request` 访问共享的常驻 ROS 进程，复用订阅和 Service/Action Client，避免每次轮询启动 ROS CLI。`request` 接收 JSON，支持 `service/read/goal/result/cancel`；端点与类型从公开接口发现。发送动作需 `goal_id`、`request.session_id`、`status_endpoint`；超时的 `outcome=unknown` 仍须按下文核对，查询成功不代表停止成功。
 
-机器人端点固定为 `/robots/<robot_id>/...`，session 放在状态、请求和回执中，不进入端点名称。按机器人隔离能力、证据和坐标系；重启或 session 改变后清除旧观测缓存并读取当前状态。分别判断进程存活、ROS 发现、服务响应、观测新鲜度和控制可用性；HTTP 租约只代表身份存续，`status` 的样本新鲜度不代表图像采集时间。
+机器人端点固定为 `/robots/<robot_id>/...`，session 放在状态、请求和回执中，不进入端点名称。按机器人隔离能力、证据和坐标系；重启或 session 改变后清除旧观测缓存并读取当前状态。分别判断进程存活、ROS 发现、服务响应、观测新鲜度和控制可用性；机器人直接加入 ROS 网络，无 HTTP 注册或控制租约；发现服务离线不代表已接受动作停止，`status` 的样本新鲜度不代表图像采集时间。
 
 ## 动作执行
 

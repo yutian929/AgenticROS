@@ -40,7 +40,7 @@ def valid_goal(positions, duration, limits):
 class CameraPublisher(Node):
     def __init__(self, world, camera, lan=None, node_name='camera_driver'):
         self.lan = lan
-        self.robot_namespace = (lan.membership['namespace'] if lan else '') + '/' + camera
+        self.robot_namespace = (lan.namespace if lan else '') + '/' + camera
         super().__init__(node_name, namespace=self.robot_namespace)
         self.sim = Simulation(world, camera)
         self.render = world.render
@@ -57,7 +57,7 @@ class CameraPublisher(Node):
         self.create_timer(.5, self.camera)
 
     def frame(self, name):
-        root = (self.lan.membership['namespace'].strip('/')+'/' if self.lan else '')
+        root = (self.lan.namespace.strip('/')+'/' if self.lan else '')
         return root + (self.sim.arm+'/' if name == 'camera_optical_frame' else '') + name
 
     def observe(self, request, response):
@@ -140,7 +140,7 @@ class Driver(CameraPublisher):
                 'Snapshot returns rgb_url, depth_url, snapshot_json_url instead of local paths. '
                 'Download these immutable public artifacts into your workspace; validate session, identity and SHA256. '
                 'Keep URLs private: they carry read-only snapshot tokens. '
-                'Control lease loss aborts active motion and rejects new goals until explicit client restart.\n')
+                'No HTTP control lease; accepted actions continue under local driver supervision.\n')
         self.declare_parameter('device_documentation', documentation,
                                ParameterDescriptor(read_only=True, description='Public device manual'))
         self.declare_parameter('interface_sources', json.dumps({
@@ -185,7 +185,6 @@ class Driver(CameraPublisher):
     def reserve(self, request, valid):
         with self.gate:
             if (self.shutting_down.is_set() or request.session_id != self.sim.session
-                    or (self.lan and not self.lan.lease.valid())
                     or self.busy or self.recovery_required
                     or self.sim.world.failure or not valid):
                 return GoalResponse.REJECT
@@ -214,8 +213,6 @@ class Driver(CameraPublisher):
             return 'shutdown'
         if self.sim.world.failure:
             return 'physics_fault'
-        if self.lan and not self.lan.lease.valid():
-            return 'lease_lost'
         return None
 
     @staticmethod
@@ -316,8 +313,8 @@ class Driver(CameraPublisher):
         executed, reason, complete, stopped = 'none', 'settled', False, False
         try:
             for i in range(1, count + 61):
-                if handle.is_cancel_requested or self.shutting_down.is_set() or self.sim.world.failure or (self.lan and not self.lan.lease.valid()):
-                    reason = "cancelled" if handle.is_cancel_requested else ("lease_lost" if self.lan and not self.lan.lease.valid() else "physics_fault" if self.sim.world.failure else "shutdown")
+                if handle.is_cancel_requested or self.shutting_down.is_set() or self.sim.world.failure:
+                    reason = "cancelled" if handle.is_cancel_requested else ("physics_fault" if self.sim.world.failure else "shutdown")
                     stopped = self.hold()
                     break
                 with self.sim.lock:
@@ -372,9 +369,7 @@ class Driver(CameraPublisher):
                                        and np.max(np.abs(state['state']['joint_velocities'])) < .02)
         if self.lan:
             state.update(self.lan.identity())
-            state['control_lease_valid'] = self.lan.lease.valid()
-        state['control_available'] = bool(not self.sim.world.failure and not self.shutting_down.is_set() and not state['busy'] and not state['recovery_required']
-                                          and state.get('control_lease_valid', True))
+        state['control_available'] = bool(not self.sim.world.failure and not self.shutting_down.is_set() and not state['busy'] and not state['recovery_required'])
         response.success, response.message = True, json.dumps(state)
         return response
 
@@ -397,17 +392,16 @@ class Driver(CameraPublisher):
                              recovery_required=self.recovery_required, state=state)
         if self.lan:
             telemetry.update(self.lan.identity())
-            telemetry['control_lease_valid'] = self.lan.lease.valid()
-        telemetry['control_available'] = bool(not self.sim.world.failure and not self.shutting_down.is_set() and not telemetry['busy'] and not telemetry['recovery_required'] and telemetry.get('control_lease_valid', True))
+        telemetry['control_available'] = bool(not self.sim.world.failure and not self.shutting_down.is_set() and not telemetry['busy'] and not telemetry['recovery_required'])
         self.telemetry.publish(String(data=json.dumps(telemetry)))
 
 
 
 def main():
     lan = None
-    if os.getenv('AGENTICROS_SERVER'):
-        from registration import Client
-        lan = Client()
+    if os.getenv('AGENTICROS_ROBOT_ID'):
+        from robot_network import RobotNetwork
+        lan = RobotNetwork()
     rclpy.init()
     world = World(int(os.getenv('BODY_SEED', '0')))
     if lan:

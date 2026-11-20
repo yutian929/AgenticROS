@@ -32,18 +32,6 @@ class Discovery(unittest.TestCase):
         self.assertTrue(all(d['Enabled'] for d in images))
         self.assertEqual(view['Window Geometry']['Y'], 140)
 
-    def test_roster_stable_namespaces_and_live_sessions(self):
-        namespace='/robots/robot_a'
-        robot=dict(robot_id='robot_a',session_id='a'*12,namespace=namespace,process_alive=True)
-        roster=dict(robots=[robot])
-        self.assertEqual(discovery.robots(roster),{'robot_a':namespace})
-        robot['process_alive']=False
-        self.assertEqual(discovery.robots(roster),{})
-        robot.update(process_alive=True,session_id='b'*12)
-        self.assertEqual(discovery.robots(roster),{'robot_a':namespace})
-        robot['namespace']='/robots/other'
-        with self.assertRaises(ValueError):discovery.robots(roster)
-
     def test_frame_selection_never_connects_unrelated_robots(self):
         a, b = '/robots/robot_a', '/robots/robot_b'
         edges = [(a[1:]+'/base',a[1:]+'/camera'),(b[1:]+'/base',b[1:]+'/camera')]
@@ -78,7 +66,7 @@ class Discovery(unittest.TestCase):
 
 class Configuration(unittest.TestCase):
     def test_server_only_mounts_dedicated_data_and_generic_config(self):
-        config = dict(AGENTICROS_DDS_HOST='192.168.1.10', AGENTICROS_REGISTRY_PORT=17447,
+        config = dict(AGENTICROS_DDS_HOST='192.168.1.10',
                       AGENTICROS_DDS_PORT=12811, ROS_DOMAIN_ID=73,
                       AGENTICROS_DDS_PREFIX='01.02.03.04.05.06.07.08.09.0a.0b.0c')
         data = json.loads(subprocess.check_output(launcher.compose(config)+['config','--format','json'],
@@ -86,7 +74,7 @@ class Configuration(unittest.TestCase):
         self.assertEqual(set(data['services']), {'server'})
         instance = data['services']['server']
         self.assertEqual(instance['network_mode'], 'host')
-        self.assertEqual(instance['environment']['AGENTICROS_REGISTRY_URL'], 'http://127.0.0.1:17447')
+        self.assertNotIn('AGENTICROS_REGISTRY_URL',instance['environment'])
         self.assertEqual(instance['environment']['ROS_DOMAIN_ID'], '73')
         self.assertEqual({m['target'] for m in instance['volumes']},
                          {'/viewer-auth', '/workspace', '/home/agent/.codex', '/config/codex.toml'})
@@ -97,7 +85,7 @@ class Configuration(unittest.TestCase):
 
     def test_lan_camera_publication_does_not_use_synchronous_mode(self):
         config = dict(AGENTICROS_ROBOT_ID='robot_a',
-                      AGENTICROS_SERVER='http://127.0.0.1:7447', AGENTICROS_CLIENT_HOST='127.0.0.1',
+                      AGENTICROS_DDS_HOST='127.0.0.1', AGENTICROS_CLIENT_HOST='127.0.0.1',
                       AGENTICROS_OBSERVATION_PORT=8800)
         data = json.loads(subprocess.check_output(launcher.compose(config, True)+['config','--format','json'],
                           cwd=ROOT, env=launcher.environment(config), text=True))

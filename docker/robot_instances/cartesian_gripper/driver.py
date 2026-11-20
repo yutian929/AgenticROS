@@ -43,7 +43,7 @@ def valid_goal(positions, duration):
 class Driver(Node):
     def __init__(self, lan=None):
         self.lan = lan
-        self.robot_namespace = lan.membership['namespace'] if lan else ''
+        self.robot_namespace = lan.namespace if lan else ''
         super().__init__('raw_body_driver', namespace=self.robot_namespace or '/')
         # Public device metadata is discovered over standard ROS parameter services.
         # No simulator source, scene state, evaluator or client program is exported.
@@ -58,7 +58,7 @@ class Driver(Node):
                 'Snapshot returns rgb_url, depth_url, snapshot_json_url instead of local paths. '
                 'Download these immutable public artifacts into your workspace; validate session, identity and SHA256. '
                 'Keep URLs private: they carry read-only snapshot tokens. '
-                'Control lease loss aborts active motion and rejects new goals until explicit client restart.\n')
+                'No HTTP control lease; accepted actions continue under local driver supervision.\n')
         self.declare_parameter('device_documentation', documentation,
                                ParameterDescriptor(read_only=True, description='Public device manual'))
         self.declare_parameter('interface_sources', json.dumps({
@@ -105,7 +105,6 @@ class Driver(Node):
     def accept(self, request):
         with self.gate:
             if (self.shutting_down.is_set() or request.session_id != self.sim.session
-                    or (self.lan and not self.lan.lease.valid())
                     or self.busy or self.recovery_required
                     or not valid_goal(request.positions, request.duration)):
                 return GoalResponse.REJECT
@@ -131,8 +130,8 @@ class Driver(Node):
         executed, reason, complete, stopped = 'none', 'settled', False, False
         try:
             for i in range(1, count + 61):
-                if handle.is_cancel_requested or self.shutting_down.is_set() or (self.lan and not self.lan.lease.valid()):
-                    reason = "cancelled" if handle.is_cancel_requested else ("lease_lost" if self.lan and not self.lan.lease.valid() else "shutdown")
+                if handle.is_cancel_requested or self.shutting_down.is_set():
+                    reason = "cancelled" if handle.is_cancel_requested else "shutdown"
                     stopped = self.hold()
                     break
                 with self.sim.lock:
@@ -185,9 +184,7 @@ class Driver(Node):
                                        and np.max(np.abs(state['state']['joint_velocities'])) < .02)
         if self.lan:
             state.update(self.lan.identity())
-            state['control_lease_valid'] = self.lan.lease.valid()
-        state['control_available'] = bool(not self.shutting_down.is_set() and not state['busy'] and not state['recovery_required']
-                                          and state.get('control_lease_valid', True))
+        state['control_available'] = bool(not self.shutting_down.is_set() and not state['busy'] and not state['recovery_required'])
         response.success, response.message = True, json.dumps(state)
         return response
 
@@ -212,8 +209,7 @@ class Driver(Node):
                              recovery_required=self.recovery_required, state=state)
         if self.lan:
             telemetry.update(self.lan.identity())
-            telemetry['control_lease_valid'] = self.lan.lease.valid()
-        telemetry['control_available'] = bool(not self.shutting_down.is_set() and not telemetry['busy'] and not telemetry['recovery_required'] and telemetry.get('control_lease_valid', True))
+        telemetry['control_available'] = bool(not self.shutting_down.is_set() and not telemetry['busy'] and not telemetry['recovery_required'])
         self.telemetry.publish(String(data=json.dumps(telemetry)))
 
     def capture_frame(self):
@@ -269,9 +265,9 @@ class Driver(Node):
 
 def main():
     lan = None
-    if os.getenv('AGENTICROS_SERVER'):
-        from registration import Client
-        lan = Client()
+    if os.getenv('AGENTICROS_ROBOT_ID'):
+        from robot_network import RobotNetwork
+        lan = RobotNetwork()
     rclpy.init()
     driver = Driver(lan)
     evaluator = start_evaluator(driver)

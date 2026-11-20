@@ -1,0 +1,357 @@
+[
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 758.0794589994184,
+    "response_ms": 316.88450000001467
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 754.3512499996723,
+    "response_ms": 337.3999579998781
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.035291999665787444,
+    "response_ms": 0.9719999998196727
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014458999430644326,
+    "response_ms": 1.042792000589543
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012708000213024206,
+    "response_ms": 0.7905000002210727
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014291999832494184,
+    "response_ms": 0.8512919994245749
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013249999028630555,
+    "response_ms": 0.7040410000627162
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.00983300014922861,
+    "response_ms": 0.7800420007697539
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01166600122814998,
+    "response_ms": 0.7244579992402578
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.010292000297340564,
+    "response_ms": 0.8231249994423706
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011791998986154795,
+    "response_ms": 0.6067079993954394
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01316599991696421,
+    "response_ms": 0.6935419987712521
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.010042000212706625,
+    "response_ms": 0.6818340007157531
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011083000572398305,
+    "response_ms": 0.6992910002736608
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012624999726540409,
+    "response_ms": 0.6727500003762543
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012041000445606187,
+    "response_ms": 0.7619169991812669
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.010583000403130427,
+    "response_ms": 0.5887499992240919
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01170799987448845,
+    "response_ms": 0.7329999989451608
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01199999860546086,
+    "response_ms": 0.6948339996597497
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011165999239892699,
+    "response_ms": 0.7707079985266319
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011665999409160577,
+    "response_ms": 0.6769159990653861
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01195799995912239,
+    "response_ms": 0.7281250000232831
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011666999853332527,
+    "response_ms": 0.7083330001478316
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013708000551559962,
+    "response_ms": 0.7577079995826352
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011499998436192982,
+    "response_ms": 0.6164160004118457
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011833000826300122,
+    "response_ms": 0.6649169990851078
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011083999197580852,
+    "response_ms": 0.6434589995478746
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.010957999620586634,
+    "response_ms": 0.685499999235617
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012083999536116607,
+    "response_ms": 0.5906250007683411
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013249999028630555,
+    "response_ms": 0.6402499984687893
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.011125001037726179,
+    "response_ms": 91.49045800040767
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "bytes": 61895,
+    "response_ms": 1.7960419991140952
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.025082999854930677,
+    "response_ms": 90.13445900018269
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "bytes": 61895,
+    "response_ms": 0.60124999981781
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.02354199932597112,
+    "response_ms": 94.9697500000184
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "bytes": 61895,
+    "response_ms": 0.6425419996958226
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.03712499892571941,
+    "response_ms": 99.82895799839753
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "bytes": 61895,
+    "response_ms": 0.7089580012689112
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.0384579998353729,
+    "response_ms": 160.87599999991653
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "bytes": 61895,
+    "response_ms": 0.7817910009180196
+  }
+]

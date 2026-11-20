@@ -1,0 +1,46 @@
+{
+  "elapsed_seconds": 42.921969895000075,
+  "goal_id": "c7c0248f04954eb59c3366b8a9503c6d",
+  "result_received": true,
+  "state_age_seconds": 0.022869500000524567,
+  "state": {
+    "session_id": "730f0dde6141",
+    "busy": true,
+    "recovery_required": false,
+    "state": {
+      "sim_time": 34.89999999999669,
+      "frame": "robots/robot_a/base",
+      "tcp_xyz": [
+        0.0,
+        -0.25,
+        0.28575843711886756
+      ],
+      "gripper_width": 0.08,
+      "joint_names": [
+        "x",
+        "y",
+        "z",
+        "left",
+        "right"
+      ],
+      "joint_positions": [
+        0.0,
+        -0.25,
+        0.08575843711909728,
+        0.04,
+        0.04
+      ],
+      "joint_velocities": [
+        0.0,
+        0.0,
+        1.1486842718172376e-10,
+        0.0,
+        0.0
+      ],
+      "orientation": "fixed downward; no rotational DOF"
+    },
+    "robot_id": "robot_a",
+    "namespace": "/robots/robot_a",
+    "control_available": false
+  }
+}

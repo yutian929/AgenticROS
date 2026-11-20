@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "<string>", line 4, in <module>
+TimeoutError: timed out
+
+Traceback (most recent call last):
+  File "/tmp/check_udp_host.py", line 16, in <module>
+    out=p.communicate(timeout=12)[0];print(out);assert p.returncode==0
+AssertionError

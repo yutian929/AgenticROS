@@ -1,4 +1,4 @@
-> 历史开发记录：旧实例/join 命令不适用于当前单 Server 架构。当前部署见 [使用说明](usage.md)，迁移和实测结果见 [网络验证报告](network-validation.md)。
+> 历史开发记录：下文旧实例/join、HTTP 注册、控制租约及旧构建命令不适用于当前直接 ROS 接入架构。当前部署和迁移见 [使用说明](usage.md)，最新实测见 [原生 ROS 验证报告](direct-ros-validation.md)。历史内容保留作为当时实现与验证的记录。
 
 # 开发记录
 
@@ -6,7 +6,7 @@
 Agent instance 在一个容器内运行注册与发现服务、Agent 与 RViz2/noVNC；Robot instance 独立运行仿真与观测。
 旧单机模式仍保留独立 Agent 容器及带 RViz2 的 `cartesian_gripper` 容器。
 
-## 当前开发说明
+## 历史开发说明（归档）
 
 Docker 源码按运行实例组织，主机角色不作为目录层级：
 

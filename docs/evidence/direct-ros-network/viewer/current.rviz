@@ -1,0 +1,146 @@
+Panels:
+- Class: rviz_common/Displays
+  Name: Displays
+- Class: rviz_common/Views
+  Name: Views
+Visualization Manager:
+  Class: ''
+  Global Options:
+    Fixed Frame: robots/robot_a/base
+    Frame Rate: 10
+    Background Color: 28; 34; 43
+  Displays:
+  - Class: rviz_default_plugins/Grid
+    Name: Grid
+    Enabled: true
+    Cell Size: 0.1
+    Plane Cell Count: 20
+  - Class: rviz_default_plugins/TF
+    Name: TF
+    Enabled: true
+    Show Names: false
+    Marker Scale: 0.1
+  - Class: rviz_default_plugins/Image
+    Name: left/camera
+    Enabled: true
+    Topic:
+      Value: /robots/robot_a/left/camera/color/image_raw/compressed
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Normalize Range: true
+  - Class: rviz_default_plugins/PointCloud2
+    Name: /robots/robot_a/left/camera/depth/color/points
+    Enabled: true
+    Topic:
+      Value: /robots/robot_a/left/camera/depth/color/points
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Queue Size: 1
+    Style: Flat Squares
+    Size (m): 0.008
+    Color Transformer: RGB8
+    Position Transformer: XYZ
+  - Class: rviz_default_plugins/Image
+    Name: left/camera/depth/image_raw
+    Enabled: false
+    Topic:
+      Value: /robots/robot_a/left/camera/depth/image_raw
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Normalize Range: true
+  - Class: rviz_default_plugins/Image
+    Name: overhead/camera
+    Enabled: true
+    Topic:
+      Value: /robots/robot_a/overhead/camera/color/image_raw/compressed
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Normalize Range: true
+  - Class: rviz_default_plugins/PointCloud2
+    Name: /robots/robot_a/overhead/camera/depth/color/points
+    Enabled: true
+    Topic:
+      Value: /robots/robot_a/overhead/camera/depth/color/points
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Queue Size: 1
+    Style: Flat Squares
+    Size (m): 0.008
+    Color Transformer: RGB8
+    Position Transformer: XYZ
+  - Class: rviz_default_plugins/Image
+    Name: overhead/camera/depth/image_raw
+    Enabled: false
+    Topic:
+      Value: /robots/robot_a/overhead/camera/depth/image_raw
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Normalize Range: true
+  - Class: rviz_default_plugins/Image
+    Name: right/camera
+    Enabled: true
+    Topic:
+      Value: /robots/robot_a/right/camera/color/image_raw/compressed
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Normalize Range: true
+  - Class: rviz_default_plugins/PointCloud2
+    Name: /robots/robot_a/right/camera/depth/color/points
+    Enabled: true
+    Topic:
+      Value: /robots/robot_a/right/camera/depth/color/points
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Queue Size: 1
+    Style: Flat Squares
+    Size (m): 0.008
+    Color Transformer: RGB8
+    Position Transformer: XYZ
+  - Class: rviz_default_plugins/Image
+    Name: right/camera/depth/image_raw
+    Enabled: false
+    Topic:
+      Value: /robots/robot_a/right/camera/depth/image_raw
+      Reliability Policy: Best Effort
+      Durability Policy: Volatile
+      History Policy: Keep Last
+      Depth: 1
+    Normalize Range: true
+  Tools:
+  - Class: rviz_default_plugins/Interact
+  - Class: rviz_default_plugins/MoveCamera
+  - Class: rviz_default_plugins/Select
+  - Class: rviz_default_plugins/FocusCamera
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Target Frame: robots/robot_a/base
+      Distance: 1.5
+      Pitch: 0.65
+      Yaw: 5.1
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0.1
+Window Geometry:
+  Width: 1440
+  Height: 740
+  X: 0
+  Y: 140
+  QMainWindow State: 000000ff00000000fd000000020000000000000118000002cbfc0200000002fb000000100044006900730070006c0061007900730100000019000001630000001300fffffffb0000000a005600690065007700730100000182000001620000001300ffffff0000000200000426000000dcfc0100000003fb00000016006c006500660074002f00630061006d00650072006101000000000000015e0000003a00fffffffb0000001e006f0076006500720068006500610064002f00630061006d00650072006101000001e20000015e0000003a00fffffffb0000001800720069006700680074002f00630061006d00650072006101000003c40000015e0000003a00ffffff00000560000002cb00000004000000040000000800000008fc00000000

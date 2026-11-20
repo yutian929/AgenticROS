@@ -1,0 +1,23 @@
+{
+  "physical_hosts": 1,
+  "containers": 3,
+  "network_namespaces": 3,
+  "middleware_sha256": [
+    "afe6588b08febeffce4c1fc6ad705726ef6c87a02c1adc9bdac22b9065c70258",
+    "afe6588b08febeffce4c1fc6ad705726ef6c87a02c1adc9bdac22b9065c70258",
+    "afe6588b08febeffce4c1fc6ad705726ef6c87a02c1adc9bdac22b9065c70258"
+  ],
+  "addresses": {
+    "server": "172.20.0.10",
+    "robot_a": "172.20.0.11",
+    "robot_b": "172.20.0.12"
+  },
+  "images": [
+    "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670",
+    "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670"
+  ],
+  "transport": "tcp",
+  "discovery_port": 11811,
+  "baseline": true
+}

@@ -1,0 +1,161 @@
+[
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_a",
+    "success": true,
+    "discovery_ms": 0.14700000065204222,
+    "response_ms": 11.133999999401567
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.03279100019426551,
+    "response_ms": 2005.3793340002812,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.046084000132395886,
+    "response_ms": 2000.6227929998204,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.07816699962859275,
+    "response_ms": 2000.415709000663,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.08866699954523938,
+    "response_ms": 2000.6524170003104,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.7095420005498454,
+    "response_ms": 2002.4768339999355,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.030207999770937022,
+    "response_ms": 2000.2272510000694,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.026916999559034593,
+    "response_ms": 2000.7052499995552,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.06920899977558292,
+    "response_ms": 2000.3975009994974,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.08508400060236454,
+    "response_ms": 2002.099416999954,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.12837499980378198,
+    "response_ms": 2000.30312600029,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.030750000405532774,
+    "response_ms": 2000.246210000114,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.10275000022375025,
+    "response_ms": 2000.1845010001489,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.1229170002261526,
+    "response_ms": 2000.435001000369,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.030915999559510965,
+    "response_ms": 2000.3552090001904,
+    "error": "request_timeout"
+  },
+  {
+    "layer": "ros_data",
+    "phase": "discovery_restart",
+    "operation": "status",
+    "robot": "robot_b",
+    "success": false,
+    "discovery_ms": 0.0379169996449491,
+    "response_ms": 2004.0717920001043,
+    "error": "request_timeout"
+  }
+]

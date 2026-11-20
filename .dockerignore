@@ -1,3 +1,5 @@
 **
 !docker/
 !docker/**
+# Middleware documentation is not a build input.
+docker/shared/fastdds/README.md

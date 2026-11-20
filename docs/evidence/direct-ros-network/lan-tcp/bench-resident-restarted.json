@@ -1,0 +1,168 @@
+[
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 101.27074999945762,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.03983300121035427,
+    "response_ms": 90.71870899970236,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.784208001481602,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.043708998418878764,
+    "response_ms": 1.4418750015465776,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9998330006055767,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.01941700065799523,
+    "response_ms": 0.7350830001087161,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8304580005642492,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.012290998711250722,
+    "response_ms": 0.6339170013234252,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.7944999997562263,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.01191700175695587,
+    "response_ms": 0.6196659996930975,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0515000012674136,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.010250001651002094,
+    "response_ms": 0.8584159986639861,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 91.32458299973223,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"9ec4f220b367\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"5850e4c1f4994c6cba79d4b5d0af0a9d\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 13.700000000001245, \"frame\": \"robots/robot_b/base\", \"tcp_xyz\": [0.0, -0.25, 0.28575843710476223], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.08575843710533658, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.8717008798761514e-10, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"5850e4c1f4994c6cba79d4b5d0af0a9d\", \"session_id\": \"9ec4f220b367\", \"robot_id\": \"robot_b\", \"namespace\": \"/robots/robot_b\"}}, \"state\": {\"sim_time\": 13.700000000001245, \"frame\": \"robots/robot_b/base\", \"tcp_xyz\": [0.0, -0.25, 0.28575843710476223], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.08575843710533658, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.8717008798761514e-10, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_b\", \"namespace\": \"/robots/robot_b\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.008041000910452567,
+    "response_ms": 90.71899999980815,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 4.448458999831928,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.06641700019827113,
+    "response_ms": 3.989832999650389,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 2.927375000581378,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"9ec4f220b367\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"5850e4c1f4994c6cba79d4b5d0af0a9d\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 13.700000000001245, \"frame\": \"robots/robot_b/base\", \"tcp_xyz\": [0.0, -0.25, 0.28575843710476223], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.08575843710533658, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.8717008798761514e-10, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"5850e4c1f4994c6cba79d4b5d0af0a9d\", \"session_id\": \"9ec4f220b367\", \"robot_id\": \"robot_b\", \"namespace\": \"/robots/robot_b\"}}, \"state\": {\"sim_time\": 13.700000000001245, \"frame\": \"robots/robot_b/base\", \"tcp_xyz\": [0.0, -0.25, 0.28575843710476223], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.08575843710533658, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.8717008798761514e-10, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_b\", \"namespace\": \"/robots/robot_b\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.034540998967713676,
+    "response_ms": 2.3898750005173497,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "restarted",
+    "success": true,
+    "total_ms": 27.88433299974713,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.04745899968838785,
+    "response_ms": 0.9735410003486322,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "restarted",
+    "success": true,
+    "total_ms": 22.051750000173342,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.047917001211317256,
+    "response_ms": 0.8986249995359685,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8683750002091983,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"6786cbcfc98c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {\"ccee6d1ad83a4fb3a72fe4a403d1222f\": {\"complete\": true, \"executed\": \"some\", \"stop_confirmed\": true, \"reason\": \"settled\", \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"goal_id\": \"ccee6d1ad83a4fb3a72fe4a403d1222f\", \"session_id\": \"6786cbcfc98c\", \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\"}}, \"state\": {\"sim_time\": 3.699999999999814, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757584371282713], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827131, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, 2.9268845664555264e-15, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.01595899993844796,
+    "response_ms": 0.6526250017486745,
+    "server_success": true
+  }
+]

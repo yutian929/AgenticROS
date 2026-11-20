@@ -1,0 +1,18 @@
+{
+  "physical_hosts": 1,
+  "containers": 3,
+  "network_namespaces": 3,
+  "addresses": {
+    "server": "172.19.0.10",
+    "robot_a": "172.19.0.11",
+    "robot_b": "172.19.0.12"
+  },
+  "images": [
+    "sha256:553587c8f68566e2b32fd5b6c3805136af085e7cf41e0ac0b14ab90c6fc8cfac",
+    "sha256:c31070ee9f647ee8df20c758ddfc4711a5df7ae80de5d1b2664ab40cda6b80bc",
+    "sha256:c31070ee9f647ee8df20c758ddfc4711a5df7ae80de5d1b2664ab40cda6b80bc"
+  ],
+  "transport": "tcp",
+  "discovery_port": 65000,
+  "baseline": false
+}

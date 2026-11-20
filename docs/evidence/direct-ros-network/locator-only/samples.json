@@ -1,0 +1,20 @@
+[
+  {
+    "phase": "cold_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 1691.3553330000007,
+    "returncode": 0
+  },
+  {
+    "phase": "cold_direct",
+    "operation": "list",
+    "robot": null,
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 3973.9354999999996,
+    "returncode": 0
+  }
+]

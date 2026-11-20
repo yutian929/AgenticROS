@@ -1,5 +1,7 @@
 # 单 Agent、多机器人网络验证
 
+> 历史报告：对应 HTTP presence/控制租约版本，保留作为基线证据。当前直接 ROS 接入的架构与测试见 [原生 ROS 验证报告](direct-ros-validation.md)。
+
 本报告对应 `codex/single-agent-network`，基线为 `origin/main` 的 `b58a03a`。先完成基线采样，再修改架构。完整原始记录留在本工作树忽略的 `runs/`；可审查的指标、拓扑、源码校验和测试结果保存在 [evidence/single-agent-network](evidence/single-agent-network/manifest.json)。指标文件仅保留计时、结果与错误类别，不提交账号、租约密钥或签名下载 URL。
 
 ## 环境与可比范围

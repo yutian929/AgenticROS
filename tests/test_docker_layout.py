@@ -11,8 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class DockerLayout(unittest.TestCase):
     def test_single_server_boundary(self):
         import os
-        config = json.loads(subprocess.check_output(['docker','compose','config','--format','json'],
-            cwd=ROOT,env=dict(os.environ,AGENTICROS_DDS_HOST='127.0.0.1'),text=True))
+        config = json.loads(subprocess.check_output(['docker','compose','--env-file','/dev/null','config','--format','json'],
+            cwd=ROOT,env=dict(os.environ,AGENTICROS_DDS_HOST='127.0.0.1',ROS_DOMAIN_ID='42'),text=True))
         self.assertEqual(set(config['services']), {'server'})
         server=config['services']['server']
         self.assertEqual(server['network_mode'],'host')
@@ -56,7 +56,8 @@ class DockerLayout(unittest.TestCase):
         self.assertIn('COPY docker/robot_instances/cartesian_gripper/body.md ', bodyfile)
 
     def test_build_context(self):
-        self.assertEqual((ROOT / '.dockerignore').read_text().splitlines(), ['**', '!docker/', '!docker/**'])
+        rules=[line for line in (ROOT / '.dockerignore').read_text().splitlines() if not line.startswith('#')]
+        self.assertEqual(rules, ['**', '!docker/', '!docker/**', 'docker/shared/fastdds/README.md'])
 
 
 if __name__ == '__main__':

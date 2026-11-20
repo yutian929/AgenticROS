@@ -1,4 +1,4 @@
-"""One Agent instance, independent registry/desktop processes, one interactive brain and one persistent ROS client worker."""
+"""One Agent instance, independent discovery/desktop processes, one interactive brain and one persistent ROS client worker."""
 import fcntl
 import json
 import os
@@ -7,7 +7,6 @@ import signal
 import socket
 import subprocess
 import sys
-import urllib.request
 
 SOCKET = '/tmp/agenticros-instance.sock'
 
@@ -35,7 +34,8 @@ class Runtime:
         if process and process.poll() is None:
             return
         self.enabled.add(name)
-        commands = {'server': ['python3', '/opt/agenticros-server/registry.py'],
+        if name == 'server': Path('/tmp/discovery-ready').unlink(missing_ok=True)
+        commands = {'server': ['python3', '/opt/agenticros-server/discovery.py'],
                     'viewer': ['bash', '/opt/viewer/entrypoint.sh'],
                     'clients': ['bash', '-c', 'source /etc/profile.d/agenticros.sh; if [ -f /workspace/ros_ws/install/setup.bash ]; then source /workspace/ros_ws/install/setup.bash; fi; exec python3 /opt/instance/ros_client.py serve']}
         env = os.environ.copy()
@@ -99,8 +99,8 @@ class Runtime:
                         self.start('clients')
                     server = self.processes['server']
                     if 'server' in self.enabled and server.poll() is not None:
-                        # Never silently change the registry epoch after a failure.
-                        raise RuntimeError('registry exited; explicit Agent instance restart required')
+                        # Never silently change the discovery process after a failure.
+                        raise RuntimeError('discovery exited; explicit Agent instance restart required')
                     try:
                         stream, _ = listener.accept()
                     except socket.timeout:
@@ -128,9 +128,7 @@ class Runtime:
 def health():
     state = request('status')
     assert state['server']['running'] and state['server']['enabled']
-    url = 'http://127.0.0.1:'+os.environ['AGENTICROS_REGISTRY_PORT']+'/health'
-    with urllib.request.urlopen(url, timeout=2) as response:
-        assert json.load(response)['domain_id'] == int(os.environ['ROS_DOMAIN_ID'])
+    assert Path('/tmp/discovery-ready').read_text() == str(state['server']['pid'])
     assert state['clients']['running']
     from ros_client import request as client_request
     assert 'topics' in client_request(dict(op='graph',timeout=1))

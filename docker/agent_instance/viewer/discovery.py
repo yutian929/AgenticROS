@@ -2,19 +2,6 @@
 import re
 
 
-def robots(roster):
-    result = {}
-    for item in roster.get('robots', []):
-        robot, session, namespace = item['robot_id'], item['session_id'], item['namespace']
-        if (not re.fullmatch('[a-z][a-z0-9_]{0,47}', robot)
-                or not re.fullmatch('[0-9a-f]{12,32}', session)
-                or namespace != f'/robots/{robot}'):
-            raise ValueError('Invalid robot identity')
-        if item.get('process_alive'):
-            result[robot] = namespace
-    return result
-
-
 def scoped_topics(topics, namespace):
     return sorted((name, types) for name, types in topics if name.startswith(namespace+'/'))
 

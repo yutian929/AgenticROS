@@ -1,0 +1,18 @@
+Starting >>> agenticros_driver_interfaces
+Finished <<< agenticros_driver_interfaces [3.23s]
+
+Summary: 1 package finished [3.31s]
+{"label": "warm", "samples": 12, "failed": 0}
+{"label": "concurrent", "samples": 12, "failed": 0}
+{"label": "cold-0", "samples": 1, "failed": 0}
+resident PASS 15
+normal PASS
+robot restart PASS
+resident PASS 12
+Evidence retained: /Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS/runs/checks/agenticros-check-1b325787
+Traceback (most recent call last):
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS/scripts/check_lan.py", line 302, in <module>
+    if __name__=='__main__':main()
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS/scripts/check_lan.py", line 284, in main
+    if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('action failed during discovery outage')
+RuntimeError: action failed during discovery outage

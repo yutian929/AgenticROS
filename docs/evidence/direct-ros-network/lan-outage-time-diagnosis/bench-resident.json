@@ -1,0 +1,202 @@
+[
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 92.71787499983475,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.029708000511163846,
+    "response_ms": 84.05537499947968,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0182500000155414,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.031042000045999885,
+    "response_ms": 0.7314169997698627,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.5732090005258215,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.011874999472638592,
+    "response_ms": 0.6512919999295264,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 89.1563329996643,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"8408e3e27426\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_b/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_b\", \"namespace\": \"/robots/robot_b\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.011791999895649496,
+    "response_ms": 88.55837499959307,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 24.17358399998193,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.031708999813417904,
+    "response_ms": 0.9312909996879171,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 21.15916599996126,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.03379200006747851,
+    "response_ms": 0.7938329999888083,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 19.68349999970087,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.02816600044752704,
+    "response_ms": 0.8413749992541852,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 24.718709000808303,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.03416600065975217,
+    "response_ms": 0.9389589995407732,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 19.96983299977728,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.02262499947391916,
+    "response_ms": 0.8069160003287834,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 19.838500000332715,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.030209000215108972,
+    "response_ms": 0.8923750001486042,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 19.461083999885886,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.019750000319618266,
+    "response_ms": 0.7866669993745745,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 24.267208000310347,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.049375000344298314,
+    "response_ms": 4.755291000037687,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 19.928790999983903,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.03425000068091322,
+    "response_ms": 0.9449579993088264,
+    "server_success": true
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 19.782542000029935,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.02579100055299932,
+    "response_ms": 0.8272919994851691,
+    "server_success": true
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8922079996409593,
+    "response": {
+      "success": true,
+      "message": "{\"session_id\": \"69f02645950c\", \"busy\": false, \"recovery_required\": false, \"active_goal_id\": null, \"execution_status\": \"idle\", \"receipts\": {}, \"state\": {\"sim_time\": 0.5000000000000003, \"frame\": \"robots/robot_a/base\", \"tcp_xyz\": [0.0, -0.25, 0.2757586734537146], \"gripper_width\": 0.08, \"joint_names\": [\"x\", \"y\", \"z\", \"left\", \"right\"], \"joint_positions\": [0.0, -0.25, 0.07575843712827157, 0.04, 0.04], \"joint_velocities\": [0.0, 0.0, -0.00011816272149600884, 0.0, 0.0], \"orientation\": \"fixed downward; no rotational DOF\"}, \"stop_confirmed\": true, \"robot_id\": \"robot_a\", \"namespace\": \"/robots/robot_a\", \"control_available\": true}"
+    },
+    "discovery_ms": 0.016457999663543887,
+    "response_ms": 0.6930420004209736,
+    "server_success": true
+  }
+]

@@ -6,16 +6,12 @@
 
 ```mermaid
 flowchart LR
-    subgraph SERVER["Server 主机 · 固定 SERVER_IP"]
-        AGENT["一个主 Agent<br/>可使用执行子 agents"]
-        CLIENT["常驻 ROS 客户端"]
-        AGENT <-->|"本地调用"| CLIENT
-    end
-    CLIENT <-->|"局域网 ROS 通信"| A["机器人 A<br/>/robots/robot_a/..."]
-    CLIENT <-->|"局域网 ROS 通信"| B["机器人 B<br/>/robots/robot_b/..."]
+    AGENT["Agent 容器<br/>Agent · ROS 2 · RViz<br/>固定 DDS Discovery Server"]
+    AGENT <-->|"同一 ROS 2 网络"| A["Robot A 容器<br/>/robots/robot_a/..."]
+    AGENT <-->|"同一 ROS 2 网络"| B["Robot B 容器<br/>/robots/robot_b/..."]
 ```
 
-Server 统一提供 DDS 发现、HTTP 接入与续租、RViz 和工作区。常驻客户端复用订阅及 Service/Action Client，直接调用机器人公开接口；Discovery Server 只负责发现，不转发动作。
+Robot 容器直接加入同一 ROS 2 网络。Agent 容器中的原生 `ros2 topic list`、订阅、Service 和 Action 可以直接访问机器人，不经过 HTTP 注册或控制网关。固定 Discovery Server 只负责发现，不转发动作。常驻通用客户端是供子 agent 复用连接的工具，原生 ROS 客户端不依赖它。首次 `topic list` 是短时图快照；完整冷发现检查用 `ros2 topic list --no-daemon --spin-time 3`，详见[原生 CLI 使用说明](docs/usage.md#原生-ros-cli)。
 
 所有机器人使用同一 ROS 域和 DDS 配置，各有唯一 `robot_id`。重启更新 session，保留 UUID、互斥、取消和停止核对，动作超时不自动重发。规则在进入 Agent 前同步，无需因提示词更新重建镜像。详细状态与安全语义见下文。
 
@@ -40,8 +36,8 @@ bash scripts/agent.sh resume --last
 
 ```bash
 export SERVER_IP=192.168.1.10  # 与 Server 主机上设置的地址一致
-bash scripts/robot.sh aloha_tabletop --server "http://${SERVER_IP}:7447" --robot-id aloha_a
-bash scripts/robot.sh cartesian_gripper --server "http://${SERVER_IP}:7447" --robot-id gripper_b
+bash scripts/robot.sh aloha_tabletop --server "${SERVER_IP}" --robot-id aloha_a
+bash scripts/robot.sh cartesian_gripper --server "${SERVER_IP}" --robot-id gripper_b
 ```
 
 同一主机运行多台机器人时，第二台显式指定不同的 `--observation-port 8801`。不生成 join 码，不分配 Agent instance，不动态分配 ROS 域。`--host` 可显式指定机器人向 Server 公布的 IPv4 地址。
@@ -65,16 +61,15 @@ Viewer 默认 `http://127.0.0.1:8080/vnc.html`。通过 `python3 scripts/lan.py 
 
 | 信号 | 证明什么 |
 | --- | --- |
-| `process_alive` | 近期 HTTP presence 或新鲜 ROS 状态证明进程存活；无证据为未知，不证明进程死亡 |
-| `control_lease_valid` | 唯一 robot_id 的控制租约尚有效；超时会停止动作并锁住控制 |
-| `ros_discoverable` | ROS 图已发现该机器人接口；可能包含尚未清除的旧端点 |
+| `process_alive` | 新鲜 ROS 状态证明该发布进程近期存活；无证据为未知，不证明进程死亡 |
+| `ros_discoverable` | ROS 图已发现发布者或服务端点；自身订阅不算，仍可能包含未过期的旧发现记录 |
 | `service_callable` | 按端点记录实际 RPC 响应、时间与服务端成功标志；未调用为无证据 |
 | `observation_fresh` | 收到匹配当前 session 的新鲜状态样本；图像时间须单独核对 |
-| `control_available` | 按状态端点分别报告新鲜度、租约、驱动空闲/故障条件；未出现的臂为未知，驱动最终裁决动作 |
+| `control_available` | 按状态端点分别报告新鲜度、session 一致性、驱动空闲/故障条件；未出现的臂为未知，驱动最终裁决动作 |
 
-HTTP `/presence` 合并首次身份申请和续租，仅负责唯一身份/控制许可；`/health` 提供固定网络配置，`/robots` 提供身份目录。该目录同时通过 ROS 发布，Viewer 和常驻客户端复用订阅。服务端重启或租约过期不自动恢复控制，需明确重启对应机器人并取得新 session。接口名称保持稳定。
+不再有 HTTP 注册、心跳续租或 7447 端口；ROS 2 / DDS 自带的发现与存活检测仍保留。`robot_id` 由部署者保证全网唯一；同名进程会污染同一 ROS 名称空间，不能同时启动。检测到不同新鲜 session 时常驻客户端报告 `session_conflict`，不宣告控制可用；这不替代部署约束。
 
-此方案面向可信同一局域网；去掉 join 码后 HTTP 身份租约不提供客户端身份认证，DDS 也未启用 SROS2。不能把唯一 robot_id 的租约当作安全认证或物理机器人权限隔离。
+机器人重启生成新 session，旧 session 命令被拒绝。发现服务或 Agent 离线不会触发额外租约停机：已接受的有限动作由本地驱动继续执行，取消、故障和停止核对仍由机器人负责。动作超时表示结果未知，必须核对 UUID/session，不能自动重发。此方案用于可信局域网仿真，未启用 SROS2；真实硬件的安全停机必须由本地控制器独立保证。
 
 ## 数据与规则
 
@@ -88,6 +83,7 @@ HTTP `/presence` 合并首次身份申请和续租，仅负责唯一身份/控�
 
 ```bash
 bash scripts/test.sh
+python3 scripts/check_native_ros.py --environment aloha_tabletop --samples 10 --restart --discovery-cycles 5
 python3 scripts/check_lan.py             # 独立 Server + 两个机器人容器，真实 DDS 通信
 python3 scripts/check_lan.py --transport udp
 python3 scripts/check_viewer.py          # ALOHA 三相机、原生 RViz 面板、接口列表
@@ -96,4 +92,4 @@ python3 scripts/check_aloha.py --cartesian
 python3 scripts/audit_agent_image.py
 ```
 
-测试只操作自己创建的隔离仿真，保留 `runs/checks/` 和数据卷。网络测试记录发现/请求/服务端错误，分开测量 HTTP 目录、ROS 数据及图像下载；包含常驻查询、冷启动、并发查询、机器人重启、客户端重连和动作超时核对。实际前后数据与未覆盖环境见[验证报告](docs/network-validation.md)。
+测试只操作自己创建的隔离仿真，保留 `runs/checks/` 和数据卷。网络测试记录发现/请求/服务端错误，分开测量原生 ROS 发现、ROS 数据及图像下载（图像 HTTP 文件服务保留）；包含常驻查询、冷启动、并发查询、机器人重启、客户端重连和动作超时核对。实际前后数据与未覆盖环境见[原生 ROS 验证报告](docs/direct-ros-validation.md)。

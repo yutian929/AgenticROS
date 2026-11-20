@@ -18,6 +18,11 @@ import time
 ROOT=Path(__file__).resolve().parents[1]
 
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--host',default='127.0.0.1',help='use this actual host IPv4 for same-host LAN-address/hairpin verification')
+    parser.add_argument('--transport',choices=('tcp','udp'),default='tcp')
+    parser.add_argument('--keep',action='store_true',help='retain disposable fixture for failure diagnosis')
+    options=parser.parse_args()
     name='agenticros-startup-check-'+secrets.token_hex(4)
     root=ROOT/'runs/checks'/name;root.mkdir(parents=True)
     for filename in ('compose.yaml','compose.client.yaml'):
@@ -42,7 +47,7 @@ def main():
                 except OSError:continue
             reserved.append(number);return number
         raise RuntimeError('no fixture port')
-    config=lan.server_config('127.0.0.1',port(),port(),75,'tcp')
+    config=lan.server_config(options.host,port(),75,options.transport)
     config.update(AGENTICROS_VIEWER_PORT=port(),AGENTICROS_VNC_PORT=port(),
                   AGENTICROS_CODEX_VOLUME=name+'-codex',AGENTICROS_VIEWER_VOLUME=name+'-viewer')
     lan.server_file().write_text(json.dumps(config))
@@ -54,17 +59,22 @@ def main():
         try:lan.main()
         finally:sys.argv=previous
     try:
-        call(['server']);server_id=cid(config)
-        call(['server']);assert cid(config)==server_id
         for robot_id in ('startup_a','startup_b'):
-            args=['robot','--robot-id',robot_id,'--server',f'http://127.0.0.1:{config["AGENTICROS_REGISTRY_PORT"]}',
-                  '--host','127.0.0.1','--observation-port',str(port())]
-            robot=lan.client_config(argparse.Namespace(robot_id=robot_id,server=args[4],host='127.0.0.1',observation_port=int(args[-1]),environment=None,stop=False))
+            args=['robot','--robot-id',robot_id,'--server',options.host,
+                  '--host',options.host,'--transport',options.transport,'--domain-id','75','--discovery-port',str(config['AGENTICROS_DDS_PORT']),'--observation-port',str(port())]
+            robot=lan.client_config(argparse.Namespace(robot_id=robot_id,server=args[4],host=options.host,observation_port=int(args[-1]),environment=None,stop=False,domain_id=75,discovery_port=config["AGENTICROS_DDS_PORT"],transport=options.transport))
             robots.append(robot)
             call(args);first=cid(robot,True);call(args);assert cid(robot,True)==first
+        # Both robot healthchecks must pass with no Server container present.
+        assert not cid(config)
+        call(['server']);server_id=cid(config)
+        call(['server']);assert cid(config)==server_id
         def request(data):
-            raw=subprocess.check_output(['docker','exec',server_id,'agenticros-ros','request',json.dumps(data)],text=True)
-            return json.loads(raw)
+            reply=subprocess.run(['docker','exec',server_id,'agenticros-ros','request',json.dumps(data)],text=True,capture_output=True)
+            with (root/'requests.jsonl').open('a') as log:
+                log.write(json.dumps(dict(request=data,returncode=reply.returncode,stdout=reply.stdout,stderr=reply.stderr))+'\n')
+            if reply.returncode:raise RuntimeError(reply.stdout+reply.stderr)
+            return json.loads(reply.stdout)
         end=time.monotonic()+30
         while True:
             status=request({'op':'status'})
@@ -81,15 +91,22 @@ def main():
         installed=subprocess.check_output(['docker','exec',server_id,'cat','/workspace/AGENTS.md'],text=True)
         assert marker in installed
         inspections=json.loads(subprocess.check_output(['docker','inspect',server_id,*[cid(r,True) for r in robots]],text=True))
-        result=dict(result='PASS',physical_hosts=1,containers=3,network_mode='host',ipc='host',
-                    repeat_start_keeps_containers=True,hot_rules_without_rebuild=True,robot_count=2,
+        result=dict(result='PASS',physical_hosts=1,containers=3,network_mode='host',ipc='host',advertised_host=options.host,
+                    robots_started_without_server=True,repeat_start_keeps_containers=True,hot_rules_without_rebuild=True,robot_count=2,
                     images=[i['Image'] for i in inspections])
         (root/'result.json').write_text(json.dumps(result,indent=2))
         print('PASS: '+str(root),flush=True)
     finally:
-        for robot in robots:
-            lan.run(robot,['stop','client'],True);lan.run(robot,['rm','-f','client'],True)
-        lan.run(config,['stop','server']);lan.run(config,['rm','-f','server'])
+        for container in [cid(config),*[cid(r,True) for r in robots]]:
+            if container:
+                log=subprocess.run(['docker','logs',container],text=True,capture_output=True)
+                (root/(container+'.log')).write_text(log.stdout+log.stderr)
+        if options.keep:
+            print('Fixture retained: '+str(root),flush=True)
+        else:
+            for robot in robots:
+                lan.run(robot,['stop','client'],True);lan.run(robot,['rm','-f','client'],True)
+            lan.run(config,['stop','server']);lan.run(config,['rm','-f','server'])
         print('Evidence and volumes retained: '+str(root),flush=True)
 
 if __name__=='__main__':main()

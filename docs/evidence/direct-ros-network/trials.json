@@ -1,0 +1,302 @@
+{
+  "baseline-cartesian": {
+    "source": "runs/checks/agenticros-native-d77ec7bd",
+    "physical_hosts": 1,
+    "recorded_samples": 40,
+    "recorded_successes": 33,
+    "summary_written": true
+  },
+  "baseline-aloha": {
+    "source": "runs/checks/agenticros-native-9234b549",
+    "physical_hosts": 1,
+    "recorded_samples": 40,
+    "recorded_successes": 8,
+    "summary_written": true
+  },
+  "locator-only": {
+    "source": "runs/checks/agenticros-native-972d93c7",
+    "physical_hosts": 1,
+    "recorded_samples": 2,
+    "recorded_successes": 0,
+    "summary_written": false
+  },
+  "server-mode-only": {
+    "source": "runs/checks/agenticros-native-2b48390e",
+    "physical_hosts": 1,
+    "recorded_samples": 40,
+    "recorded_successes": 40,
+    "summary_written": true
+  },
+  "server-mode-restart": {
+    "source": "runs/checks/agenticros-native-a4119444",
+    "physical_hosts": 1,
+    "recorded_samples": 121,
+    "recorded_successes": 100,
+    "summary_written": true
+  },
+  "backup-tmpfs": {
+    "source": "runs/checks/agenticros-native-b5665a64",
+    "physical_hosts": 1,
+    "recorded_samples": 24,
+    "recorded_successes": 23,
+    "summary_written": false
+  },
+  "server-delay25": {
+    "source": "runs/checks/agenticros-native-84c85128",
+    "physical_hosts": 1,
+    "recorded_samples": 25,
+    "recorded_successes": 20,
+    "summary_written": true
+  },
+  "backup-volume": {
+    "source": "runs/checks/agenticros-native-4c0c8198",
+    "physical_hosts": 1
+  },
+  "native-discovery-cli": {
+    "source": "runs/checks/agenticros-native-7e34dbe9",
+    "physical_hosts": 1,
+    "recorded_samples": 25,
+    "recorded_successes": 20,
+    "summary_written": true
+  },
+  "backup-wal": {
+    "source": "runs/checks/agenticros-native-f1b832f4",
+    "physical_hosts": 1,
+    "recorded_samples": 37,
+    "recorded_successes": 23,
+    "summary_written": true
+  },
+  "filtered-clients": {
+    "source": "runs/checks/agenticros-native-6a061b44",
+    "physical_hosts": 1,
+    "recorded_samples": 5,
+    "recorded_successes": 0,
+    "summary_written": false
+  },
+  "unicast-locators": {
+    "source": "runs/checks/agenticros-native-0adfa1c9",
+    "physical_hosts": 1,
+    "recorded_samples": 25,
+    "recorded_successes": 21,
+    "summary_written": true
+  },
+  "logical-port": {
+    "source": "runs/checks/agenticros-native-dff6261e",
+    "physical_hosts": 1,
+    "recorded_samples": 13,
+    "recorded_successes": 11,
+    "summary_written": true
+  },
+  "tcp-without-shm": {
+    "source": "runs/checks/agenticros-native-ab1e8d89",
+    "physical_hosts": 1,
+    "recorded_samples": 13,
+    "recorded_successes": 11,
+    "summary_written": true
+  },
+  "wan-locator": {
+    "source": "runs/checks/agenticros-native-1a60ec0b",
+    "physical_hosts": 1,
+    "recorded_samples": 13,
+    "recorded_successes": 11,
+    "summary_written": true
+  },
+  "high-port": {
+    "source": "runs/checks/agenticros-native-0172b452",
+    "physical_hosts": 1,
+    "recorded_samples": 16,
+    "recorded_successes": 0,
+    "summary_written": false
+  },
+  "udp-restart": {
+    "source": "runs/checks/agenticros-native-77cda235",
+    "physical_hosts": 1,
+    "recorded_samples": 25,
+    "recorded_successes": 25,
+    "summary_written": true
+  },
+  "tcp-initial-peer": {
+    "source": "runs/checks/agenticros-native-e7737212",
+    "physical_hosts": 1,
+    "recorded_samples": 25,
+    "recorded_successes": 24,
+    "summary_written": true
+  },
+  "tcp-initial-peer-large": {
+    "source": "runs/checks/agenticros-native-7ee96e75",
+    "physical_hosts": 1,
+    "recorded_samples": 120,
+    "recorded_successes": 98,
+    "summary_written": false
+  },
+  "dds-lease-expiry": {
+    "source": "runs/checks/agenticros-native-34674306",
+    "physical_hosts": 1,
+    "recorded_samples": 43,
+    "recorded_successes": 31,
+    "summary_written": true
+  },
+  "tcp-canonical-peer-alias": {
+    "source": "runs/checks/agenticros-native-9fc74576",
+    "physical_hosts": 1,
+    "recorded_samples": 43,
+    "recorded_successes": 43,
+    "summary_written": true
+  },
+  "tcp-canonical-peer-large": {
+    "source": "runs/checks/agenticros-native-2c4bea22",
+    "physical_hosts": 1,
+    "recorded_samples": 137,
+    "recorded_successes": 119,
+    "summary_written": false
+  },
+  "udp-host": {
+    "source": "runs/checks/agenticros-startup-check-120cc751",
+    "physical_hosts": 1,
+    "returncode": 1
+  },
+  "udp-shm-host": {
+    "source": "runs/checks/agenticros-startup-check-5e6be5ff",
+    "physical_hosts": 1,
+    "returncode": 1
+  },
+  "hybrid-host": {
+    "source": "runs/checks/agenticros-startup-check-9411e5fb",
+    "physical_hosts": 1,
+    "returncode": 1
+  },
+  "hybrid-mtu-host": {
+    "source": "runs/checks/agenticros-startup-check-79d764e4",
+    "physical_hosts": 1,
+    "returncode": 1
+  },
+  "hybrid-buffers-host": {
+    "source": "runs/checks/agenticros-startup-check-8cfef678",
+    "physical_hosts": 1,
+    "returncode": 1
+  },
+  "tcp-source-unmodified": {
+    "source": "runs/checks/agenticros-native-2ca2a56a",
+    "physical_hosts": 1,
+    "diagnostic_build": true,
+    "recorded_samples": 55,
+    "recorded_successes": 49,
+    "summary_written": true
+  },
+  "tcp-logical-port-trace": {
+    "source": "runs/checks/agenticros-native-b4a01458",
+    "physical_hosts": 1,
+    "diagnostic_build": true,
+    "recorded_samples": 55,
+    "recorded_successes": 48,
+    "summary_written": true
+  },
+  "tcp-logical-port-retry-diagnostic": {
+    "source": "runs/checks/agenticros-native-9bb1f3bc",
+    "physical_hosts": 1,
+    "diagnostic_build": true,
+    "recorded_samples": 67,
+    "recorded_successes": 66,
+    "summary_written": true
+  },
+  "lan-tcp-initial-time-budget": {
+    "source": "runs/checks/agenticros-check-6da52eca",
+    "physical_hosts": 1,
+    "returncode": 1,
+    "reason": "parent test 40 s bound expired; isolated diagnostic action completed in 41.9 s with receipt"
+  },
+  "lan-outage-time-diagnosis": {
+    "source": "runs/checks/agenticros-check-1b325787",
+    "physical_hosts": 1,
+    "returncode": 1,
+    "reason": "parent test 40 s bound expired; isolated diagnostic action completed in 41.9 s with receipt"
+  },
+  "lan-tcp-first-post-discovery-request": {
+    "source": "runs/checks/agenticros-check-170d4cd5",
+    "physical_hosts": 1,
+    "returncode": 1,
+    "reason": "accepted action completed; immediate cached status request after discovery start timed out; recovery-window probe added"
+  },
+  "lan-recovery-window-diagnostic": {
+    "source": "runs/checks/agenticros-check-f41d2c82",
+    "physical_hosts": 1,
+    "returncode": 0,
+    "samples_argument": 2,
+    "cold_samples_argument": 1
+  },
+  "loopback-fixed-full": {
+    "source": "runs/checks/agenticros-check-2fb4b5d7",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "loopback-discovery-cleanup": {
+    "physical_hosts": 1,
+    "returncode": 1,
+    "note": "failed long-outage diagnostic; evidence retained"
+  },
+  "long-outage-failure-4889825c": {
+    "physical_hosts": 1,
+    "returncode": 1,
+    "note": "failed long-outage diagnostic; evidence retained"
+  },
+  "long-outage-failure-e8eded64": {
+    "physical_hosts": 1,
+    "returncode": 1,
+    "note": "failed long-outage diagnostic; evidence retained"
+  },
+  "viewer-session-learning-failure": {
+    "source": "runs/checks/agenticros-check-d41cefbd",
+    "physical_hosts": 1,
+    "returncode": 1
+  },
+  "startup-lan": {
+    "source": "runs/checks/agenticros-startup-check-d5849a5e",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "native-aloha-final": {
+    "source": "runs/checks/agenticros-native-1c9d9f63",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "native-cartesian": {
+    "source": "runs/checks/agenticros-native-5c274853",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "lan-tcp": {
+    "source": "runs/checks/agenticros-check-84fa4abd",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "lan-udp": {
+    "source": "runs/checks/agenticros-check-81497fe1",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "viewer": {
+    "source": "runs/checks/agenticros-check-ffd83eb4",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "startup": {
+    "source": "runs/checks/agenticros-startup-check-fb4f13fe",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "aloha-cartesian": {
+    "source": "runs/checks/agenticros-aloha-check-e0a14956",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "aloha-raw": {
+    "source": "runs/checks/agenticros-aloha-check-a2e5c9fa",
+    "physical_hosts": 1,
+    "returncode": 0
+  },
+  "baseline-instrumented": {
+    "source": "runs/checks/agenticros-native-b8a7ceb9",
+    "physical_hosts": 1,
+    "note": "frozen old image repeated with split timing; 0/40 successes, no requests reached sending phase"
+  }
+}

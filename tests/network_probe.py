@@ -20,16 +20,8 @@ def http(url):
     with urllib.request.urlopen(url, timeout=5) as response:
         return response.read()
 
-start = time.monotonic()
-try:
-    roster = json.loads(http(os.environ['AGENTICROS_REGISTRY_URL']+'/robots'))
-except Exception as exc:
-    rows.append(dict(layer='registration',phase=mode,success=False,error=type(exc).__name__,response_ms=(time.monotonic()-start)*1000))
-    p=Path('/workspace/evidence/bench-'+label+'.json');p.parent.mkdir(exist_ok=True)
-    p.write_text(json.dumps(rows,indent=2))
-    raise
-rows.append(dict(layer='registration', phase=mode, success=True, response_ms=(time.monotonic()-start)*1000))
-namespaces = {x['robot_id']: x['namespace'] for x in roster['robots']}
+namespaces = {robot:'/robots/'+robot for robot in ('robot_a','robot_b')}
+sessions = {}
 rclpy.init()
 node = rclpy.create_node('network_benchmark_'+str(os.getpid()))
 executor = MultiThreadedExecutor(num_threads=4)
@@ -51,7 +43,7 @@ def call(robot, kind='status'):
     start = time.monotonic()
     request=c.srv_type.Request()
     if kind=='observe' and hasattr(request,'session_id'):
-        request.session_id=next(x['session_id'] for x in roster['robots'] if x['robot_id']==robot)
+        request.session_id=sessions[robot]
     f = c.call_async(request)
     done = threading.Event()
     f.add_done_callback(lambda _: done.set())
@@ -66,6 +58,7 @@ def call(robot, kind='status'):
             payload = json.loads(response.message if kind == 'status' else response.snapshot_json)
             if isinstance(payload,dict) and 'error' in payload:raise RuntimeError(payload['error'])
             row['success'] = True
+            if kind == 'status': sessions[robot]=payload['session_id']
         except Exception:
             row['error'] = 'server_failure'
     row['response_ms'] = (time.monotonic()-start)*1000
@@ -101,3 +94,5 @@ finally:
     p.parent.mkdir(exist_ok=True)
     p.write_text(json.dumps(rows, indent=2))
 print(json.dumps({'label': label, 'samples': len(rows), 'failed': sum(not r['success'] for r in rows)}), flush=True)
+
+assert all(r["success"] for r in rows), "communication benchmark failures; see evidence"

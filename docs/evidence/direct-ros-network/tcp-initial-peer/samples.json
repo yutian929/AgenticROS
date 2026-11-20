@@ -1,0 +1,279 @@
+[
+  {
+    "phase": "cold_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 1322.2752919999996,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold_direct",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 3641.749707999999,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "state",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 2141.8897910000005,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "image",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1609.3099590000008,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1033.1260830000008,
+    "returncode": 0,
+    "discovery_ms": 744.4347080000018,
+    "response_ms": 139.19579199999887
+  },
+  {
+    "phase": "cold_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": false,
+    "error": "discovery_failure",
+    "total_ms": 1017.8304579999988,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold_direct",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 3514.9860830000002,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "state",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1132.726667,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "image",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1642.711042000002,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "cold",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1383.2368329999981,
+    "returncode": 0,
+    "discovery_ms": 1210.8733749999985,
+    "response_ms": 8.435042000002113
+  },
+  {
+    "phase": "warm_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 337.7693750000006,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "warm_daemon",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 359.33458300000257,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1060.6255000000006,
+    "returncode": 0,
+    "discovery_ms": 916.3310419999995,
+    "response_ms": 0.6437499999982776
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": true,
+    "error": null,
+    "total_ms": 1314.191416,
+    "returncode": 0,
+    "discovery_ms": 1169.0027500000006,
+    "response_ms": 2.26904099999814
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": true,
+    "error": null,
+    "total_ms": 1592.0946250000015,
+    "returncode": 0,
+    "discovery_ms": 1343.5265409999993,
+    "response_ms": 100.23233400000109
+  },
+  {
+    "phase": "concurrent",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1624.9251250000007,
+    "returncode": 0,
+    "discovery_ms": 1482.4465420000017,
+    "response_ms": 1.1335410000015145
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "existing_subscription",
+    "success": true,
+    "error": null,
+    "total_ms": 3339.368666999999,
+    "previous_sessions": [
+      "1760f536da41"
+    ],
+    "new_sessions": [
+      "4c4d44e956fa"
+    ]
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 349.7962080000008,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1507.2492079999975,
+    "returncode": 0,
+    "discovery_ms": 1347.0219169999993,
+    "response_ms": 1.4959579999995753
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 433.2448339999999,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "robot_restart",
+    "operation": "service",
+    "robot": "robot_a",
+    "success": true,
+    "error": null,
+    "total_ms": 1569.8294579999938,
+    "returncode": 0,
+    "discovery_ms": 1395.5148749999964,
+    "response_ms": 3.0097910000037587
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 4359.298625000001,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": true,
+    "error": null,
+    "total_ms": 1417.3892920000028,
+    "returncode": 0,
+    "discovery_ms": 1233.0937919999983,
+    "response_ms": 7.676583000005621
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "list",
+    "robot": null,
+    "success": true,
+    "error": null,
+    "total_ms": 3946.347875000001,
+    "returncode": 0,
+    "discovery_ms": null,
+    "response_ms": null
+  },
+  {
+    "phase": "discovery_restart",
+    "operation": "service",
+    "robot": "robot_b",
+    "success": true,
+    "error": null,
+    "total_ms": 1464.6012919999976,
+    "returncode": 0,
+    "discovery_ms": 1302.0457920000013,
+    "response_ms": 1.533790999999951
+  }
+]

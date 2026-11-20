@@ -1,0 +1,33 @@
+Starting >>> agenticros_driver_interfaces
+Finished <<< agenticros_driver_interfaces [3.27s]
+
+Summary: 1 package finished [3.37s]
+{"label": "warm", "samples": 40, "failed": 0}
+{"label": "concurrent", "samples": 40, "failed": 0}
+{"label": "cold-0", "samples": 1, "failed": 0}
+{"label": "cold-1", "samples": 1, "failed": 0}
+{"label": "cold-2", "samples": 1, "failed": 0}
+{"label": "cold-3", "samples": 1, "failed": 0}
+{"label": "cold-4", "samples": 1, "failed": 0}
+{"label": "cold-5", "samples": 1, "failed": 0}
+{"label": "cold-6", "samples": 1, "failed": 0}
+{"label": "cold-7", "samples": 1, "failed": 0}
+{"label": "cold-8", "samples": 1, "failed": 0}
+{"label": "cold-9", "samples": 1, "failed": 0}
+resident PASS 71
+normal PASS
+robot restart PASS
+resident PASS 12
+Traceback (most recent call last):
+  File "<stdin>", line 102, in <module>
+  File "<stdin>", line 27, in status
+  File "<stdin>", line 26, in call
+  File "<stdin>", line 15, in wait
+AssertionError: timeout: never resend
+Evidence retained: /Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS/runs/checks/agenticros-check-170d4cd5
+Traceback (most recent call last):
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS/scripts/check_lan.py", line 305, in <module>
+    if __name__=='__main__':main()
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS/scripts/check_lan.py", line 291, in main
+    assert proc.wait(timeout=120)==0
+AssertionError

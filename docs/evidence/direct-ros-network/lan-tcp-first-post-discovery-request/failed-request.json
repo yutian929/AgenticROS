@@ -1,0 +1,11 @@
+{
+  "layer": "ros_data",
+  "phase": "discovery_restart",
+  "operation": "status",
+  "robot": "robot_a",
+  "success": false,
+  "error": "request_timeout",
+  "configured_response_timeout_ms": 45000,
+  "response_ms": null,
+  "note": "First cached status RPC immediately after discovery start; client wait_for_service passed. No server-side request trace was captured, so the exact lost-message stage is unproven."
+}

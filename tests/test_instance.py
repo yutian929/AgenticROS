@@ -16,7 +16,7 @@ class Lifecycle(unittest.TestCase):
             self.assertEqual(runtime.main(),0)
             request.assert_called_once_with('clients-reload')
 
-    def test_repeated_start_keeps_registry_process_and_epoch(self):
+    def test_repeated_start_keeps_discovery_process(self):
         process = Mock()
         process.poll.return_value = None
         manager = runtime.Runtime()
@@ -26,7 +26,7 @@ class Lifecycle(unittest.TestCase):
             self.assertEqual(spawn.call_count, 1)
         self.assertTrue(manager.status()['server']['running'])
 
-    def test_desktop_stop_does_not_signal_registry(self):
+    def test_desktop_stop_does_not_signal_discovery(self):
         server, viewer = Mock(), Mock()
         server.poll.return_value = viewer.poll.return_value = None
         manager = runtime.Runtime()

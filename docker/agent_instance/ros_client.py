@@ -68,7 +68,6 @@ class Clients:
         import rclpy
         from rclpy.executors import MultiThreadedExecutor
         from rclpy.callback_groups import ReentrantCallbackGroup
-        from std_msgs.msg import String
         rclpy.init()
         self.node = rclpy.create_node('agent_transport')
         self.group = ReentrantCallbackGroup()
@@ -77,23 +76,10 @@ class Clients:
         self.thread = threading.Thread(target=self.executor.spin, daemon=True)
         self.lock = threading.RLock()
         self.services, self.actions, self.subscriptions, self.samples, self.goals = {}, {}, {}, {}, {}
-        self.roster, self.roster_at = {}, 0
+        self.sessions = {}
         self.service_calls = {}
         self.journal = Journal('/workspace/evidence/transport/goals')
-        self.node.create_subscription(String, '/agenticros/robots', self.receive_roster, 10)
         self.thread.start()
-
-    def receive_roster(self, msg):
-        try:
-            roster = json.loads(msg.data)
-            with self.lock:
-                previous={r['robot_id']:r['session_id'] for r in self.roster.get('robots',[])}
-                changed=[r['namespace']+'/' for r in roster.get('robots',[]) if previous.get(r['robot_id']) != r['session_id']]
-                self.samples={key:value for key,value in self.samples.items() if not any(key[0].startswith(ns) for ns in changed)}
-                self.service_calls={key:value for key,value in self.service_calls.items() if not any(key.startswith(ns) for ns in changed)}
-                self.roster, self.roster_at = roster, time.monotonic()
-        except (ValueError, TypeError):
-            pass
 
     def type(self, name, kind):
         from rosidl_runtime_py.utilities import get_message, get_service, get_action
@@ -175,45 +161,43 @@ class Clients:
 
     def status(self):
         graph = self.graph()
-        with self.lock:
-            roster, age = self.roster, time.monotonic()-self.roster_at
-        result = []
-        directory={r['robot_id']:dict(r, membership_registered=True) for r in roster.get('robots',[])}
+        identities = set()
         for name,_ in graph['topics']+graph['services']:
             match=re.match(r'^/robots/([a-z][a-z0-9_]{0,47})/',name)
-            if match:
-                robot_id=match.group(1)
-                directory.setdefault(robot_id,dict(robot_id=robot_id,namespace='/robots/'+robot_id,session_id=None,
-                    process_alive=None,control_lease_valid=False,membership_registered=False))
-        for robot in directory.values():
-            ns = robot['namespace']
-            topics = [(n, t) for n,t in graph['topics'] if n.startswith(ns+'/')]
-            services = [n for n,t in graph['services'] if n.startswith(ns+'/')]
-            # Generic JSON state topics: discover the schema at runtime. No device names.
-            samples = []
-            for name, types in topics:
+            if match: identities.add(match.group(1))
+        result=[]
+        for robot_id in sorted(identities):
+            ns='/robots/'+robot_id
+            topics=[(n,t) for n,t in graph['topics'] if n.startswith(ns+'/')]
+            services=[n for n,t in graph['services'] if n.startswith(ns+'/')]
+            # Our own retained subscriptions keep topic names in the graph.
+            # Require a publisher or service endpoint as remote discovery evidence.
+            discoverable=bool(services) or any(self.node.count_publishers(n)>0 for n,t in topics)
+            samples=[]
+            for name,types in topics:
                 if 'std_msgs/msg/String' not in types: continue
-                sample = self.subscribe(name, 'std_msgs/msg/String')
-                if sample['message']:
-                    try: data = json.loads(sample['message']['data'])
-                    except (ValueError, KeyError): continue
-                    if isinstance(data, dict) and 'session_id' in data and 'state' in data:
-                        samples.append(dict(endpoint=name, age_seconds=sample['age_seconds'], **data))
-            observed_sessions={s['session_id'] for s in samples if s['age_seconds'] < 2}
-            if robot['session_id'] is None and len(observed_sessions)==1:
-                robot['session_id']=next(iter(observed_sessions))
-            fresh = [s for s in samples if s['age_seconds'] < 2 and s['session_id'] == robot['session_id']]
-            result.append(dict(robot, process_alive=True if fresh else robot['process_alive'] if age < 3 else None,
-                               session_conflict=len(observed_sessions)>1,
-                               control_lease_valid=robot['control_lease_valid'] and age < 3,
-                               ros_discoverable=bool(topics or services),
-                               service_callable={n:dict(age_seconds=time.monotonic()-v['at'], callable=v['callable'] if time.monotonic()-v['at'] < 3 else None, server_success=v['server_success'], last_error=v['error']) for n,v in list(self.service_calls.items()) if n.startswith(ns+'/')},
-                               observation_fresh=bool(fresh), observations=samples,
-                               control_available={s['endpoint']:bool(s in fresh and age < 3 and robot['control_lease_valid']
-                                   and len(observed_sessions)==1 and s.get('control_available',False)) for s in samples}))
-        return dict(registry_age_seconds=age if self.roster_at else None,
-                    registry_fresh=age < 3, robots=result,
-                    client_counts=dict(services=len(self.services), actions=len(self.actions), subscriptions=len(self.subscriptions)))
+                sample=self.subscribe(name,'std_msgs/msg/String')
+                if not sample['message']: continue
+                try:data=json.loads(sample['message']['data'])
+                except (ValueError,KeyError):continue
+                if isinstance(data,dict) and 'session_id' in data and 'state' in data:
+                    samples.append(dict(endpoint=name,age_seconds=sample['age_seconds'],**data))
+            fresh=[s for s in samples if s['age_seconds']<2]
+            sessions={s['session_id'] for s in fresh}
+            session=next(iter(sessions)) if len(sessions)==1 else None
+            with self.lock:
+                if session and self.sessions.get(robot_id)!=session:
+                    self.service_calls={n:v for n,v in self.service_calls.items() if not n.startswith(ns+'/')}
+                    self.sessions[robot_id]=session
+                calls=list(self.service_calls.items())
+            result.append(dict(robot_id=robot_id,namespace=ns,session_id=session,
+                process_alive=True if fresh else None,ros_discoverable=discoverable,
+                session_conflict=len(sessions)>1,observation_fresh=bool(fresh) and len(sessions)==1,
+                service_callable={n:dict(age_seconds=time.monotonic()-v['at'],callable=v['callable'] if time.monotonic()-v['at']<3 else None,
+                    server_success=v['server_success'],last_error=v['error']) for n,v in calls if n.startswith(ns+'/')},
+                observations=samples,
+                control_available={s['endpoint']:bool(s in fresh and len(sessions)==1 and s.get('control_available',False)) for s in samples}))
+        return dict(robots=result,client_counts=dict(services=len(self.services),actions=len(self.actions),subscriptions=len(self.subscriptions)))
 
     def reconcile(self, record):
         """One read-only status RPC; no retry, no implicit cancel, no goal replay."""

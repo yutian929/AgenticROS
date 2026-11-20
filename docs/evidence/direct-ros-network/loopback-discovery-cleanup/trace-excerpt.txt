@@ -1,0 +1,16 @@
+2026-11-20 05:57:41.178 [RTPS_PDP Info] Removing writer proxy data 44.53.00.5f.45.50.52.4f.53.49.4d.41|0.0.4.3 -> Function removeWriterProxyData
+2026-11-20 05:57:41.180 [RTPS_PDP Info] 44.53.00.5f.45.50.52.4f.53.49.4d.41|0.0.1.c1 -> Function remove_remote_participant
+2026-11-20 05:57:41.180 [RTPS_PDP Info] For unmatching for server: 44.53.00.5f.45.50.52.4f.53.49.4d.41|0.0.1.c1 -> Function removeRemoteEndpoints
+2026-11-20 05:57:41.180 [RTCP Info] CLEAN CANDIDATE TCPv4:[127.0.0.1]:11811-0 -> Function CloseOutputChannel
+2026-11-20 05:57:41.180 [RTCP Info] CLEAN CANDIDATE SHM:[_]:25911 -> Function CloseOutputChannel
+2026-11-20 05:57:41.180 [RTCP Info] CLEAN KEEP TCPv4:[172.21.0.10]:11811-7410 -> Function CloseOutputChannel
+2026-11-20 05:57:41.180 [RTCP Info] CLEAN KEEP TCPv4:[172.21.0.10]:11811-7410 -> Function CloseOutputChannel
+2026-11-20 05:57:41.180 [RTCP Info] CLEAN ERASE TCPv4:[127.0.0.1]:11811-0 -> Function CloseOutputChannel
+2026-11-20 05:58:22.027 [RTPS_PDP Info] Removing reader proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.14.4 -> Function removeReaderProxyData
+2026-11-20 05:58:22.027 [RTPS_PDP Info] Removing writer proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.15.3 -> Function removeWriterProxyData
+2026-11-20 05:58:22.028 [RTPS_PDP Info] Removing reader proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.16.4 -> Function removeReaderProxyData
+2026-11-20 05:58:22.028 [RTPS_PDP Info] Removing writer proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.17.3 -> Function removeWriterProxyData
+2026-11-20 05:58:22.028 [RTPS_PDP Info] Removing reader proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.18.4 -> Function removeReaderProxyData
+2026-11-20 05:58:22.028 [RTPS_PDP Info] Removing writer proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.19.3 -> Function removeWriterProxyData
+2026-11-20 05:58:22.028 [RTPS_PDP Info] Removing reader proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.1a.4 -> Function removeReaderProxyData
+2026-11-20 05:58:22.028 [RTPS_PDP Info] Removing reader proxy data 01.0f.d6.3e.ef.07.31.7e.00.00.00.00|0.0.1b.4 -> Function removeReaderProxyData

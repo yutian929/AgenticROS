@@ -1,0 +1,8 @@
+{
+  "result": "PASS",
+  "physical_hosts": 1,
+  "containers": 3,
+  "transport": "udp",
+  "autonomous_adaptation": false,
+  "task_evaluation": false
+}

@@ -33,6 +33,24 @@ class InterfaceDialog(unittest.TestCase):
             self.assertEqual(window.dockWidgetArea(dock), QtCore.Qt.TopDockWidgetArea)
         window.close()
 
+    def test_session_learning_and_staleness_do_not_restart_rviz(self):
+        app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
+        with patch.object(Discovery, 'start'), patch('viewer.subprocess.Popen') as launch, \
+                patch('viewer.Path.write_text'):
+            launch.return_value.poll.return_value = None
+            widget = Viewer(); widget.timer.stop()
+            snapshot = dict(robots={'a':'/robots/a'}, topics=[], services=[], actions=[],
+                            frames=['robots/a/base'], edges=[], sessions={})
+            widget.receive(snapshot)
+            self.assertEqual(launch.call_count,1)
+            widget.receive(dict(snapshot,sessions={'a':'first'}))
+            widget.receive(snapshot)  # stale state is not a new session
+            widget.receive(dict(snapshot,sessions={'a':'first'}))
+            self.assertEqual(launch.call_count,1)
+            widget.receive(dict(snapshot,sessions={'a':'second'}))
+            self.assertEqual(launch.call_count,2)
+            widget.close()
+
     def test_tabs_refresh_names_types_and_empty_results(self):
         app = QtWidgets.QApplication.instance() or QtWidgets.QApplication([])
         with patch.object(Discovery, 'start'), patch.object(Viewer, 'select'):

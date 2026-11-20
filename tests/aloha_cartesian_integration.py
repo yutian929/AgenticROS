@@ -145,26 +145,12 @@ def main():
         wait_executing(sent);drivers[0].shutting_down.set()
         assert result('left',sent,False)['reason']=='shutdown'
         drivers[0].shutting_down.clear()
-        # Lease loss is latched by the registration layer; exercise execution response.
-        class Lease:
-            ok=True
-            def valid(self): return self.ok
-        class Lan:
-            lease=Lease()
-            membership={'namespace':''}
-            def identity(self): return {}
-        drivers[0].lan=Lan()
-        sent=send('left','move_delta',goal('left','move_delta',duration=5.))
-        wait_executing(sent);drivers[0].lan.lease.ok=False
-        assert result('left',sent,False)['reason']=='lease_lost'
-        assert not send('left','move_delta',goal('left','move_delta'))[0].accepted
-        assert not state('left')['control_available']
         world.failure='injected-test-fault'
         assert not state('right')['control_available']
         assert not send('right','move_delta',goal('right','move_delta'))[0].accepted
         Path('/observations/integration.json').write_text(json.dumps(dict(passed=True,receipts=reports,
             cases=['both_arms_both_actions_both_frames','rotation_and_translation','invalid_and_stale',
-                   'unreachable_no_execution','joint_speed_limit','planning_cancel','shutdown','shared_exclusion','concurrent_arms','cancel','lease_loss']),indent=2))
+                   'unreachable_no_execution','joint_speed_limit','planning_cancel','shutdown','shared_exclusion','concurrent_arms','cancel','local_fault']),indent=2))
         print('PASS: Cartesian integration',flush=True)
     finally:
         for d in drivers: d.shutting_down.set()

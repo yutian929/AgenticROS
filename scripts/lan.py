@@ -13,9 +13,6 @@ import struct
 import subprocess
 import sys
 import time
-import urllib.error
-import urllib.request
-from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = '44.53.00.5f.45.50.52.4f.53.49.4d.41'
@@ -73,11 +70,10 @@ def lan_addresses():
 def detect_host(server=None):
     if server:
         # UDP connect selects a route without sending traffic to the destination.
-        url = urlsplit(server)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
-            sock.connect((url.hostname, url.port))
+            sock.connect((server, 11811))
             address = sock.getsockname()[0]
-        if ipaddress.IPv4Address(address).is_loopback and not ipaddress.IPv4Address(url.hostname).is_loopback:
+        if ipaddress.IPv4Address(address).is_loopback and not ipaddress.IPv4Address(server).is_loopback:
             raise ValueError('cannot advertise loopback to LAN peers; specify --host')
         return ipv4(address)
     addresses = lan_addresses()
@@ -160,9 +156,6 @@ def environment(config):
     env['AGENTICROS_WORKSPACE_GID'] = str(os.getgid())
     for key,value in dict(ROS_DOMAIN_ID=42,AGENTICROS_DDS_HOST='127.0.0.1',AGENTICROS_DDS_PORT=11811,AGENTICROS_DDS_PREFIX=PREFIX,AGENTICROS_DDS_TRANSPORT='tcp').items():
         env.setdefault(key,str(value))
-    server = config.get('AGENTICROS_SERVER')
-    if server and urlsplit(server).hostname == config.get('AGENTICROS_CLIENT_HOST'):
-        env['AGENTICROS_SERVER'] = 'http://127.0.0.1:'+str(urlsplit(server).port)
     if 'AGENTICROS_ROBOT_ID' in config:
         env['AGENTICROS_OBSERVATION_SOURCE'] = str(client_file(config['AGENTICROS_ROBOT_ID']).parent/'observations')
     return env
@@ -178,14 +171,13 @@ def run(config, args, client=False):
 
 
 def validate_platform_transport(transport):
-    if transport not in ('tcp','udp'):
-        raise ValueError('unsupported DDS transport')
+    if transport not in ('tcp','udp'):raise ValueError('DDS transport must be tcp or udp')
     if sys.platform == 'darwin' and transport != 'tcp':
         raise ValueError('macOS Docker requires TCP; configure the entire LAN consistently')
 
 
-def server_config(host=None, registry_port=None, discovery_port=None, domain=None, transport=None):
-    requested = dict(AGENTICROS_DDS_HOST=host, AGENTICROS_REGISTRY_PORT=registry_port,
+def server_config(host=None, discovery_port=None, domain=None, transport=None):
+    requested = dict(AGENTICROS_DDS_HOST=host,
                      AGENTICROS_DDS_PORT=discovery_port, ROS_DOMAIN_ID=domain,
                      AGENTICROS_DDS_TRANSPORT=transport)
     if server_file().exists():
@@ -194,20 +186,19 @@ def server_config(host=None, registry_port=None, discovery_port=None, domain=Non
             raise ValueError('saved configuration differs; stop the Server and edit runs/server.json explicitly')
     else:
         config = dict(AGENTICROS_DDS_HOST=host or detect_host(),
-                      AGENTICROS_REGISTRY_PORT=registry_port or 7447,
                       AGENTICROS_DDS_PORT=discovery_port or 11811,
                       ROS_DOMAIN_ID=42 if domain is None else domain,
                       AGENTICROS_DDS_TRANSPORT=transport or 'tcp', AGENTICROS_DDS_PREFIX=PREFIX,
                       AGENTICROS_VIEWER_BIND='127.0.0.1', AGENTICROS_VIEWER_PORT=8080,
                       AGENTICROS_VNC_PORT=5900)
     ipv4(config['AGENTICROS_DDS_HOST'])
-    for key in ('AGENTICROS_REGISTRY_PORT','AGENTICROS_DDS_PORT','AGENTICROS_VIEWER_PORT','AGENTICROS_VNC_PORT'): port(config[key])
+    for key in ('AGENTICROS_DDS_PORT','AGENTICROS_VIEWER_PORT','AGENTICROS_VNC_PORT'): port(config[key])
     validate_platform_transport(config['AGENTICROS_DDS_TRANSPORT'])
     if not 0 <= config['ROS_DOMAIN_ID'] <= 101:
         raise ValueError('ROS_DOMAIN_ID must be 0..101')
     if config['AGENTICROS_DDS_TRANSPORT']=='tcp' and config['AGENTICROS_DDS_PORT'] > 32767:
         raise ValueError('TCP discovery port must be <=32767')
-    if len({config[k] for k in ('AGENTICROS_REGISTRY_PORT','AGENTICROS_DDS_PORT','AGENTICROS_VIEWER_PORT','AGENTICROS_VNC_PORT')}) != 4:
+    if len({config[k] for k in ('AGENTICROS_DDS_PORT','AGENTICROS_VIEWER_PORT','AGENTICROS_VNC_PORT')}) != 3:
         raise ValueError('Server ports must be distinct')
     if not server_file().exists():
         for key in ('AGENTICROS_CODEX_VOLUME','AGENTICROS_VIEWER_VOLUME'):
@@ -217,15 +208,14 @@ def server_config(host=None, registry_port=None, discovery_port=None, domain=Non
 
 
 def health(config):
-    url = 'http://127.0.0.1:'+str(config['AGENTICROS_REGISTRY_PORT'])
-    with urllib.request.urlopen(url+'/health', timeout=3) as response:
-        actual = json.load(response)
-    expected = dict(domain_id=config['ROS_DOMAIN_ID'], discovery_host=config['AGENTICROS_DDS_HOST'],
-                    discovery_port=config['AGENTICROS_DDS_PORT'], discovery_transport=config['AGENTICROS_DDS_TRANSPORT'],
-                    discovery_prefix=config['AGENTICROS_DDS_PREFIX'])
-    if any(actual.get(k) != v for k,v in expected.items()):
-        raise ValueError('running Server network configuration differs; refusing replacement')
-    return url
+    ids=subprocess.check_output(compose(config)+['ps','-q','server'],cwd=ROOT,env=environment(config),text=True).split()
+    if not ids: raise OSError('Server is not running')
+    actual=json.loads(subprocess.check_output(['docker','inspect',ids[0]],text=True))[0]
+    variables=dict(v.split('=',1) for v in actual['Config']['Env'] if '=' in v)
+    for key in ('ROS_DOMAIN_ID','AGENTICROS_DDS_HOST','AGENTICROS_DDS_PORT','AGENTICROS_DDS_PREFIX','AGENTICROS_DDS_TRANSPORT'):
+        if variables.get(key)!=str(config[key]):raise ValueError('running Server network configuration differs; refusing replacement')
+    run(config,['exec','-T','server','python3','/opt/instance/runtime.py','health'])
+    return ids[0]
 
 
 def ensure_image(config, service, client=False):
@@ -242,7 +232,7 @@ def prepare_workspace(config):
 def ensure_server(config):
     try:
         return health(config)
-    except (OSError, urllib.error.URLError):
+    except OSError:
         prepare_workspace(config)
         image=ensure_image(config,'server')
         check_host_network(image)
@@ -263,47 +253,42 @@ def agent_command(config, action, extra, interactive):
     return cmd+['server','python3','/opt/instance/runtime.py','attach','bash',entrypoint,*action,*extra]
 
 
-def server_url(value):
-    url=urlsplit(value)
-    if url.scheme!='http' or not url.hostname or url.username or url.password or url.path not in ('','/') or url.query or url.fragment:
-        raise ValueError('server must be http://IPv4:port')
-    ipv4(url.hostname); port(url.port or 7447)
-    return 'http://'+url.hostname+':'+str(url.port or 7447)
-
-
 def client_config(args):
     path=client_file(args.robot_id)
+    fields={'server':'AGENTICROS_DDS_HOST','host':'AGENTICROS_CLIENT_HOST','environment':'AGENTICROS_ENVIRONMENT',
+            'observation_port':'AGENTICROS_OBSERVATION_PORT','domain_id':'ROS_DOMAIN_ID',
+            'discovery_port':'AGENTICROS_DDS_PORT','transport':'AGENTICROS_DDS_TRANSPORT'}
     if path.exists():
         config=json.loads(path.read_text())
-        for option,key in [('server','AGENTICROS_SERVER'),('host','AGENTICROS_CLIENT_HOST'),
-                           ('environment','AGENTICROS_ENVIRONMENT'),('observation_port','AGENTICROS_OBSERVATION_PORT')]:
+        if args.stop:return config
+        if 'AGENTICROS_SERVER' in config:
+            raise ValueError('Legacy HTTP binding: back up and update client.json using docs/usage.md before starting')
+        for option,key in fields.items():
             value=getattr(args,option,None)
-            if option=='server' and value is not None: value=server_url(value)
-            if value is not None and value != config[key]:
+            if value is not None and value!=config[key]:
                 raise ValueError('saved robot binding differs; stop robot and edit its client.json explicitly')
-        return config
-    if args.stop or not args.server:
-        raise ValueError('first start requires --server http://SERVER_IP:7447 and --robot-id ID')
-    server=server_url(args.server)
-    # No enrollment in launcher: robot makes one presence request at process start.
-    config=dict(AGENTICROS_ROBOT_ID=args.robot_id,AGENTICROS_SERVER=server,
-                AGENTICROS_CLIENT_HOST=args.host or detect_host(server),
-                AGENTICROS_OBSERVATION_PORT=args.observation_port or 8800,
-                AGENTICROS_ENVIRONMENT=args.environment or 'cartesian_gripper')
-    write_new(path,config)
+    else:
+        if args.stop or not args.server:
+            raise ValueError('first start requires --server SERVER_IP and --robot-id ID')
+        config=dict(AGENTICROS_ROBOT_ID=args.robot_id,AGENTICROS_DDS_HOST=args.server,
+                    AGENTICROS_CLIENT_HOST=args.host or detect_host(args.server),
+                    AGENTICROS_OBSERVATION_PORT=args.observation_port or 8800,
+                    AGENTICROS_ENVIRONMENT=args.environment or 'cartesian_gripper',
+                    ROS_DOMAIN_ID=args.domain_id if args.domain_id is not None else 42,
+                    AGENTICROS_DDS_PORT=args.discovery_port or 11811,
+                    AGENTICROS_DDS_TRANSPORT=args.transport or 'tcp',AGENTICROS_DDS_PREFIX=PREFIX)
+        validate_network(config)
+        write_new(path,config)
+    validate_network(config)
     return config
 
 
-def client_network(config):
-    url=environment(config)['AGENTICROS_SERVER']
-    with urllib.request.urlopen(url+'/health',timeout=3) as response:
-        network=json.load(response)
-    validate_platform_transport(network['discovery_transport'])
-    ipv4(network['discovery_host']);port(network['discovery_port'])
-    if not 0 <= network['domain_id'] <= 101: raise ValueError('invalid Server domain')
-    return dict(config, ROS_DOMAIN_ID=network['domain_id'],
-                AGENTICROS_DDS_HOST=network['discovery_host'],AGENTICROS_DDS_PORT=network['discovery_port'],
-                AGENTICROS_DDS_PREFIX=network['discovery_prefix'],AGENTICROS_DDS_TRANSPORT=network['discovery_transport'])
+def validate_network(config):
+    ipv4(config['AGENTICROS_DDS_HOST']);port(config['AGENTICROS_DDS_PORT'])
+    validate_platform_transport(config['AGENTICROS_DDS_TRANSPORT'])
+    if not 0<=config['ROS_DOMAIN_ID']<=101:raise ValueError('ROS_DOMAIN_ID must be 0..101')
+    if config['AGENTICROS_DDS_TRANSPORT']=='tcp' and config['AGENTICROS_DDS_PORT']>32767:
+        raise ValueError('TCP discovery port must be <=32767')
 
 
 def prepare_observations(config):
@@ -331,7 +316,6 @@ def main():
     server=sub.add_parser('server')
     server.add_argument('--recreate',action='store_true',help='replace only a stopped Server container, retaining data')
     server.add_argument('--host',type=ipv4,default=os.getenv('AGENTICROS_HOST'))
-    server.add_argument('--port',type=port)
     server.add_argument('--discovery-port',type=port)
     server.add_argument('--domain-id',type=int)
     server.add_argument('--transport',choices=('tcp','udp'),default=os.getenv('AGENTICROS_DDS_TRANSPORT'))
@@ -340,7 +324,10 @@ def main():
         if name in ('agent','login'): p.add_argument('codex_args',nargs=argparse.REMAINDER)
     robot=sub.add_parser('robot')
     robot.add_argument('--robot-id',type=robot_name,required=True)
-    robot.add_argument('--server')
+    robot.add_argument('--server',type=ipv4,help='fixed DDS Server IPv4 address; no HTTP registration')
+    robot.add_argument('--domain-id',type=int)
+    robot.add_argument('--discovery-port',type=port)
+    robot.add_argument('--transport',choices=('tcp','udp'))
     robot.add_argument('--host',type=ipv4)
     robot.add_argument('--observation-port',type=port)
     robot.add_argument('--environment',choices=('cartesian_gripper','aloha_tabletop'))
@@ -354,12 +341,11 @@ def main():
         config=client_config(args)
         if args.recreate: recreate_stopped(config,True)
         if not args.stop:
-            config=client_network(config)
             prepare_observations(config)
             check_host_network(ensure_image(config,'client',True))
         run(config,['stop','client'] if args.stop else ['up','-d','--no-build','--pull','never','--no-recreate','--wait','client'],True)
         return
-    config=server_config(args.host,args.port,args.discovery_port,args.domain_id,args.transport) if args.command=='server' else server_config(os.getenv('AGENTICROS_HOST'))
+    config=server_config(args.host,args.discovery_port,args.domain_id,args.transport) if args.command=='server' else server_config(os.getenv('AGENTICROS_HOST'))
     if args.command=='server' and args.recreate: recreate_stopped(config)
     if args.command=='stop-server': run(config,['stop','server'])
     elif args.command in ('viewer','stop-viewer','reload-clients'):
@@ -378,7 +364,7 @@ def main():
         os.chdir(ROOT); os.execvpe(cmd[0],cmd,environment(config))
     else:
         if args.command=='server': ensure_server(config)
-        print('Server: http://'+config['AGENTICROS_DDS_HOST']+':'+str(config['AGENTICROS_REGISTRY_PORT']))
+        print('DDS Server: '+config['AGENTICROS_DDS_HOST']+':'+str(config['AGENTICROS_DDS_PORT']))
         print('Viewer: http://'+config['AGENTICROS_VIEWER_BIND']+':'+str(config['AGENTICROS_VIEWER_PORT'])+'/vnc.html')
         print('Viewer password: python3 scripts/lan.py viewer-password')
 

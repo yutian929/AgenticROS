@@ -65,23 +65,25 @@ class Transport(unittest.TestCase):
     def test_status_never_equates_graph_or_liveness_with_control(self):
         import threading,time
         client=m.Clients.__new__(m.Clients);client.lock=threading.RLock()
-        client.roster_at=time.monotonic();client.service_calls={}
+        client.sessions={};client.service_calls={}
+        client.node=SimpleNamespace(count_publishers=Mock(return_value=1))
         client.services={};client.actions={};client.subscriptions={}
         client.graph=lambda:dict(topics=[('/robots/a/state',['std_msgs/msg/String'])],services=[],actions=[])
         sample=dict(session_id='new',state={},control_available=True)
         client.subscribe=lambda *args:dict(message={'data':json.dumps(sample)},age_seconds=.1)
-        client.roster={}
         status=client.status()['robots'][0]
         self.assertTrue(status['process_alive']);self.assertTrue(status['ros_discoverable'])
-        self.assertFalse(status['membership_registered']);self.assertFalse(any(status['control_available'].values()))
-        client.roster=dict(robots=[dict(robot_id='a',namespace='/robots/a',session_id='old',process_alive=True,control_lease_valid=True)])
+        self.assertEqual(status['session_id'],'new')
+        self.assertTrue(status['control_available']['/robots/a/state'])
+        client.service_calls={'/robots/a/status':dict(at=time.monotonic(),callable=True,server_success=True,error=None)}
+        sample['session_id']='restarted'
+        self.assertEqual(client.status()['robots'][0]['service_callable'],{})
+        client.subscribe=lambda *args:dict(message={'data':json.dumps(sample)},age_seconds=4)
         status=client.status()['robots'][0]
+        self.assertIsNone(status['process_alive']);self.assertTrue(status['ros_discoverable'])
         self.assertFalse(status['observation_fresh']);self.assertFalse(any(status['control_available'].values()))
-        client.roster['robots'][0]['session_id']='new'
-        self.assertTrue(client.status()['robots'][0]['control_available']['/robots/a/state'])
-        client.roster['robots'][0]['control_lease_valid']=False
-        status=client.status()['robots'][0]
-        self.assertTrue(status['process_alive']);self.assertFalse(any(status['control_available'].values()))
+        client.node.count_publishers.return_value=0
+        self.assertFalse(client.status()['robots'][0]['ros_discoverable'])
 
     def test_cancel_timeout_reconciles_once_without_resending(self):
         client=m.Clients.__new__(m.Clients)
