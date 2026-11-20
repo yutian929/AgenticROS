@@ -2,12 +2,62 @@
 
 一个 Agent Server，在同一局域网接入多台机器人。Server 内一个监督 Agent 可使用多个执行子 agent；感知、规划、驱动仍可由多个 ROS 节点实现。当前仓库提供 Cartesian Gripper 和 ALOHA 双臂共享世界仿真，不包含真实硬件部署验证。
 
-```text
-Agent / 执行子 agents ── 本地 socket ── 常驻通用 ROS 客户端
-                                         │ 直接调用公开 ROS 接口
-              固定 DDS Discovery Server ──┼── /robots/robot_a/...
-                                         └── /robots/robot_b/...
+## 系统架构
+
+```mermaid
+flowchart TB
+    subgraph SERVER["Server 主机 · 单 Agent Server · 固定 SERVER_IP"]
+        MAIN["主 Agent<br/>任务决策与编排"]
+        SUB["执行子 agents<br/>按机器人 / 机械臂分工"]
+        CLIENT["常驻通用 ROS 客户端<br/>复用订阅、Service Client、ActionClient"]
+        REG["身份目录与控制租约<br/>HTTP /health · /presence · /robots"]
+        DDS["固定 DDS Discovery Server<br/>接口发现"]
+        VIEW["Viewer / 原生 RViz<br/>相机、点云、接口列表"]
+        WS[("唯一 /workspace<br/>生成代码、公开 IDL、证据、UUID 日志")]
+        MAIN -->|"分配与监督"| SUB
+        MAIN -->|"本地 Unix socket"| CLIENT
+        SUB -->|"同一本地 socket"| CLIENT
+        MAIN --- WS
+        CLIENT --- WS
+        REG -->|"ROS 身份目录"| CLIENT
+        REG -->|"ROS 身份目录"| VIEW
+        CLIENT -.->|"发现"| DDS
+        VIEW -.->|"发现"| DDS
+    end
+
+    subgraph LAN["同一局域网 · 全网统一 ROS_DOMAIN_ID 与 DDS profile"]
+        subgraph ROBOT_A["机器人 A · robot_id = robot_a"]
+            A["公开 ROS 接口 /robots/robot_a/...<br/>感知、规划、驱动等 ROS 节点<br/>驱动校验 session / UUID，执行互斥与取消"]
+            PA["接入与续租<br/>图像 HTTP 服务"]
+        end
+        subgraph ROBOT_B["机器人 B · robot_id = robot_b"]
+            B["公开 ROS 接口 /robots/robot_b/...<br/>感知、规划、驱动等 ROS 节点<br/>驱动校验 session / UUID，执行互斥与取消"]
+            PB["接入与续租<br/>图像 HTTP 服务"]
+        end
+    end
+
+    PA -->|"HTTP presence"| REG
+    PB -->|"HTTP presence"| REG
+    A -.->|"发现"| DDS
+    B -.->|"发现"| DDS
+    CLIENT <-->|"直接 ROS Topic / Service / Action"| A
+    CLIENT <-->|"直接 ROS Topic / Service / Action"| B
+    A -->|"ROS 相机 / 点云 / TF"| VIEW
+    B -->|"ROS 相机 / 点云 / TF"| VIEW
+
+    classDef server fill:#e8f1fc,stroke:#4677aa,color:#162c46
+    classDef robot fill:#e9f5ed,stroke:#47835d,color:#183c26
+    classDef infrastructure fill:#fff3df,stroke:#a77a30,color:#493411
+    class MAIN,SUB,CLIENT,VIEW server
+    class A,B,PA,PB robot
+    class REG,DDS,WS infrastructure
 ```
+
+- 虚线表示 DDS 发现关系；动作、状态和观测通过公开 ROS 接口直接传输，Discovery Server 不转发动作。图中的身份目录与 Discovery Server 是逻辑职责，当前由同一个 registry 进程承载。
+- HTTP presence 负责身份与控制租约，不代表 ROS 接口已可调用。快照服务返回的图像 URL，由 Agent 侧按需通过 HTTP 下载并校验；RViz 相机走 ROS topic。
+- 接口名称空间固定，机器人重启改变 `session_id`；状态、动作请求及回执携带 session。ALOHA 的左右臂属于同一机器人，共享世界和 session，接口在该 robot_id 下继续按臂划分。
+- 启动 Agent 前同步 AGENTS.md、contract、skills 和执行子 agent 规则到工作区，无需因提示词更新重建镜像。
+
 
 Server 同时提供原生 RViz、相机面板和只读接口列表。机器人进程内保留 session 校验、动作 UUID、单臂互斥、取消和停止回执。等待超时不自动重发。客户端和 Server 不预装设备任务程序；Agent 从运行时公开接口获取设备文档和 IDL，按需实现能力。
 
