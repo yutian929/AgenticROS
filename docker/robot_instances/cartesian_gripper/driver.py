@@ -58,7 +58,7 @@ class Driver(Node):
                 'Snapshot returns rgb_url, depth_url, snapshot_json_url instead of local paths. '
                 'Download these immutable public artifacts into your workspace; validate session, identity and SHA256. '
                 'Keep URLs private: they carry read-only snapshot tokens. '
-                'Instance heartbeat loss aborts active motion and rejects new goals until explicit client restart.\n')
+                'Control lease loss aborts active motion and rejects new goals until explicit client restart.\n')
         self.declare_parameter('device_documentation', documentation,
                                ParameterDescriptor(read_only=True, description='Public device manual'))
         self.declare_parameter('interface_sources', json.dumps({
@@ -185,11 +185,16 @@ class Driver(Node):
                                        and np.max(np.abs(state['state']['joint_velocities'])) < .02)
         if self.lan:
             state.update(self.lan.identity())
-            state['connected'] = self.lan.lease.valid()
+            state['control_lease_valid'] = self.lan.lease.valid()
+        state['control_available'] = bool(not self.shutting_down.is_set() and not state['busy'] and not state['recovery_required']
+                                          and state.get('control_lease_valid', True))
         response.success, response.message = True, json.dumps(state)
         return response
 
     def observe(self, request, response):
+        if (self.lan or request.session_id) and request.session_id != self.sim.session:
+            response.snapshot_json = json.dumps(dict(error='session_mismatch', session_id=self.sim.session))
+            return response
         snapshot = self.render.submit(self.sim.snapshot, os.getenv('OBSERVATION_ROOT', '/observations')).result()
         if self.lan:
             snapshot = self.lan.export(snapshot)
@@ -207,7 +212,8 @@ class Driver(Node):
                              recovery_required=self.recovery_required, state=state)
         if self.lan:
             telemetry.update(self.lan.identity())
-            telemetry['connected'] = self.lan.lease.valid()
+            telemetry['control_lease_valid'] = self.lan.lease.valid()
+        telemetry['control_available'] = bool(not self.shutting_down.is_set() and not telemetry['busy'] and not telemetry['recovery_required'] and telemetry.get('control_lease_valid', True))
         self.telemetry.publish(String(data=json.dumps(telemetry)))
 
     def capture_frame(self):

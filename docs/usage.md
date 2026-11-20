@@ -1,196 +1,82 @@
-# 详细使用说明
+# 使用说明
 
-首次使用见 [README](../README.md)。以下命令均在仓库根目录执行。
-Server / Client 是主机角色；Agent instance / Robot instance 是运行实例。
-命令中的 `--agent_id` 指 Agent instance，`--robot-id` 标识其下的 Robot instance。
+## 固定 Server 和机器人接入
 
-## 多账号与会话
+在 Server 主机运行 `python3 scripts/lan.py server --host SERVER_IP`，然后 `bash scripts/agent.sh`。仅一个 Server、一个 `/workspace`，监督 Agent 可派生多个执行子 agent，不需要实例名称。
 
-不同 Agent instance 分别保存账号、配置、历史和工作区：
+首次可配置 `--domain-id 42 --port 7447 --discovery-port 11811 --transport tcp`。配置固定保存到 `runs/server.json`；后续不重新分配。运行中传入不同配置会拒绝，先明确停止所有受影响任务与机器人，停止 Server，再编辑配置并重启。不要让任务 Agent 修改 DDS 设置。
 
-```bash
-bash scripts/agent.sh --agent_id account-a
-bash scripts/agent.sh --agent_id account-b
-bash scripts/agent.sh --agent_id account-a resume --last
-bash scripts/agent-login.sh --agent_id account-a
-```
-
-名称使用小写字母、数字和连字符，首位不能为连字符，最长 48 字符；`--agent_id` 放在其他参数之前。
-首次启动按菜单选择 ChatGPT 或 API；后续可复用账号，也可进入菜单切换配置。
-模型默认配置见 [codex.toml](../docker/agent_instance/agent/codex.toml)。API 校验可能产生少量用量。
-每个 Agent instance 同时只允许一个交互控制会话。
-
-## 局域网与指定 IP
-
-Linux 与 macOS 使用相同启动命令。macOS 需要 Docker Desktop 4.34+，开启
-Settings → Resources → Network → Enable host networking，然后 Apply & restart；不能同时启用 Enhanced Container Isolation。
-启动器会检测双向 host networking。多网卡或 VPN 环境可明确指定 Server 主机地址：
+在每个机器人主机运行：
 
 ```bash
-AGENTICROS_HOST=192.168.1.10 bash scripts/agent.sh --agent_id account-a
+bash scripts/robot.sh aloha_tabletop --server http://SERVER_IP:7447 --robot-id aloha_a
+# 同一主机的第二台机器人需要不同图像 HTTP 端口
+bash scripts/robot.sh cartesian_gripper --server http://SERVER_IP:7447 --robot-id gripper_b --observation-port 8801
 ```
 
-Robot instance 使用输出的完整连接码加入，不必另传 Server IP。同一 Agent instance 下，每个机器人使用不同 ID：
+重启沿用保存的 Server 地址、robot_id 和环境。ALOHA 是一个 robot_id、一个共享世界/session；两臂位于 `/robots/aloha_a/left/...` 与 `/robots/aloha_a/right/...`，保留 `move_pose`、`move_delta`、`actuate`、三相机和原生 RViz 面板。
+
+唯一身份租约默认 6 秒。若旧进程已停止，等待其租约过期再启动同一 robot_id；新进程生成新 session。旧 session 命令被驱动拒绝，名称空间不会变化。网络故障/Server 重启导致租约过期后，客户端仍继续报告进程存活并提供只读诊断，控制保持锁定，明确重启机器人才能恢复。不会自动重放动作。
+
+## 网络配置与定位
+
+Linux 和 macOS Docker 默认使用 TCP Discovery Server，端口 11811；HTTP presence 7447；机器人图像 HTTP 默认 8800。TCP 模式统一启用 TCP + 同机 SHM（host 网络同时共享 IPC）；不同网络名称空间走 TCP。UDP 模式只使用 UDP。TCP DDS 数据使用动态监听端口，可信 LAN 防火墙必须允许双向节点数据连接；只放通发现端口不足以保证 Service/Action/图像成功。macOS 启动器会探测实际双向 Docker host 网络转发。
+
+Linux 可在全网统一配置 UDP，但必须先用隔离环境验证。不要为删除组件切换为 multicast 自动发现。所有节点继承统一 profile、domain 和异步发布设置；不要临时导出另一套 DDS 配置。跨机器质量仍需在目标 LAN 实测。
+
+定位顺序：
+
+1. HTTP `/health` 读取固定域、发现地址和传输；`/robots` 的 presence 只证明进程续租。
+2. `agenticros-ros graph` 检查 ROS 图发现，记录发现耗时。
+3. 调用公开只读 Service，分别记录发现失败、请求超时、服务端拒绝；查询超时不能解释为动作未执行。
+4. 用观测服务取带 session、时间和校准的快照，单独下载图像，校验会话与 SHA-256；DDS 成功不证明 HTTP 图像链路成功。
+
+## 常驻通用客户端
+
+在 Server Agent 终端内：
 
 ```bash
-bash scripts/robot.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_a
-bash scripts/robot.sh cartesian_gripper --join CONNECTION_CODE --robot-id robot_b
+agenticros-ros graph
+agenticros-ros status
+agenticros-ros request '{"op":"service","endpoint":"/公开服务名称","type":"std_srvs/srv/Trigger","timeout":5}'
+agenticros-ros request '{"op":"read","endpoint":"/公开主题名称","type":"std_msgs/msg/String"}'
 ```
 
-连接码包含地址、实例身份与加入令牌，只交给相关操作者。
-`127.0.0.1` 仅适用于同机部署；跨机器必须使用可达的局域网 IP。
-已有 Robot instance 的归属与连接码不符时，启动器会拒绝覆盖。
+CLI 仅通过本地 Unix socket 联系常驻进程，每次调用不启动 ROS participant。Service Client、ActionClient 和订阅按端点/类型复用，多个执行子 agent 共用同一进程。`control_available` 按实际收到的状态端点分别列出，不把一臂就绪当作整台机器人就绪；未出现的端点为未知。`service_callable` 只记录最近实际调用的证据，超时或证据过期为未知，明确记录最近错误；不会为了刷新状态遍历调用未知服务。Server 目录丢失时仍按 ROS 图列出机器人，标记 `membership_registered=false` 并禁止把发现当作控制许可。`read` 首次创建订阅时可能尚无样本，后续返回接收年龄；设备采集时间与 schema 应以公开说明核对。
 
-新 Agent instance 默认 Fast DDS TCP；已有 Linux UDP 配置保持原协议。
-macOS 需要新建 TCP Agent instance，不能加入旧 UDP 实例。
-Viewer 通过容器内回环地址访问注册服务；Robot instance 与注册服务使用同一主机 IP 时，启动器也让注册请求走回环地址。保存的连接码、对外地址及实例归属不变，远端 Robot instance 仍走局域网地址。
-同机 ROS 数据可走共享内存，跨机走 TCP。注册端口从 TCP 7447、发现端口从 11811、快照端口从 TCP 8800 起选择，以实际输出为准。
-TCP 数据还需要可信主机间双向动态 TCP 连接，仅开放注册与发现端口不够。
-这些网络配置不提供 DDS 身份认证、加密或恶意节点隔离，不能用于公网或真实机器人。
+自定义类型从公开参数/接口取得并构建到 `/workspace/ros_ws`。确认当前动作已核对后执行 `python3 /opt/instance/runtime.py clients-reload`（主机也可 `python3 scripts/lan.py reload-clients`），加载新类型。重载不重启机器人；旧 UUID 发送记录保留，旧句柄不可用时按显式公开状态接口核对。
 
-## 查看状态与画面
+动作 JSON 字段：`op=goal`、实际 `endpoint/type`、调用方分配的 `goal_id`、含 `session_id` 的 `request`、公开只读 `status_endpoint` 和可选 `status_type`。状态服务是环境公开契约，调用方负责选择正确且只读的端点。`result`/`cancel` 使用同一 `goal_id`。超时返回 `outcome=unknown`、`replay_allowed=false` 和状态核对结果；取消确认不是停止确认，必须检查终态回执、session、UUID 和实测停止。通信层不包含抓取或跨步骤任务程序。
+
+## 更新和停止
+
+日常提示词修改后重新进入 `agent.sh` 即可，规则在取得单 Agent 锁后安装。不会自动覆盖运行会话的规则、用户生成文件或本地编辑的规则冲突。
+
+代码/IDL 改动需显式重建镜像。先停止对应仿真任务并核对停止，再停止机器人及 Server；不要替换正在运行的容器：
 
 ```bash
-python3 scripts/lan.py info --agent_id account-a
-python3 scripts/lan.py status --agent_id account-a
-python3 scripts/lan.py start-agent --agent_id account-a
+python3 scripts/lan.py robot --robot-id aloha_a --stop
+python3 scripts/lan.py stop-server
+AGENTICROS_DDS_HOST=SERVER_IP docker compose build server
+docker build -f docker/robot_instances/aloha_tabletop/Dockerfile -t agenticros-aloha_tabletop:single .
+python3 scripts/lan.py server --recreate
+python3 scripts/lan.py robot --robot-id aloha_a --recreate
 ```
 
-`info` 显示 join码、Viewer 地址与密码；`status` 列出注册状态。
-`server` 只准备 Agent instance 的服务与可视化，不进入 Codex。
-注册成功不等于 ROS 数据已互通，仍需核对实际观测。
+`--recreate` 仅替换已停止的对应容器；活动容器会被拒绝，卷和工作区保留。管理入口加载 `runs/server.json`；直接 Compose 启停命令需要提供相同完整配置。机器人启动时通过 `/health` 读取网络配置（不注册），把同一域和 DDS 配置传给容器所有节点；驱动首次 `/presence` 再校验配置一致性。
 
-Viewer 默认绑定 Server 主机的回环地址。需要其他电脑访问时，在首次创建时指定：
+## 迁移
+
+先退出旧 Agent 并停止相关旧 Server/机器人，保留账号卷、runs 和图像卷。选择**一个**旧工作区，不自动合并多个账号：
 
 ```bash
-AGENTICROS_VIEWER_BIND=192.168.1.10 bash scripts/agent.sh --agent_id account-a
+python3 scripts/migrate_workspace.py --from-directory runs/agent_instances/OLD/workspace
+# 或旧版命名数据卷（先构建新 Server 镜像）
+python3 scripts/migrate_workspace.py --from-volume OLD_workspace
 ```
 
-网页顶部选择机器人。点击 **ROS interfaces**，可在 Topics、Services、Actions 三个页签查看发现到的名称和类型，列表每两秒更新；这里只查看接口，不调用服务或发送动作。当前仿真以图像、点云和 TF 展示场景；不同机器人的坐标系独立。
-可单独启停 Viewer，关闭 RViz 后也可点击网页中的 `Open / reset RViz`：
+脚本复制到 `runs/workspace` 并逐文件校验，赋予专用工作区所需的组读写权限，源目录/卷保留；目标已存在时拒绝覆盖。旧的 `runs/instances/OLD/workspace` 也可作为来源。迁移不复用旧 join 码或动态域配置，新建 `runs/server.json` 并让机器人以固定地址重新接入。
 
-```bash
-python3 scripts/lan.py viewer --agent_id account-a
-python3 scripts/lan.py stop-viewer --agent_id account-a
-```
+默认账号卷 `agenticros_codex-home` 继续使用。原命名实例账号可在首次 Server 启动前设置 `AGENTICROS_CODEX_VOLUME=agenticros_codex-home-instance-OLD`（或将同名配置键写入 `runs/server.json`）；Viewer 对应 `AGENTICROS_VIEWER_VOLUME`。直接复用专用卷，不读取或复制宿主凭据。所有旧生成代码和证据保留，但旧 session/旧名称空间的能力记录需要重新发现和验证，不能直接重放旧动作。远程 `Snapshot` 请求现在也要求 `session_id`：从机器人公开接口重新取得 IDL、构建绑定并重载常驻客户端；旧的空请求格式不会在联网模式被兼容接受。
 
-## 停止、恢复与数据
-
-先结束控制任务，再停止各 Robot instance，最后停止 Agent instance：
-
-```bash
-# 各 Client 主机
-python3 scripts/lan.py robot --agent_id account-a --robot-id robot_a --stop
-# Server 主机
-python3 scripts/lan.py stop-agent --agent_id account-a
-```
-
-退出 Codex 不会停止 Agent instance 容器。恢复时先启动 Agent instance，再恢复机器人：
-
-```bash
-bash scripts/agent.sh --agent_id account-a resume --last
-bash scripts/robot.sh cartesian_gripper --agent_id account-a --robot-id robot_a
-```
-
-重启 Robot instance 会重置仿真场景和 session，必须重新发现、核对身份与观测。
-租约失效时机器人中止动作并拒绝新目标；通信恢复不会重发动作或自动恢复控制，需明确停止并重启机器人。
-
-新实例的工作区在 `runs/agent_instances/<agent_id>/workspace/`，Agent 连接配置在同级 `lan/` 目录。
-Robot 配置和观测在 `runs/robot_instances/<agent_id>/<robot_id>/client.json` 与 `observations/`。
-账号与可视化密码使用专用数据卷。已有实例保留旧目录及观测卷，不会在线迁移。停止或移除容器不等于删除这些数据。
-`bash scripts/clean-runtime.sh` 可预览完整清理范围；加 `--yes` 会停止本项目任务并删除数据卷及整个 `runs/`，包括账号、历史和所有证据。加 `--images` 可另删项目镜像标签。清理后新建实例统一使用新目录。
-生成 ROS 包、能力清单和证据分别位于工作区中的 `ros_ws/src/`、`capabilities/manifest.json` 和 `evidence/`。
-
-## 更新源码与镜像
-
-**仅修改 Agent 规则无需重建镜像。** `AGENTS.md`、`contract.md`、`skills/` 和 `agents/` 会在
-`agent.sh` 启动或恢复会话前自动同步，已有容器同样适用。退出当前会话后重新运行原命令即可，
-无需重启机器人；详见 [Agent 规则更新](agent-rules.md)。以下构建步骤用于程序和依赖的更新。
-
-已有镜像默认复用，不会因源码变化自动更新。按所在主机的角色构建所需镜像：
-
-```bash
-# Agent instance
-docker build --target instance -f docker/agent_instance/Dockerfile -t agenticros-instance:lan .
-# Robot instance
-docker build -f docker/robot_instances/cartesian_gripper/Dockerfile -t agenticros-cartesian_gripper:lan .
-```
-
-构建后，先结束任务并停止对应实例，再重新启动。启动器会复用已有容器，不会自动替换在线或已创建的容器；
-应用新镜像时需先移除对应的旧容器（保留数据卷），然后按原命令启动。
-目录整理没有改变镜像标签、容器名、数据卷或已有配置路径。
-
-### 从旧三容器部署迁移
-
-先结束任务并停止各 Robot instance，再构建新镜像，替换旧 Agent instance 容器：
-
-```bash
-# 替换为自己的实例名称；旧 controller 使用 --rm，停止后自动移除
-docker stop agenticros-controller-account-a agenticros-lan-account-a-viewer-1 agenticros-lan-account-a-server-1
-docker rm agenticros-lan-account-a-viewer-1 agenticros-lan-account-a-server-1
-bash scripts/agent.sh --agent_id account-a
-```
-
-随后按上文恢复 Robot instance。保留全部数据卷与 `runs/`，账号、加入令牌和 Viewer 密码沿用原数据。
-
-## 旧版单机入口
-
-不带 `--agent_id` 时保留旧版模式，启动顺序与命名实例模式不同：
-
-```bash
-bash scripts/robot.sh cartesian_gripper
-bash scripts/agent.sh
-```
-
-该模式由仿真容器提供 RViz2。恢复 Agent 会话使用 `bash scripts/agent.sh resume --last`；
-结束任务后使用 `docker compose stop cartesian_gripper` 停止仿真。
-新默认工作区为 `runs/agent_instances/default/workspace/`，已有 `runs/workspace/` 仍兼容。新用户建议使用 README 中的命名实例流程。
-
-旧单机实例可通过下列命令预览删除范围；去掉 `--dry-run` 会不可恢复地删除账号、配置、历史与工作区：
-
-```bash
-bash scripts/delete-agent.sh --agent_id account-a --dry-run
-```
-
-该脚本拒绝删除含 LAN 配置或仍被容器引用的实例，不用于删除当前命名 LAN 实例。
-
-## 验证与开发
-
-```bash
-bash scripts/test.sh
-python3 scripts/audit_agent_image.py --image agenticros-instance:lan
-python3 scripts/check_lan.py --transport tcp
-python3 scripts/check_lan.py --transport tcp --separate-ips --result-timeout 180
-python3 scripts/check_viewer.py
-```
-
-集成验证使用新建的隔离实例，结束后移除测试容器，保留证据和数据卷。
-独立 IP 测试使用私有 IPC，不能替代真实 Mac ↔ Linux 双机的路由、防火墙和链路验收。
-`check_viewer.py` 不发出机器人运动指令；`check_lan.py` 会在新建测试仿真中验证动作、取消与断线停止。
-这些结果不代表 Codex 自主适配或任务评估通过。目录结构、隔离约束与历史结果见 [开发记录](development-record.md)。
-
-## 双臂环境验证
-
-`aloha_tabletop` 使用原生 MuJoCo 与固定版本的 Menagerie 模型；不依赖 robosuite。
-先按 README 启动 Agent instance，然后通过 `robot.sh aloha_tabletop --join CODE --robot-id aloha_a` 加入。
-同一个 `robot-id` 保存环境绑定，不能通过再次传入不同环境名称改变既有实例。
-
-维护者先构建 `agenticros-aloha_tabletop:lan` 镜像，再运行 `python3 scripts/check_aloha.py`。
-该脚本在无外部网络的临时容器执行 `tests/aloha_integration.py`，验证实际 ROS 双臂动作、拒绝并发、错误 session、取消和停止回执；证据写入 `runs/checks/agenticros-aloha-check-*/`，结束后移除测试容器。
-此脚本包含小幅仿真运动，仅对新建测试场景使用，不用于运行中的任务。
-`python3 scripts/check_viewer.py --environment aloha_tabletop` 创建独立测试实例，验证 LAN、Viewer 与左右臂接口发现。
-图形观察使用 Agent instance 的 Viewer，ALOHA 不启动自己的桌面。
-
-### ALOHA 基础笛卡尔运动
-
-在机器人 session 名称空间下，两臂分别提供 `left/driver/move_pose`、`left/driver/move_delta` 和对应的 `right/driver/` 接口。
-类型为 `aloha_driver_interfaces/action/MovePose`、`MoveDelta`；从驱动的 `interface_sources` 参数取得最新定义并重新构建客户端绑定。
-两个 Action 都要求当前 `session_id`、`reference_frame`（`base` 或 `tcp`）及 `duration`（0.1～30 秒）。
-
-`MovePose.target` 为 Pose：base 表示绝对目标，tcp 表示相对于动作开始时 TCP 的目标。
-`MoveDelta.translation` 为 Vector3，`rotation` 为 Quaternion：base 按基座轴施加增量，tcp 按起始工具轴施加增量。增量旋转绕 TCP 原点进行，不绕基座原点公转。
-单位为米，四元数按 xyzw，零旋转必须填 `w: 1.0`。两类动作均保持夹爪命令，执行前预检笛卡尔路径的 IK、关节限位与采样关节速度；不检查碰撞、不自动绕障。
-反馈和回执包含基座下的实测 TCP 位姿、目标误差、执行阶段与停止确认；成功要求 3 mm / 0.03 rad 以内且关节速度低于 0.02 rad/s。
-规划、取消、超时和并发行为的完整约定见驱动公开说明。
-
-维护者运行 `python3 scripts/check_aloha.py --cartesian` 可在独立容器验证两臂、两种 Action 和两种参考系，以及不可达、非法请求、执行互斥、取消和租约失效。测试不会向既有 Robot instance 发动作。
+不会自动调用清理脚本、删除 runs 或数据卷。`clean-runtime.sh` 是显式破坏性维护工具，与启动/迁移流程无关。

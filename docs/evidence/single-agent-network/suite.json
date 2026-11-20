@@ -1,0 +1,86 @@
+{
+  "initial": [
+    {
+      "stage": "server-build",
+      "returncode": 0,
+      "seconds": 2.124024916
+    },
+    {
+      "stage": "gripper-build",
+      "returncode": 0,
+      "seconds": 1.109046292
+    },
+    {
+      "stage": "aloha-build",
+      "returncode": 0,
+      "seconds": 1.099485375
+    },
+    {
+      "stage": "regression",
+      "returncode": 0,
+      "seconds": 4.371953209000001
+    },
+    {
+      "stage": "network-tcp",
+      "returncode": 1,
+      "seconds": 116.525794916
+    },
+    {
+      "stage": "presence",
+      "returncode": 0,
+      "seconds": 0.8086104589999934
+    },
+    {
+      "stage": "viewer",
+      "returncode": 1,
+      "seconds": 39.985942917
+    },
+    {
+      "stage": "network-udp",
+      "returncode": 0,
+      "seconds": 98.42783837499996
+    },
+    {
+      "stage": "aloha-cartesian",
+      "returncode": 0,
+      "seconds": 26.482657042000028
+    },
+    {
+      "stage": "aloha-raw",
+      "returncode": 0,
+      "seconds": 21.343336125000008
+    },
+    {
+      "stage": "image-audit",
+      "returncode": 0,
+      "seconds": 42.191224292000015
+    },
+    {
+      "stage": "macos-network-preflight",
+      "returncode": 0,
+      "seconds": 0.45449162500000284
+    }
+  ],
+  "acceptance": [
+    {
+      "stage": "regression",
+      "returncode": 0,
+      "seconds": 3.76816175
+    },
+    {
+      "stage": "network-tcp",
+      "returncode": 0,
+      "seconds": 200.24589425
+    },
+    {
+      "stage": "viewer",
+      "returncode": 0,
+      "seconds": 77.69069279100003
+    },
+    {
+      "stage": "startup",
+      "returncode": 0,
+      "seconds": 29.14231474999997
+    }
+  ]
+}

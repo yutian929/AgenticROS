@@ -21,7 +21,7 @@ Use grasp-center speeds 0.01..0.25 m/s. There is no collision planner.
   Feedback: measured joint positions. Result: receipt_json.
 * `/driver/status`: std_srvs/srv/Trigger. JSON in message: session_id, busy,
   recovery_required, active_goal_id, execution_status, stop_confirmed, state, completed receipts keyed by goal UUID.
-* `/driver/observe`: agenticros_driver_interfaces/srv/Snapshot. Empty request, snapshot_json response.
+* `/driver/observe`: agenticros_driver_interfaces/srv/Snapshot. Request session_id must match the current driver in LAN mode; snapshot_json response. A mismatch returns an error with the current session, never an old snapshot.
 * `/driver/joint_states`: sensor_msgs/msg/JointState, positions and velocities at 10 Hz.
 * `/driver/state`: std_msgs/msg/String, public session/busy/recovery status and measured state at 10 Hz.
 * `/camera/color/image_raw`: sensor_msgs/msg/Image, rgb8 at approximately 2 Hz.
@@ -50,3 +50,5 @@ snapshots remain available for measurement and task evidence.
 Every snapshot contains explicit session_id and captured_at_unix. Reject stale observations.
 A session mismatch rejects a goal without movement. Status reports the active UUID; a
 missing receipt is NOT evidence that a timed-out request never executed.
+
+LAN identity: stable /robots/<robot_id> namespace. session_id appears in state, observation/action requests and receipts, never in the namespace. Read-only status is the bootstrap query for the current session. control_lease_valid and control_available are distinct from process liveness and ROS discovery. An expired control lease stays locked until explicit robot process restart, even while process presence and read-only observations continue.

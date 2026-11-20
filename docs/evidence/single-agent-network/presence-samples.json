@@ -1,0 +1,202 @@
+[
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.8637500000077125
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.6430000003092573
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5551249996642582
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.7018750002316665
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.6205829999998969
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.6510829998660483
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5541670002457977
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.7224999999380088
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.6957079999665439
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5958329998065892
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.6202909999046824
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.6245419999686419
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.6230829999367415
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.6725419998474536
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.6189999999151041
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5189170001358434
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.533082999936596
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5421249998107669
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5468750000545697
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5234579998614208
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5043750002187153
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5069160001767159
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5123750001985172
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5090409999866097
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.4935419997309509
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.515207999796985
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5197089999455784
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5018329998165427
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5502919998434663
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5051250000178698
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5277500004012836
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.522499999988213
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5044999998062849
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5188330001146824
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5611670003418112
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.548375000107626
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5979589996059076
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5352500002118177
+  },
+  {
+    "layer": "http_enrollment",
+    "success": true,
+    "response_ms": 0.5072499998277635
+  },
+  {
+    "layer": "http_renewal",
+    "success": true,
+    "response_ms": 0.5273330002637522
+  }
+]

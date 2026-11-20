@@ -1,0 +1,7 @@
+{
+  "two_robots": true,
+  "cross_session_rejected": true,
+  "exclusive_actions": true,
+  "cancel_reconciled": true,
+  "remote_snapshots": true
+}

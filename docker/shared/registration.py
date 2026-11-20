@@ -10,6 +10,7 @@ import threading
 import time
 import urllib.parse
 import urllib.request
+import urllib.error
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
@@ -54,11 +55,23 @@ class Client:
         self.server_url = os.environ['AGENTICROS_SERVER'].rstrip('/')
         self.host = str(ipaddress.IPv4Address(os.environ['AGENTICROS_CLIENT_HOST']))
         self.port = int(os.environ['AGENTICROS_OBSERVATION_PORT'])
-        sent = time.monotonic()
-        self.membership = post(self.server_url+'/join', dict(
-            instance=os.environ['AGENTICROS_INSTANCE'], robot_id=os.environ['AGENTICROS_ROBOT_ID'],
-            session_id=self.session), os.environ['AGENTICROS_JOIN_TOKEN'])
+        body=dict(robot_id=os.environ['AGENTICROS_ROBOT_ID'], session_id=self.session)
+        for attempt in range(3):
+            sent=time.monotonic()
+            try:
+                self.membership=post(self.server_url+'/presence',body,'')
+                break
+            except urllib.error.HTTPError:
+                raise  # identity/configuration rejection is not a transport retry
+            except OSError:
+                if attempt==2: raise
+                time.sleep(.2)
+        # Only idempotent presence is retried, using the same session. No ROS goal retry.
         m = self.membership
+        expected={'ROS_DOMAIN_ID':'domain_id','AGENTICROS_DDS_HOST':'discovery_host','AGENTICROS_DDS_PORT':'discovery_port','AGENTICROS_DDS_PREFIX':'discovery_prefix','AGENTICROS_DDS_TRANSPORT':'discovery_transport'}
+        for key,field in expected.items():
+            if key in os.environ and os.environ[key] != str(m[field]):
+                raise ValueError('Server network configuration changed; recreate the stopped robot container')
         self.lease = Lease(m['lease_seconds'], sent)
         self.stop = threading.Event()
         self.secret = secrets.token_bytes(32)
@@ -73,25 +86,24 @@ class Client:
         self.worker.start()
 
     def identity(self):
-        return {k: self.membership[k] for k in ('instance', 'instance_id', 'robot_id', 'namespace')}
+        return {k: self.membership[k] for k in ('robot_id', 'namespace')}
 
     def heartbeat(self):
         while not self.stop.wait(1.):
-            if self.lease.valid():
-                sent = time.monotonic()
-                try:
-                    reply = post(self.server_url+'/heartbeat', {k: self.membership[k] for k in
-                                 ('robot_id', 'session_id', 'epoch')}, self.membership['lease'])
-                    if reply['epoch'] != self.membership['epoch']:
-                        raise ValueError('Agent instance registry restarted')
-                    self.lease.renew(sent, reply['lease_seconds'])
-                except Exception as exc:
-                    # Do not log URLs, tokens or request bodies. Preserve the
-                    # fail-closed deadline while making transport failures visible.
-                    print('LAN heartbeat failed: '+type(exc).__name__, flush=True)
+            sent = time.monotonic()
+            try:
+                body={k:self.membership[k] for k in ('robot_id','session_id','epoch')}
+                body['control_lease_lost']=not self.lease.valid()
+                reply=post(self.server_url+'/presence',body,self.membership['lease'])
+                if reply['epoch'] != self.membership['epoch']:
+                    raise ValueError('Server registry restarted')
+                self.lease.renew(sent,reply['lease_seconds'])
+            except Exception as exc:
+                # Keep process presence separate from the latched control lease.
+                print('LAN presence failed: '+type(exc).__name__,flush=True)
             target = Path('/tmp/lan-health.json')
             temporary = target.with_suffix('.tmp')
-            temporary.write_text(json.dumps(dict(updated=time.time(), connected=self.lease.valid())))
+            temporary.write_text(json.dumps(dict(updated=time.time(), process_alive=True, control_lease_valid=self.lease.valid(), session_id=self.session)))
             temporary.replace(target)
 
     def signature(self, path):

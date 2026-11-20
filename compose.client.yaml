@@ -3,23 +3,28 @@ services:
     build:
       context: .
       dockerfile: docker/robot_instances/${AGENTICROS_ENVIRONMENT:-cartesian_gripper}/Dockerfile
-    image: agenticros-${AGENTICROS_ENVIRONMENT:-cartesian_gripper}:lan
+    image: agenticros-${AGENTICROS_ENVIRONMENT:-cartesian_gripper}:single
     network_mode: host
     ipc: host
     environment:
       AGENTICROS_SERVER: ${AGENTICROS_SERVER:?}
-      AGENTICROS_INSTANCE: ${AGENTICROS_INSTANCE:?}
       AGENTICROS_ROBOT_ID: ${AGENTICROS_ROBOT_ID:?}
-      AGENTICROS_JOIN_TOKEN: ${AGENTICROS_JOIN_TOKEN:?}
       AGENTICROS_CLIENT_HOST: ${AGENTICROS_CLIENT_HOST:?}
-      AGENTICROS_OBSERVATION_PORT: ${AGENTICROS_OBSERVATION_PORT:?}
+      AGENTICROS_OBSERVATION_PORT: ${AGENTICROS_OBSERVATION_PORT:-8800}
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:?}
+      AGENTICROS_DDS_HOST: ${AGENTICROS_DDS_HOST:?}
+      AGENTICROS_DDS_PORT: ${AGENTICROS_DDS_PORT:?}
+      AGENTICROS_DDS_PREFIX: ${AGENTICROS_DDS_PREFIX:?}
+      AGENTICROS_DDS_TRANSPORT: ${AGENTICROS_DDS_TRANSPORT:?}
+      AGENTICROS_ADVERTISE_HOST: ${AGENTICROS_CLIENT_HOST:?}
+      FASTRTPS_DEFAULT_PROFILES_FILE: /tmp/agenticros-lan.xml
       BODY_SEED: ${BODY_SEED:-0}
       # Large camera samples must not synchronously block the driver's Python
       # threads (including lease renewal) when a remote viewer subscribes.
       RMW_FASTRTPS_PUBLICATION_MODE: ASYNCHRONOUS
     volumes:
-      - type: ${AGENTICROS_OBSERVATION_MOUNT_TYPE:-volume}
-        source: ${AGENTICROS_OBSERVATION_SOURCE:-observations}
+      - type: bind
+        source: ${AGENTICROS_OBSERVATION_SOURCE:?}
         target: /observations
     group_add: ["${AGENTICROS_WORKSPACE_GID:-1001}"]
     read_only: true
@@ -28,9 +33,7 @@ services:
     security_opt: ["no-new-privileges:true"]
     init: true
     healthcheck:
-      test: [CMD, /opt/body-venv/bin/python, -c, "import pathlib,time,json; p=pathlib.Path('/tmp/lan-health.json'); d=json.loads(p.read_text()); assert time.time()-d['updated']<5 and d['connected']; p=pathlib.Path('/tmp/body-camera-ready'); assert time.time()-p.stat().st_mtime<15"]
+      test: [CMD, /opt/body-venv/bin/python, -c, "import pathlib,time,json; p=pathlib.Path('/tmp/lan-health.json'); d=json.loads(p.read_text()); assert time.time()-d['updated']<5 and d['process_alive']; p=pathlib.Path('/tmp/body-camera-ready'); assert time.time()-p.stat().st_mtime<15"]
       interval: 3s
       timeout: 4s
       retries: 15
-volumes:
-  observations:

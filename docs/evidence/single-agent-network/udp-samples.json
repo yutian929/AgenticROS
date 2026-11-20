@@ -1,0 +1,2432 @@
+[
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 2.178083000217157
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 503.84712499999296,
+    "response_ms": 453.76325000006545
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.6203750001295703
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 502.9964169998493,
+    "response_ms": 452.5320420002572
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 2.5014170000758895
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 504.84224999991056,
+    "response_ms": 447.0315009998558
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 2.8664999999818974
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 509.2711670004064,
+    "response_ms": 444.6702919999552
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.8947499997921113
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 501.04908299999806,
+    "response_ms": 450.4102910000256
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.828375000059168
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 505.12670799980697,
+    "response_ms": 440.5028749997655
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.6651660002935387
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 504.3209170003138,
+    "response_ms": 462.6270419998946
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.5760840001348697
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 504.1169589999299,
+    "response_ms": 439.47962499987625
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.919916999668203
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 504.87387500015757,
+    "response_ms": 524.983875000089
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "success": true,
+    "response_ms": 1.8733749998318672
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 507.99187599977813,
+    "response_ms": 471.077583999886
+  },
+  {
+    "layer": "registration",
+    "phase": "concurrent",
+    "success": true,
+    "response_ms": 3.6026249999849824
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 503.9861669997663,
+    "response_ms": 454.55295900001147
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 505.79779199961195,
+    "response_ms": 452.7652090000629
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.04199999966658652,
+    "response_ms": 1.0966670001835155
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.026542000341578387,
+    "response_ms": 1.2060839999321615
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01887500002339948,
+    "response_ms": 0.9913330000017595
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01741699998092372,
+    "response_ms": 1.111624999794003
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013833000139129581,
+    "response_ms": 0.9907079997901747
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01849999989644857,
+    "response_ms": 1.299624999774096
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014791000012337463,
+    "response_ms": 0.9098750001612643
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.017040999864548212,
+    "response_ms": 1.0062910000669945
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013582999599748291,
+    "response_ms": 4.334084000220173
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013000000308238668,
+    "response_ms": 4.439458999968338
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.06262499982767622,
+    "response_ms": 1.395416000377736
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.023042000066197943,
+    "response_ms": 2.5114159998338437
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.04254200030118227,
+    "response_ms": 1.4953330000935239
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01329099995928118,
+    "response_ms": 1.4407919998120633
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.018582999928185018,
+    "response_ms": 0.9819580000112182
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.016334000065398868,
+    "response_ms": 1.0798749999594293
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.015750000329717295,
+    "response_ms": 0.979750000169588
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.016375000086554792,
+    "response_ms": 1.135833999796887
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.015624999832652975,
+    "response_ms": 1.0302919999958249
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.028292000024521258,
+    "response_ms": 1.097999999728927
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01662499971644138,
+    "response_ms": 1.0276250000060827
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.035208999634051,
+    "response_ms": 1.0484580002412258
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.016792000224086223,
+    "response_ms": 0.9643749999668216
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01529200017102994,
+    "response_ms": 1.126041000134137
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.017749999642546754,
+    "response_ms": 0.9644169999774022
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.010624999958963599,
+    "response_ms": 1.0875829998440167
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.024375000066356733,
+    "response_ms": 0.8738750002521556
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011458000244601863,
+    "response_ms": 0.9747090002747427
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01316599991696421,
+    "response_ms": 0.829957999940234
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014166000255499966,
+    "response_ms": 0.9667500003160967
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.015625000287400326,
+    "response_ms": 0.8235840000452299
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.02141699997082469,
+    "response_ms": 0.9259580001526047
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012875000265921699,
+    "response_ms": 0.788250000368862
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01554200025566388,
+    "response_ms": 0.9130840003308549
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013750000107393134,
+    "response_ms": 0.7580830001643335
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.020041999960085377,
+    "response_ms": 0.8957079999163398
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01504199963164865,
+    "response_ms": 0.8399170001212042
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014458999885391677,
+    "response_ms": 0.8543750000171713
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01395800018144655,
+    "response_ms": 0.8382500000152504
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.0144999999065476,
+    "response_ms": 0.9928750000653963
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.015083000107551925,
+    "response_ms": 0.7332499999392894
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012707999758276856,
+    "response_ms": 0.968457999988459
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01770799963196623,
+    "response_ms": 0.9048749998328276
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012624999726540409,
+    "response_ms": 1.0186670001530729
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014665999970020493,
+    "response_ms": 0.8365419998881407
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013667000075656688,
+    "response_ms": 0.9013750000121945
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_b",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013999999737279722,
+    "response_ms": 0.7932909998089599
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012708000213024206,
+    "response_ms": 0.9556669997436984
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.014665999970020493,
+    "response_ms": 145.90745800023797
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 1.1321249999127758
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.035167000078217825,
+    "response_ms": 163.8703329999771
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 1.0394999999334686
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.03654100009953254,
+    "response_ms": 236.6633329997967
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 1.0571249999884458
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.04399999988891068,
+    "response_ms": 168.584749999809
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 0.9361669999634614
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.037540999983320944,
+    "response_ms": 163.10329099997034
+  },
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 1.3577079998867703
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.005999999757477781,
+    "response_ms": 469.86604199992144
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.024250000024039764,
+    "response_ms": 1.6092500000013388
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": false,
+    "discovery_ms": 0.05075000035503763,
+    "error": "request_timeout",
+    "response_ms": 2000.163417999829
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": false,
+    "error": "discovery_failure",
+    "discovery_ms": 2027.432208999926
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": false,
+    "error": "discovery_failure",
+    "discovery_ms": 2011.3611259998834
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 2018.877083999996,
+    "response_ms": 4.340750000210392
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.1810839999052405,
+    "response_ms": 1.3466249997691193
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.022790999992139405,
+    "response_ms": 1.1904589996447612
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.024957999812613707,
+    "response_ms": 1.1992499998996209
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.02645799986566999,
+    "response_ms": 1.1441249998824787
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.023208000129670836,
+    "response_ms": 3.6220830002093862
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.028875000225525582,
+    "response_ms": 2.4364999999306747
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.029833000098733464,
+    "response_ms": 1.2453750000531727
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.022958000045036897,
+    "response_ms": 1.0794170002554893
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.020040999970660778,
+    "response_ms": 1.0514999999031716
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "success": true,
+    "discovery_ms": 0.01779100011845003,
+    "response_ms": 1.06824999966193
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 193.096916000286,
+    "discovery_ms": 0.03920800008927472,
+    "response_ms": 178.92495900014183
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.7030839999279124,
+    "discovery_ms": 0.037415999941003975,
+    "response_ms": 1.3207090000832977
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.1389579999558919,
+    "discovery_ms": 0.02579199963292922,
+    "response_ms": 0.8577500002502347
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.1148749999847496,
+    "discovery_ms": 0.017916999695444247,
+    "response_ms": 0.8519160001014825
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.116083999932016,
+    "discovery_ms": 0.015333000192185864,
+    "response_ms": 0.8743749999666761
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.6182079998543486,
+    "discovery_ms": 0.015040999642224051,
+    "response_ms": 1.2767920002261235
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 90.54658300010487,
+    "discovery_ms": 0.013207999927544734,
+    "response_ms": 89.7388339999452
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.968083000065235,
+    "discovery_ms": 0.09116700039157877,
+    "response_ms": 1.465332999941893
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 2.095415999974648,
+    "discovery_ms": 0.014332999853650108,
+    "response_ms": 1.476625000123022
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "restarted",
+    "success": true,
+    "total_ms": 28.96912500000326,
+    "discovery_ms": 0.06504099974335986,
+    "response_ms": 1.333292000254005
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "restarted",
+    "success": true,
+    "total_ms": 30.240208000122948,
+    "discovery_ms": 0.06541699985973537,
+    "response_ms": 1.9861660002788994
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.1461670001153834,
+    "discovery_ms": 0.02337500018256833,
+    "response_ms": 0.8527089999006421
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 102.0061250001163,
+    "discovery_ms": 0.052834000143775484,
+    "response_ms": 89.51862499998242
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.592874999914784,
+    "discovery_ms": 0.030917000003682915,
+    "response_ms": 1.2045419998685247
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.3365410000005795,
+    "discovery_ms": 0.016125000001920853,
+    "response_ms": 1.06275000007372
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9746249997988343,
+    "discovery_ms": 0.01195799995912239,
+    "response_ms": 0.7533330003752781
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9611249997760751,
+    "discovery_ms": 0.012709000202448806,
+    "response_ms": 0.7528749997618434
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9294999999838183,
+    "discovery_ms": 0.011666999853332527,
+    "response_ms": 0.7310830001188151
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0037500001089938,
+    "discovery_ms": 0.010750000001280569,
+    "response_ms": 0.8058749999690917
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9747079998305708,
+    "discovery_ms": 0.01183399990623002,
+    "response_ms": 0.7689999997637642
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9804159999475814,
+    "discovery_ms": 0.01158399982159608,
+    "response_ms": 0.7452499999089923
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0966670001835155,
+    "discovery_ms": 0.01329199994870578,
+    "response_ms": 0.8917909999581752
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0264590000588214,
+    "discovery_ms": 0.01170799987448845,
+    "response_ms": 0.8322079997924448
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9821249996093684,
+    "discovery_ms": 0.012040999990858836,
+    "response_ms": 0.777834000018629
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9939999999915017,
+    "discovery_ms": 0.01195799995912239,
+    "response_ms": 0.7988329998624977
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0189580002588627,
+    "discovery_ms": 0.015125000118132448,
+    "response_ms": 0.7910419999461737
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9083749996534607,
+    "discovery_ms": 0.01091599961000611,
+    "response_ms": 0.7282920000761806
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8865830000104324,
+    "discovery_ms": 0.011416999768698588,
+    "response_ms": 0.686750000113534
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8917919999475998,
+    "discovery_ms": 0.011207999705220573,
+    "response_ms": 0.7059590002427285
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8951250001700828,
+    "discovery_ms": 0.01104200009649503,
+    "response_ms": 0.7160830000429996
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8869580001373834,
+    "discovery_ms": 0.010958000075333985,
+    "response_ms": 0.6885420002618048
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.924250000025495,
+    "discovery_ms": 0.010707999990700046,
+    "response_ms": 0.7257920001393359
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.853000000006432,
+    "discovery_ms": 0.010791000022436492,
+    "response_ms": 0.6792499998482526
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8735830001569411,
+    "discovery_ms": 0.010666999969544122,
+    "response_ms": 0.6903749999764841
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8659169998281868,
+    "discovery_ms": 0.010834000022441614,
+    "response_ms": 0.7005829997979163
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8815410001261625,
+    "discovery_ms": 0.010833000033017015,
+    "response_ms": 0.7096250001268345
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9037499999067222,
+    "discovery_ms": 0.010541999927227153,
+    "response_ms": 0.7190409996837843
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8757089999562595,
+    "discovery_ms": 0.010917000054178061,
+    "response_ms": 0.7051249999676656
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9093749999919964,
+    "discovery_ms": 0.010416999884910183,
+    "response_ms": 0.704791000316618
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8850829999573762,
+    "discovery_ms": 0.013249999938125256,
+    "response_ms": 0.703291999798239
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8512909998898976,
+    "discovery_ms": 0.010833000033017015,
+    "response_ms": 0.6520829997498367
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8640829996693355,
+    "discovery_ms": 0.011416999768698588,
+    "response_ms": 0.6582080000043788
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8134160002555291,
+    "discovery_ms": 0.011333000202284893,
+    "response_ms": 0.6367920000229788
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8910420001484454,
+    "discovery_ms": 0.01049999991664663,
+    "response_ms": 0.713000000359898
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9633749996282859,
+    "discovery_ms": 0.010959000064758584,
+    "response_ms": 0.7849580001675349
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9367080001538852,
+    "discovery_ms": 0.011874999927385943,
+    "response_ms": 0.7366250001723529
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9887080000225978,
+    "discovery_ms": 0.011332999747537542,
+    "response_ms": 0.8023750001484586
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9261670002160827,
+    "discovery_ms": 0.012375000096653821,
+    "response_ms": 0.7278339999174932
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8938750002016604,
+    "discovery_ms": 0.013416999991022749,
+    "response_ms": 0.6892500000503787
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.942582999869046,
+    "discovery_ms": 0.011999999969702912,
+    "response_ms": 0.7376660000772972
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8392499998990388,
+    "discovery_ms": 0.01116599969464005,
+    "response_ms": 0.6535000002259039
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8527079999112175,
+    "discovery_ms": 0.01104200009649503,
+    "response_ms": 0.6586250001419103
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8797079999567359,
+    "discovery_ms": 0.011041000107070431,
+    "response_ms": 0.6807919999118894
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9265419998882862,
+    "discovery_ms": 0.011583000286918832,
+    "response_ms": 0.657666999813955
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9315419997619756,
+    "discovery_ms": 0.011250000170548446,
+    "response_ms": 0.7333749999816064
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9148340000137978,
+    "discovery_ms": 0.012666000202443684,
+    "response_ms": 0.7149170000957383
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8806249998087878,
+    "discovery_ms": 0.011167000138812,
+    "response_ms": 0.6977499997447012
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8268330002465518,
+    "discovery_ms": 0.010791000022436492,
+    "response_ms": 0.6530419996124692
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8865830000104324,
+    "discovery_ms": 0.010707999990700046,
+    "response_ms": 0.7015840001258766
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8572920000915474,
+    "discovery_ms": 0.012250000054336851,
+    "response_ms": 0.6639160001213895
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.9797499997148407,
+    "discovery_ms": 0.013083000339975115,
+    "response_ms": 0.7775829999445705
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 0.8995420002975152,
+    "discovery_ms": 0.011125000128231477,
+    "response_ms": 0.7039580000309797
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.6564170000492595,
+    "discovery_ms": 0.030333000268001342,
+    "response_ms": 1.2462919999052247
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 93.62112500002695,
+    "discovery_ms": 0.008958000307757175,
+    "response_ms": 92.68429199983075
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.4281670000855229,
+    "discovery_ms": 0.0345829998877889,
+    "response_ms": 1.0498330002519651
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.8270840000695898,
+    "discovery_ms": 0.009667000085755717,
+    "response_ms": 1.2447079998310073
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.3732500001424341,
+    "discovery_ms": 0.017458000002079643,
+    "response_ms": 0.9937919999174483
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.6198339999391465,
+    "discovery_ms": 0.009458000022277702,
+    "response_ms": 1.1703750001288427
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.5271659999598342,
+    "discovery_ms": 0.025291999918408692,
+    "response_ms": 1.1540000000422879
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.8610420002005412,
+    "discovery_ms": 0.009124999905907316,
+    "response_ms": 1.254583999980241
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.2697500001195294,
+    "discovery_ms": 0.02579100009825197,
+    "response_ms": 0.9707499998512503
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.5594169999531005,
+    "discovery_ms": 0.010000000202126103,
+    "response_ms": 1.0982079998029803
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.4576660000784614,
+    "discovery_ms": 0.01554200025566388,
+    "response_ms": 0.9300829997300752
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.6887500000848377,
+    "discovery_ms": 0.015083000107551925,
+    "response_ms": 1.3469589998749143
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.4295000000856817,
+    "discovery_ms": 0.018290999832970556,
+    "response_ms": 1.1482089998935407
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.7104999997172854,
+    "discovery_ms": 0.009875000159809133,
+    "response_ms": 1.197832999878301
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.1489160001474374,
+    "discovery_ms": 0.011790999906224897,
+    "response_ms": 0.9032919997480349
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.4494590000140306,
+    "discovery_ms": 0.011749999885068974,
+    "response_ms": 1.0121659997821553
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.0539170002630271,
+    "discovery_ms": 0.010707999990700046,
+    "response_ms": 0.8067500002653105
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.1835420000352315,
+    "discovery_ms": 0.011582999832171481,
+    "response_ms": 0.8513330003552255
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.010082999982842,
+    "discovery_ms": 0.011791999895649496,
+    "response_ms": 0.7708749999437714
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.3311669999893638,
+    "discovery_ms": 0.014166999790177215,
+    "response_ms": 0.9147499999926367
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.010417000088637,
+    "discovery_ms": 0.011500000255182385,
+    "response_ms": 0.8035830001063005
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 101.73741700009487,
+    "discovery_ms": 0.014583000393031398,
+    "response_ms": 101.39270799982114
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.5302080000765272,
+    "discovery_ms": 0.015584000266244402,
+    "response_ms": 1.0436249999656866
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.7449590000069293,
+    "discovery_ms": 0.026542000341578387,
+    "response_ms": 1.371957999708684
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.4291249999587308,
+    "discovery_ms": 0.011665999863907928,
+    "response_ms": 0.8616670002083993
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.4263749999372521,
+    "discovery_ms": 0.015332999737438513,
+    "response_ms": 1.0325000002922025
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.2369999999464198,
+    "discovery_ms": 0.015582999822072452,
+    "response_ms": 0.8942079998632835
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.4409999998861167,
+    "discovery_ms": 0.011999999969702912,
+    "response_ms": 1.0846249997484847
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.4660829997410474,
+    "discovery_ms": 0.011874999927385943,
+    "response_ms": 1.0042090002571058
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.5944579999995767,
+    "discovery_ms": 0.018374999854131602,
+    "response_ms": 1.1730000001080043
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.3970420000077866,
+    "discovery_ms": 0.014000000192027073,
+    "response_ms": 0.9875420000753365
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.589375000094151,
+    "discovery_ms": 0.010583999937807675,
+    "response_ms": 1.1560829998416011
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.2664169998970465,
+    "discovery_ms": 0.012875000265921699,
+    "response_ms": 1.0023749996435072
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.555333999931463,
+    "discovery_ms": 0.010375000329077011,
+    "response_ms": 1.045209000039904
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.247000000148546,
+    "discovery_ms": 0.015749999874969944,
+    "response_ms": 1.0074169999825244
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.619541999843932,
+    "discovery_ms": 0.011250000170548446,
+    "response_ms": 1.1329579997436667
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.4523750000989821,
+    "discovery_ms": 0.014665999970020493,
+    "response_ms": 1.072208999630675
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.772415999766963,
+    "discovery_ms": 0.013917000160290627,
+    "response_ms": 1.295915999889985
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.1894580002262956,
+    "discovery_ms": 0.014041999747860245,
+    "response_ms": 0.7841670003472245
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.3589589998446172,
+    "discovery_ms": 0.010334000307921087,
+    "response_ms": 0.9280409999519179
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.2620410002455174,
+    "discovery_ms": 0.012459000117814867,
+    "response_ms": 0.870666000082565
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.2467080000533315,
+    "discovery_ms": 0.011166999684064649,
+    "response_ms": 1.0409159999653639
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.14845799998875,
+    "discovery_ms": 0.013583000054495642,
+    "response_ms": 0.8127090000016324
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.3023330002397415,
+    "discovery_ms": 0.012999999853491317,
+    "response_ms": 0.9829170003285981
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.4199160000316624,
+    "discovery_ms": 0.010000000202126103,
+    "response_ms": 0.8602079997217515
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.4042499997231062,
+    "discovery_ms": 0.013083999874652363,
+    "response_ms": 1.037707999785198
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.3111250000292785,
+    "discovery_ms": 0.011874999927385943,
+    "response_ms": 1.0133330001735885
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.6806249996079714,
+    "discovery_ms": 0.01687499980107532,
+    "response_ms": 1.3072500000816945
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_b",
+    "success": true,
+    "total_ms": 1.5905830000519927,
+    "discovery_ms": 0.01262500018128776,
+    "response_ms": 1.0192079998887493
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.8102079998243426,
+    "discovery_ms": 0.019084000086877495,
+    "response_ms": 1.4216660001693526
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 39.45999999996275,
+    "discovery_ms": 0.0397080002585426,
+    "response_ms": 1.2880419999419246
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 32.262833999993745,
+    "discovery_ms": 0.03895800000464078,
+    "response_ms": 1.2967080001544673
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 32.266833999983646,
+    "discovery_ms": 0.03974999981437577,
+    "response_ms": 1.258499999948981
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 138.33875000000262,
+    "discovery_ms": 0.04279200038581621,
+    "response_ms": 90.85345799985589
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 36.053124999853026,
+    "discovery_ms": 0.043125000047439244,
+    "response_ms": 1.4503329998660774
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 44.60429100026886,
+    "discovery_ms": 0.07341599985011271,
+    "response_ms": 3.4184999999524734
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 42.53775000006499,
+    "discovery_ms": 0.043666999772540294,
+    "response_ms": 1.701083000170911
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 52.77845900036482,
+    "discovery_ms": 0.04770800023834454,
+    "response_ms": 7.520582999859471
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 36.1790829997517,
+    "discovery_ms": 0.040874999740481144,
+    "response_ms": 1.5524170003118343
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "success": true,
+    "total_ms": 40.46116700010316,
+    "discovery_ms": 0.0418750000790169,
+    "response_ms": 1.3833329999215493
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "robot": "robot_a",
+    "success": true,
+    "total_ms": 1.6705829998500121,
+    "discovery_ms": 0.032250000003841706,
+    "response_ms": 1.2445420002222818
+  },
+  {
+    "layer": "registration",
+    "phase": "warm",
+    "success": true,
+    "response_ms": 2.0313329996497487
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 506.623541999943,
+    "response_ms": 515.8278750000136
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.03274999971836223,
+    "response_ms": 1.8575419999251608
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.020417000087036286,
+    "response_ms": 0.9922499998538115
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013459000001603272,
+    "response_ms": 0.7652909998796531
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011790999906224897,
+    "response_ms": 0.6470420003097388
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013416999991022749,
+    "response_ms": 0.7523750000473228
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01462499994886457,
+    "response_ms": 0.7984580001902941
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011916999937966466,
+    "response_ms": 0.8062090000748867
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01662500017118873,
+    "response_ms": 0.7611249998262792
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011958999948546989,
+    "response_ms": 0.7031249997453415
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012541999694803962,
+    "response_ms": 0.7109170001058374
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.016167000012501376,
+    "response_ms": 0.6586250001419103
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011999999969702912,
+    "response_ms": 0.7487920001949533
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011416999768698588,
+    "response_ms": 0.6875839999338496
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014125000234344043,
+    "response_ms": 0.6900420003148611
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012125000012019882,
+    "response_ms": 0.6910830002198054
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.010958999610011233,
+    "response_ms": 0.7229580000966962
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012957999842910795,
+    "response_ms": 0.6830840002294281
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012790999790013302,
+    "response_ms": 0.6739579998793488
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012250000054336851,
+    "response_ms": 0.7095000000845175
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.015208999684546143,
+    "response_ms": 0.6779589998586744
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011083000117650954,
+    "response_ms": 0.6642919997830177
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012583000170707237,
+    "response_ms": 0.7229999996525294
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013041000329394592,
+    "response_ms": 0.6339579999803391
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013332999969861703,
+    "response_ms": 0.7320000004256144
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011125000128231477,
+    "response_ms": 0.7195000002866436
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012999999853491317,
+    "response_ms": 0.6317500001387089
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012707999758276856,
+    "response_ms": 0.6894170001032762
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013625000065076165,
+    "response_ms": 0.6655829997725959
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014041999747860245,
+    "response_ms": 0.6802500001867884
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.04945799992128741,
+    "response_ms": 0.6657090002590849
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014082999769016169,
+    "response_ms": 0.6874169998809521
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014416000340133905,
+    "response_ms": 0.675582999974722
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011665999863907928,
+    "response_ms": 0.7142079998629924
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012541999694803962,
+    "response_ms": 0.6865000000289001
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013500000022759195,
+    "response_ms": 0.6897919997754798
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013583000054495642,
+    "response_ms": 0.6105829997977708
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.012915999832330272,
+    "response_ms": 0.6482499998128333
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.01158399982159608,
+    "response_ms": 0.6867920001241146
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013875000149710104,
+    "response_ms": 0.7360419999713486
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013541000043915119,
+    "response_ms": 0.6425829997169785
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014250000276661012,
+    "response_ms": 0.7209159998637915
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013999999737279722,
+    "response_ms": 0.7431250000990985
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.011749999885068974,
+    "response_ms": 0.7981660000950797
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.016167000012501376,
+    "response_ms": 0.7049169998936122
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014124999779596692,
+    "response_ms": 0.7403330000670394
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.018957999600388575,
+    "response_ms": 0.7750419999865699
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013542000033339718,
+    "response_ms": 0.8100000000013097
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.013040999874647241,
+    "response_ms": 0.8383330000469869
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "status",
+    "success": true,
+    "discovery_ms": 0.014666000424767844,
+    "response_ms": 0.7219170001917519
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.015541999800916528,
+    "response_ms": 154.782250000153
+  },
+  {
+    "layer": "image_download",
+    "phase": "warm",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 2.22741599964138
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.060291000409051776,
+    "response_ms": 164.2555420003191
+  },
+  {
+    "layer": "image_download",
+    "phase": "warm",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 1.2096670002392784
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.03945800017390866,
+    "response_ms": 166.44370800031538
+  },
+  {
+    "layer": "image_download",
+    "phase": "warm",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 5.494917000305577
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.05958300016573048,
+    "response_ms": 274.2883749997418
+  },
+  {
+    "layer": "image_download",
+    "phase": "warm",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 1.096957999834558
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "robot": "robot_a",
+    "operation": "observe",
+    "success": true,
+    "discovery_ms": 0.03562500023690518,
+    "response_ms": 166.80012500000885
+  },
+  {
+    "layer": "image_download",
+    "phase": "warm",
+    "robot": "robot_a",
+    "success": true,
+    "response_ms": 4.66774999995323
+  }
+]

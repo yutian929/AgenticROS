@@ -1,4 +1,4 @@
-"""One Agent instance, independent registry/desktop processes, one interactive brain."""
+"""One Agent instance, independent registry/desktop processes, one interactive brain and one persistent ROS client worker."""
 import fcntl
 import json
 import os
@@ -36,11 +36,12 @@ class Runtime:
             return
         self.enabled.add(name)
         commands = {'server': ['python3', '/opt/agenticros-server/registry.py'],
-                    'viewer': ['bash', '/opt/viewer/entrypoint.sh']}
+                    'viewer': ['bash', '/opt/viewer/entrypoint.sh'],
+                    'clients': ['bash', '-c', 'source /etc/profile.d/agenticros.sh; if [ -f /workspace/ros_ws/install/setup.bash ]; then source /workspace/ros_ws/install/setup.bash; fi; exec python3 /opt/instance/ros_client.py serve']}
         env = os.environ.copy()
         if name == 'viewer':
+            Path('/tmp/viewer-status.json').unlink(missing_ok=True)
             env.update(HOME='/tmp', ROS_LOG_DIR='/tmp/ros_logs')
-            env.pop('AGENTICROS_JOIN_TOKEN', None)
         # Docker captures service logs; the interactive Codex terminal stays separate.
         self.processes[name] = subprocess.Popen(commands[name], env=env, start_new_session=True)
 
@@ -65,6 +66,10 @@ class Runtime:
                 for name, p in self.processes.items()}
 
     def command(self, command):
+        if command == 'clients-reload':
+            self.stop('clients')
+            self.start('clients')
+            return self.status()
         if command == 'status':
             return self.status()
         if command in ('viewer-start', 'viewer-stop', 'server-start', 'server-stop'):
@@ -88,7 +93,10 @@ class Runtime:
             try:
                 self.start('server')
                 self.start('viewer')
+                self.start('clients')
                 while not self.stopping:
+                    if self.processes['clients'].poll() is not None:
+                        self.start('clients')
                     server = self.processes['server']
                     if 'server' in self.enabled and server.poll() is not None:
                         # Never silently change the registry epoch after a failure.
@@ -112,6 +120,7 @@ class Runtime:
                 try:
                     self.stop('viewer')
                 finally:
+                    self.stop('clients')
                     self.stop('server')
                     Path(SOCKET).unlink(missing_ok=True)
 
@@ -121,7 +130,10 @@ def health():
     assert state['server']['running'] and state['server']['enabled']
     url = 'http://127.0.0.1:'+os.environ['AGENTICROS_REGISTRY_PORT']+'/health'
     with urllib.request.urlopen(url, timeout=2) as response:
-        assert json.load(response)['instance_id'] == os.environ['AGENTICROS_INSTANCE_ID']
+        assert json.load(response)['domain_id'] == int(os.environ['ROS_DOMAIN_ID'])
+    assert state['clients']['running']
+    from ros_client import request as client_request
+    assert 'topics' in client_request(dict(op='graph',timeout=1))
     if state['viewer']['enabled']:
         assert state['viewer']['running']
         subprocess.run(['python3', '/opt/viewer/healthcheck.py'], check=True, timeout=8)
@@ -135,7 +147,6 @@ def attach(command):
         except BlockingIOError:
             raise RuntimeError('此 Agent instance 已有一个 Codex 会话；请先退出原会话。') from None
         env = os.environ.copy()
-        env.pop('AGENTICROS_JOIN_TOKEN', None)
         with subprocess.Popen(command, env=env) as process:
             signal.signal(signal.SIGINT, lambda *_: None)  # terminal also signals child
             signal.signal(signal.SIGTERM, lambda *_: process.terminate())

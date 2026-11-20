@@ -117,39 +117,15 @@ class Rules(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'modified'):
             rules.stage(self.source, self.workspace)
 
-    def test_legacy_launcher_reuses_image_and_preserves_arguments(self):
-        scripts = self.root / 'scripts'
-        scripts.mkdir()
-        for name in ('agent.sh', 'agent-options.sh'):
-            shutil.copyfile(ROOT / 'scripts' / name, scripts / name)
-        bins = self.root / 'bin'
-        bins.mkdir()
-        calls = self.root / 'calls.jsonl'
-        fake_docker = bins / 'docker'
-        fake_docker.write_text('#!' + sys.executable + '\n' + '''
-import json, os, sys
-with open(os.environ['CALLS'], 'a') as f: f.write(json.dumps(sys.argv[1:])+'\\n')
-if sys.argv[1:4] == ['compose','config','--images']: print('test-agent-image')
-if sys.argv[1:3] == ['image','inspect']: sys.exit(int(os.environ['IMAGE_MISSING']))
-''')
-        fake_docker.chmod(0o755)
-        fake_python = bins / 'python3'
-        fake_python.write_text('#!/bin/sh\ncase "$1" in *rules.py) echo /workspace/.agenticros/rules/test/entrypoint.sh;; esac\n')
-        fake_python.chmod(0o755)
-        for missing in ('0', '1'):
-            calls.write_text('')
-            subprocess.run(['bash', str(scripts / 'agent.sh'), 'resume', '--last', 'argument with spaces'],
-                           env=dict(os.environ, PATH=str(bins)+':'+os.environ['PATH'],
-                                    CALLS=str(calls), IMAGE_MISSING=missing),
-                           check=True, capture_output=True, text=True)
-            commands = [json.loads(line) for line in calls.read_text().splitlines()]
-            self.assertEqual(['compose', 'build', 'agenticros'] in commands, missing == '1')
-            start = commands[-1]
-            self.assertIn('--no-build', start)
-            self.assertEqual(start[start.index('--entrypoint'):], [
-                '--entrypoint', 'bash', 'agenticros', '/workspace/.agenticros/rules/test/entrypoint.sh',
-                'agenticros', 'start', 'resume', '--last', 'argument with spaces'])
+    def test_launcher_preserves_codex_arguments(self):
+        scripts=self.root/'scripts';scripts.mkdir()
+        shutil.copyfile(ROOT/'scripts/agent.sh',scripts/'agent.sh')
+        bins=self.root/'bin';bins.mkdir();calls=self.root/'calls.json'
+        fake=bins/'python3'
+        fake.write_text('#!'+sys.executable+'\nimport json,os,sys\nopen(os.environ["CALLS"],"w").write(json.dumps(sys.argv[1:]))\n')
+        fake.chmod(0o755)
+        subprocess.run(['bash',str(scripts/'agent.sh'),'resume','--last','argument with spaces'],
+            env=dict(os.environ,PATH=str(bins)+':'+os.environ['PATH'],CALLS=str(calls)),check=True)
+        self.assertEqual(json.loads(calls.read_text()),['scripts/lan.py','agent','--','resume','--last','argument with spaces'])
 
-
-if __name__ == '__main__':
-    unittest.main()
+if __name__=='__main__':unittest.main()

@@ -2,17 +2,15 @@
 import re
 
 
-def robots(roster, instance_id):
-    if roster.get('instance_id') != instance_id:
-        raise ValueError('Registry identity changed; refusing another Agent instance')
+def robots(roster):
     result = {}
     for item in roster.get('robots', []):
         robot, session, namespace = item['robot_id'], item['session_id'], item['namespace']
         if (not re.fullmatch('[a-z][a-z0-9_]{0,47}', robot)
                 or not re.fullmatch('[0-9a-f]{12,32}', session)
-                or namespace != f'/robots/{robot}/s_{session}'):
+                or namespace != f'/robots/{robot}'):
             raise ValueError('Invalid robot identity')
-        if item.get('connected'):
+        if item.get('process_alive'):
             result[robot] = namespace
     return result
 

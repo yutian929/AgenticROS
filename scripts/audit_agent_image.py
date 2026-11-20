@@ -11,10 +11,8 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
-    config = json.loads(subprocess.check_output(['docker', 'compose', 'config', '--format', 'json'], cwd=ROOT, text=True))
-    image_name = config['services']['agenticros'].get('image', config['name'] + '-agenticros')
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--image', default=image_name)
+    parser.add_argument('--image', default='agenticros-server:single')
     image_name = parser.parse_args().image
     image_id = subprocess.check_output(['docker', 'image', 'inspect', image_name,
                                        '--format', '{{.Id}}'], text=True).strip()

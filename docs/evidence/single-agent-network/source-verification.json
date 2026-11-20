@@ -1,0 +1,146 @@
+[
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/ros_client.py",
+    "source_sha256": "236a93c5255d80afb753a896a6d9992dbe4047d8e684a7550ac7aeeec9b1c581",
+    "image_sha256": "236a93c5255d80afb753a896a6d9992dbe4047d8e684a7550ac7aeeec9b1c581",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/runtime.py",
+    "source_sha256": "7b24916587d2344d366455dd542261b94f2aad42495a9bf68ace515f47d5e945",
+    "image_sha256": "7b24916587d2344d366455dd542261b94f2aad42495a9bf68ace515f47d5e945",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/registry/registry.py",
+    "source_sha256": "1259a6658957910c7a28f0b63f471cb5e4423aafdc0440c9a111533be28c3007",
+    "image_sha256": "1259a6658957910c7a28f0b63f471cb5e4423aafdc0440c9a111533be28c3007",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/shared/lan_profile.py",
+    "source_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "image_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/viewer/viewer.py",
+    "source_sha256": "2ae2057185be80082f9535bfc5bd43a7a427bc6fdef28c7447bf388c897d327d",
+    "image_sha256": "2ae2057185be80082f9535bfc5bd43a7a427bc6fdef28c7447bf388c897d327d",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/viewer/discovery.py",
+    "source_sha256": "efb258b138759fc79acffaee575dcd30f3cc8aae9e6d627f801479ae2f54e8a4",
+    "image_sha256": "efb258b138759fc79acffaee575dcd30f3cc8aae9e6d627f801479ae2f54e8a4",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/agent/AGENTS.md",
+    "source_sha256": "c6974018521f089641b00e8c9e87b6c1a3ec93ae8e70d88df0dcdc5f73aa648a",
+    "image_sha256": "c6974018521f089641b00e8c9e87b6c1a3ec93ae8e70d88df0dcdc5f73aa648a",
+    "match": true
+  },
+  {
+    "image": "agenticros-server:single",
+    "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a",
+    "source": "docker/agent_instance/agent/contract.md",
+    "source_sha256": "c472e75894e9ead7bcf6aefbe6bb7798ea7d637a2c7ac4a2d97532851935bcef",
+    "image_sha256": "c472e75894e9ead7bcf6aefbe6bb7798ea7d637a2c7ac4a2d97532851935bcef",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:single",
+    "image_id": "sha256:83e623271333efecedb3b4cb6e2c08544ea796729050e3d1a1a512fc9fd41385",
+    "source": "docker/robot_instances/cartesian_gripper/driver.py",
+    "source_sha256": "daae1bff46f913426bb45dd2b2787abe2ba93732663809636774bdac21982acd",
+    "image_sha256": "daae1bff46f913426bb45dd2b2787abe2ba93732663809636774bdac21982acd",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:single",
+    "image_id": "sha256:83e623271333efecedb3b4cb6e2c08544ea796729050e3d1a1a512fc9fd41385",
+    "source": "docker/robot_instances/cartesian_gripper/entrypoint.sh",
+    "source_sha256": "3346880d2cb4f3219797b0ac8aefcee2c2663be1d556322a6f0dcb32369495c6",
+    "image_sha256": "3346880d2cb4f3219797b0ac8aefcee2c2663be1d556322a6f0dcb32369495c6",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:single",
+    "image_id": "sha256:83e623271333efecedb3b4cb6e2c08544ea796729050e3d1a1a512fc9fd41385",
+    "source": "docker/robot_instances/cartesian_gripper/interfaces/srv/Snapshot.srv",
+    "source_sha256": "8170acbae692308be8dcf3be13dafeb7e265f7727724cb0c4ef99fa503e99bfb",
+    "image_sha256": "8170acbae692308be8dcf3be13dafeb7e265f7727724cb0c4ef99fa503e99bfb",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:single",
+    "image_id": "sha256:83e623271333efecedb3b4cb6e2c08544ea796729050e3d1a1a512fc9fd41385",
+    "source": "docker/shared/registration.py",
+    "source_sha256": "cf8d3776f45882d7764dbea6eeee9454ad8aedfe51aaf4f5648eebbdcc73bff8",
+    "image_sha256": "cf8d3776f45882d7764dbea6eeee9454ad8aedfe51aaf4f5648eebbdcc73bff8",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:single",
+    "image_id": "sha256:83e623271333efecedb3b4cb6e2c08544ea796729050e3d1a1a512fc9fd41385",
+    "source": "docker/shared/lan_profile.py",
+    "source_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "image_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "match": true
+  },
+  {
+    "image": "agenticros-aloha_tabletop:single",
+    "image_id": "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670",
+    "source": "docker/robot_instances/aloha_tabletop/driver.py",
+    "source_sha256": "0a302c7aceea93206dc4d533e3c63109a47b3309ae4042d79f57c66f9c70fae6",
+    "image_sha256": "0a302c7aceea93206dc4d533e3c63109a47b3309ae4042d79f57c66f9c70fae6",
+    "match": true
+  },
+  {
+    "image": "agenticros-aloha_tabletop:single",
+    "image_id": "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670",
+    "source": "docker/robot_instances/aloha_tabletop/entrypoint.sh",
+    "source_sha256": "6b6266405a6cf0042b67076b542b8f7ea7cd5d710dd22c162cb2eab8044ed940",
+    "image_sha256": "6b6266405a6cf0042b67076b542b8f7ea7cd5d710dd22c162cb2eab8044ed940",
+    "match": true
+  },
+  {
+    "image": "agenticros-aloha_tabletop:single",
+    "image_id": "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670",
+    "source": "docker/robot_instances/aloha_tabletop/interfaces/srv/Snapshot.srv",
+    "source_sha256": "8170acbae692308be8dcf3be13dafeb7e265f7727724cb0c4ef99fa503e99bfb",
+    "image_sha256": "8170acbae692308be8dcf3be13dafeb7e265f7727724cb0c4ef99fa503e99bfb",
+    "match": true
+  },
+  {
+    "image": "agenticros-aloha_tabletop:single",
+    "image_id": "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670",
+    "source": "docker/shared/registration.py",
+    "source_sha256": "cf8d3776f45882d7764dbea6eeee9454ad8aedfe51aaf4f5648eebbdcc73bff8",
+    "image_sha256": "cf8d3776f45882d7764dbea6eeee9454ad8aedfe51aaf4f5648eebbdcc73bff8",
+    "match": true
+  },
+  {
+    "image": "agenticros-aloha_tabletop:single",
+    "image_id": "sha256:33f6043859ed193084ec5849abc8cececf10b3ba7a1045a8e02b0ec9132c0670",
+    "source": "docker/shared/lan_profile.py",
+    "source_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "image_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "match": true
+  }
+]

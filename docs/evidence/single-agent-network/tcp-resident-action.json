@@ -1,0 +1,51 @@
+{
+  "sent": {
+    "goal_id": "12d1aed166c1421791dfd0cd3a254584",
+    "accepted": true,
+    "session_id": "4d832370deb2"
+  },
+  "receipt": {
+    "complete": false,
+    "executed": "some",
+    "stop_confirmed": true,
+    "reason": "cancelled",
+    "state": {
+      "sim_time": 0.9200000000000007,
+      "frame": "robots/robot_a/base",
+      "tcp_xyz": [
+        0.0,
+        -0.25,
+        0.2757582750303372
+      ],
+      "gripper_width": 0.08,
+      "joint_names": [
+        "x",
+        "y",
+        "z",
+        "left",
+        "right"
+      ],
+      "joint_positions": [
+        0.0,
+        -0.25,
+        0.07575827502278125,
+        0.04,
+        0.04
+      ],
+      "joint_velocities": [
+        0.0,
+        0.0,
+        -3.777966877371648e-09,
+        0.0,
+        0.0
+      ],
+      "orientation": "fixed downward; no rotational DOF"
+    },
+    "goal_id": "12d1aed166c1421791dfd0cd3a254584",
+    "session_id": "4d832370deb2",
+    "robot_id": "robot_a",
+    "namespace": "/robots/robot_a"
+  },
+  "timeout_reconciled": true,
+  "uuid_replay_rejected": true
+}

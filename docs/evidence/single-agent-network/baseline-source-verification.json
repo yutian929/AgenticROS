@@ -1,0 +1,30 @@
+[
+  {
+    "image": "agenticros-instance:lan",
+    "source": "docker/agent_instance/registry/registry.py",
+    "source_sha256": "b3b2545f6f09caf02093d4b97e67acd45e1acdbea388dcfc525e926f36d21591",
+    "image_sha256": "b3b2545f6f09caf02093d4b97e67acd45e1acdbea388dcfc525e926f36d21591",
+    "match": true
+  },
+  {
+    "image": "agenticros-instance:lan",
+    "source": "docker/shared/lan_profile.py",
+    "source_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "image_sha256": "65a46ebc82c00933c1e67732de0bd6385f74f06b4416e0169197df3f8459909b",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:lan",
+    "source": "docker/robot_instances/cartesian_gripper/driver.py",
+    "source_sha256": "26053615ef7630d6b7fa2ccf674763a08b0c1e9c992b1cad0c43b350d94c03b0",
+    "image_sha256": "26053615ef7630d6b7fa2ccf674763a08b0c1e9c992b1cad0c43b350d94c03b0",
+    "match": true
+  },
+  {
+    "image": "agenticros-cartesian_gripper:lan",
+    "source": "docker/robot_instances/cartesian_gripper/registration.py",
+    "source_sha256": "bc58e45e5a90e3cd7d1935638287282420fe07785e7c9522902345178e0dacbb",
+    "image_sha256": "bc58e45e5a90e3cd7d1935638287282420fe07785e7c9522902345178e0dacbb",
+    "match": true
+  }
+]

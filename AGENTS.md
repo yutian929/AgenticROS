@@ -16,3 +16,9 @@ and Python 3; no native ROS or pixi. Historical prototypes live only in Git hist
 - Distinguish unit tests, Docker integration, autonomous adaptation and task evaluation.
 - Preserve volumes, credentials, generated adapters and runs/. Do not restart a live body
   silently. Use scripts/test.sh for isolated unit tests; motion tests require an idle body.
+
+- One Agent Server and one runs/workspace; execution subagents share persistent generic ROS clients.
+- Stable /robots/<robot_id> namespaces; session belongs in payloads, never endpoint names.
+- One configured DDS domain/profile for every node. Keep fixed discovery unless measured tests justify a network change.
+- HTTP presence owns identity leases only. Report process, discovery, RPC, freshness and control separately.
+- Changes must retain rule hot-sync and run isolated separate-container communication tests; do not claim same-host tests prove cross-host LAN behavior.

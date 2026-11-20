@@ -1,0 +1,314 @@
+[
+  {
+    "layer": "image_download",
+    "phase": "concurrent",
+    "operation": "",
+    "samples": 5,
+    "successes": 5,
+    "errors": {},
+    "success_rate": 1.0,
+    "response_ms": {
+      "samples": 5,
+      "p50": 1.0571249999884458,
+      "p95": 1.3577079998867703,
+      "maximum": 1.3577079998867703
+    }
+  },
+  {
+    "layer": "image_download",
+    "phase": "warm",
+    "operation": "",
+    "samples": 5,
+    "successes": 5,
+    "errors": {},
+    "success_rate": 1.0,
+    "response_ms": {
+      "samples": 5,
+      "p50": 2.22741599964138,
+      "p95": 5.494917000305577,
+      "maximum": 5.494917000305577
+    }
+  },
+  {
+    "layer": "registration",
+    "phase": "cold",
+    "operation": "",
+    "samples": 10,
+    "successes": 10,
+    "errors": {},
+    "success_rate": 1.0,
+    "response_ms": {
+      "samples": 10,
+      "p50": 1.8840624998119893,
+      "p95": 2.8664999999818974,
+      "maximum": 2.8664999999818974
+    }
+  },
+  {
+    "layer": "registration",
+    "phase": "concurrent",
+    "operation": "",
+    "samples": 1,
+    "successes": 1,
+    "errors": {},
+    "success_rate": 1.0,
+    "response_ms": {
+      "samples": 1,
+      "p50": 3.6026249999849824,
+      "p95": 3.6026249999849824,
+      "maximum": 3.6026249999849824
+    }
+  },
+  {
+    "layer": "registration",
+    "phase": "warm",
+    "operation": "",
+    "samples": 1,
+    "successes": 1,
+    "errors": {},
+    "success_rate": 1.0,
+    "response_ms": {
+      "samples": 1,
+      "p50": 2.0313329996497487,
+      "p95": 2.0313329996497487,
+      "maximum": 2.0313329996497487
+    }
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "resident",
+    "operation": "",
+    "samples": 10,
+    "successes": 10,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 10,
+      "p50": 0.042333500232416554,
+      "p95": 0.07341599985011271,
+      "maximum": 0.07341599985011271
+    },
+    "response_ms": {
+      "samples": 10,
+      "p50": 1.5013750000889559,
+      "p95": 90.85345799985589,
+      "maximum": 90.85345799985589
+    },
+    "total_ms": {
+      "samples": 10,
+      "p50": 39.96058350003295,
+      "p95": 138.33875000000262,
+      "maximum": 138.33875000000262
+    }
+  },
+  {
+    "layer": "resident_cli_cold",
+    "phase": "restarted",
+    "operation": "",
+    "samples": 2,
+    "successes": 2,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 2,
+      "p50": 0.06522899980154762,
+      "p95": 0.06541699985973537,
+      "maximum": 0.06541699985973537
+    },
+    "response_ms": {
+      "samples": 2,
+      "p50": 1.6597290002664522,
+      "p95": 1.9861660002788994,
+      "maximum": 1.9861660002788994
+    },
+    "total_ms": {
+      "samples": 2,
+      "p50": 29.604666500063104,
+      "p95": 30.240208000122948,
+      "maximum": 30.240208000122948
+    }
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "resident",
+    "operation": "",
+    "samples": 101,
+    "successes": 101,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 101,
+      "p50": 0.011791999895649496,
+      "p95": 0.026542000341578387,
+      "maximum": 0.052834000143775484
+    },
+    "response_ms": {
+      "samples": 101,
+      "p50": 0.8322079997924448,
+      "p95": 1.3469589998749143,
+      "maximum": 101.39270799982114
+    },
+    "total_ms": {
+      "samples": 101,
+      "p50": 1.14845799998875,
+      "p95": 1.8102079998243426,
+      "maximum": 102.0061250001163
+    }
+  },
+  {
+    "layer": "resident_rpc",
+    "phase": "restarted",
+    "operation": "",
+    "samples": 10,
+    "successes": 10,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 10,
+      "p50": 0.020645999939006288,
+      "p95": 0.09116700039157877,
+      "maximum": 0.09116700039157877
+    },
+    "response_ms": {
+      "samples": 10,
+      "p50": 1.2987505001547106,
+      "p95": 178.92495900014183,
+      "maximum": 178.92495900014183
+    },
+    "total_ms": {
+      "samples": 10,
+      "p50": 1.6606459998911305,
+      "p95": 193.096916000286,
+      "maximum": 193.096916000286
+    }
+  },
+  {
+    "layer": "ros_data",
+    "phase": "cold",
+    "operation": "status",
+    "samples": 10,
+    "successes": 10,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 10,
+      "p50": 504.5815835001122,
+      "p95": 509.2711670004064,
+      "maximum": 509.2711670004064
+    },
+    "response_ms": {
+      "samples": 10,
+      "p50": 451.4711665001414,
+      "p95": 524.983875000089,
+      "maximum": 524.983875000089
+    }
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "operation": "observe",
+    "samples": 5,
+    "successes": 5,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 5,
+      "p50": 0.03654100009953254,
+      "p95": 0.04399999988891068,
+      "maximum": 0.04399999988891068
+    },
+    "response_ms": {
+      "samples": 5,
+      "p50": 163.8703329999771,
+      "p95": 236.6633329997967,
+      "maximum": 236.6633329997967
+    }
+  },
+  {
+    "layer": "ros_data",
+    "phase": "concurrent",
+    "operation": "status",
+    "samples": 50,
+    "successes": 50,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 50,
+      "p50": 0.01562500006002665,
+      "p95": 0.06262499982767622,
+      "maximum": 505.79779199961195
+    },
+    "response_ms": {
+      "samples": 50,
+      "p50": 0.9863329999006964,
+      "p95": 4.439458999968338,
+      "maximum": 454.55295900001147
+    }
+  },
+  {
+    "layer": "ros_data",
+    "phase": "robot_restart",
+    "operation": "",
+    "samples": 16,
+    "successes": 13,
+    "errors": {
+      "request_timeout": 1,
+      "discovery_failure": 2
+    },
+    "success_rate": 0.8125,
+    "discovery_ms": {
+      "samples": 16,
+      "p50": 0.02570799983914185,
+      "p95": 2027.432208999926,
+      "maximum": 2027.432208999926
+    },
+    "response_ms": {
+      "samples": 14,
+      "p50": 1.295999999911146,
+      "p95": 2000.163417999829,
+      "maximum": 2000.163417999829
+    }
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "operation": "observe",
+    "samples": 5,
+    "successes": 5,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 5,
+      "p50": 0.03945800017390866,
+      "p95": 0.060291000409051776,
+      "maximum": 0.060291000409051776
+    },
+    "response_ms": {
+      "samples": 5,
+      "p50": 166.44370800031538,
+      "p95": 274.2883749997418,
+      "maximum": 274.2883749997418
+    }
+  },
+  {
+    "layer": "ros_data",
+    "phase": "warm",
+    "operation": "status",
+    "samples": 50,
+    "successes": 50,
+    "errors": {},
+    "success_rate": 1.0,
+    "discovery_ms": {
+      "samples": 50,
+      "p50": 0.01343799999631301,
+      "p95": 0.03274999971836223,
+      "maximum": 506.623541999943
+    },
+    "response_ms": {
+      "samples": 50,
+      "p50": 0.7072084999890649,
+      "p95": 0.9922499998538115,
+      "maximum": 515.8278750000136
+    }
+  }
+]

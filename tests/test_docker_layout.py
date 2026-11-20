@@ -9,88 +9,24 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class DockerLayout(unittest.TestCase):
-    def instance_config(self, name):
-        return json.loads(subprocess.check_output([
-            'bash', '-c', 'source scripts/agent-options.sh >/dev/null; '
-            'docker compose --profile simulation config --format json',
-            'instance-test', '--agent_id', name], cwd=ROOT, text=True))
-
-    def test_named_instances_isolate_data_but_share_body(self):
-        first = self.instance_config('layout-test-a')
-        second = self.instance_config('layout-test-b')
-        for name, config in [('layout-test-a', first), ('layout-test-b', second)]:
-            mounts = {m['target']: m for m in config['services']['agenticros']['volumes']}
-            self.assertEqual(Path(mounts['/workspace']['source']),
-                             ROOT / 'runs/agent_instances' / name / 'workspace')
-            self.assertEqual(config['volumes']['codex-home']['name'],
-                             'agenticros_codex-home-instance-' + name)
-            self.assertEqual(set(mounts),
-                             {'/workspace', '/home/agent/.codex', '/observations', '/config/codex.toml'})
-            self.assertTrue(mounts['/observations']['read_only'])
-        self.assertEqual(first['services']['cartesian_gripper'], second['services']['cartesian_gripper'])
-        self.assertEqual(first['networks'], second['networks'])
-        default = self.instance_config('default')
-        self.assertEqual(default['volumes']['codex-home']['name'], 'agenticros_codex-home')
-
-    def test_instance_option_preserves_codex_arguments(self):
-        result = subprocess.check_output([
-            'bash', '-c', 'source scripts/agent-options.sh >/dev/null; printf "%s\\n" "$@"',
-            'instance-test', '--agent_id', 'layout-test-a', 'resume', '--last'], cwd=ROOT, text=True)
-        self.assertEqual(result.splitlines(), ['resume', '--last'])
-
-    def test_invalid_instances_fail_before_starting_containers(self):
-        for name in ('../escape', '/tmp', '', '-bad', 'a' * 49):
-            result = subprocess.run(['bash', 'scripts/agent.sh', '--agent_id', name],
-                                    cwd=ROOT, capture_output=True)
-            self.assertEqual(result.returncode, 2)
-        result = subprocess.run(['bash', 'scripts/agent-login.sh', '--agent_id'],
-                                cwd=ROOT, capture_output=True)
-        self.assertEqual(result.returncode, 2)
-
-    def test_agent_boundary(self):
-        config = json.loads(subprocess.check_output(
-            ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'], cwd=ROOT, text=True))
-        agent = config['services']['agenticros']
-        self.assertFalse(agent.get('privileged', False))
-        self.assertEqual(agent['cap_drop'], ['ALL'])
-        mounts = {m['target']: m for m in agent['volumes']}
-        self.assertEqual(set(mounts), {'/workspace', '/observations', '/home/agent/.codex', '/config/codex.toml'})
-        self.assertTrue(mounts['/observations']['read_only'])
-        for target, mount in mounts.items():
-            if target == '/config/codex.toml':
-                self.assertEqual(mount['type'], 'bind')
-                self.assertEqual(Path(mount['source']), ROOT / 'docker/agent_instance/agent/codex.toml')
-                self.assertTrue(mount['read_only'])
-            elif target == '/workspace':
-                self.assertEqual(mount['type'], 'bind')
-                self.assertEqual(Path(mount['source']), ROOT / 'runs/agent_instances/default/workspace')
-                self.assertFalse(mount.get('read_only', False))
-                self.assertFalse(mount['bind']['create_host_path'])
-            else:
-                self.assertEqual(mount['type'], 'volume')
-        for line in (ROOT / 'docker/agent_instance/Dockerfile').read_text().splitlines():
-            if line.startswith('COPY '):
-                self.assertTrue(all(s.startswith(('docker/agent_instance/', 'docker/shared/'))
-                                    for s in line.split()[1:-1]))
-
-    def test_environment_is_opt_in(self):
-        config = json.loads(subprocess.check_output(
-            ['docker', 'compose', '--profile', 'simulation', 'config', '--format', 'json'],
-            cwd=ROOT, text=True))
-        self.assertEqual(set(config['services']), {'cartesian_gripper', 'agenticros'})
-        self.assertEqual(config['services']['cartesian_gripper']['profiles'], ['simulation'])
-        body = config['services']['cartesian_gripper']
-        self.assertEqual({m['target'] for m in body['volumes']}, {'/observations', '/viewer-auth'})
-        self.assertEqual(len(body['ports']), 1)
-        self.assertEqual(body['ports'][0]['target'], 8080)
-        self.assertEqual(body['ports'][0]['host_ip'], '127.0.0.1')
-        self.assertFalse(any(m['type'] == 'bind' for m in body['volumes']))
-        self.assertNotIn('depends_on', config['services']['agenticros'])
-        self.assertEqual(config['name'], 'agenticros')
-        self.assertNotIn('workspace', config['volumes'])
-        self.assertEqual(config['volumes']['codex-home']['name'], 'agenticros_codex-home')
-        self.assertEqual(config['volumes']['viewer-auth']['name'], 'agenticros_viewer-auth')
-        self.assertEqual(config['networks']['robot']['name'], 'agenticros_robot')
+    def test_single_server_boundary(self):
+        import os
+        config = json.loads(subprocess.check_output(['docker','compose','config','--format','json'],
+            cwd=ROOT,env=dict(os.environ,AGENTICROS_DDS_HOST='127.0.0.1'),text=True))
+        self.assertEqual(set(config['services']), {'server'})
+        server=config['services']['server']
+        self.assertEqual(server['network_mode'],'host')
+        self.assertEqual(server['cap_drop'],['ALL'])
+        self.assertNotIn('container_name',server)
+        mounts={m['target']:m for m in server['volumes']}
+        self.assertEqual(set(mounts),{'/workspace','/home/agent/.codex','/config/codex.toml','/viewer-auth'})
+        self.assertEqual(Path(mounts['/workspace']['source']),ROOT/'runs/workspace')
+        self.assertTrue(mounts['/config/codex.toml']['read_only'])
+        self.assertFalse(mounts['/workspace']['bind']['create_host_path'])
+        self.assertEqual(config['volumes']['codex-home']['name'],'agenticros_codex-home')
+        self.assertEqual(server['environment']['ROS_DOMAIN_ID'],'42')
+        self.assertNotIn('AGENTICROS_JOIN_TOKEN',server['environment'])
+        self.assertNotIn('AGENTICROS_INSTANCE',server['environment'])
 
     def test_no_supplied_adapter(self):
         tree = ast.parse((ROOT / 'docker/robot_instances/cartesian_gripper/world.py').read_text())

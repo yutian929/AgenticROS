@@ -11,7 +11,7 @@ RUN python3 -m venv --system-site-packages /opt/body-venv && \
 COPY docker/robot_instances/aloha_tabletop/interfaces /opt/driver_ws/src/aloha_driver_interfaces
 RUN source /opt/ros/humble/setup.bash && cd /opt/driver_ws && colcon build
 COPY docker/robot_instances/aloha_tabletop/ /opt/body/
-COPY docker/shared/lan_profile.py /opt/body/lan_profile.py
+COPY docker/shared/lan_profile.py docker/shared/registration.py /opt/body/
 RUN /opt/body-venv/bin/python /opt/body/prepare_scene.py
 COPY docker/robot_instances/aloha_tabletop/interfaces /opt/device-public/interfaces
 COPY docker/robot_instances/aloha_tabletop/body.md /opt/device-public/body.md

@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "<stdin>", line 48, in <module>
+AssertionError: {'received': {}, 'endpoints': {'/robots/robot_a/left/camera/color/image_raw/compressed': {'publishers': 0, 'subscriptions': 1}, '/robots/robot_a/overhead/camera/color/image_raw/compressed': {'publishers': 0, 'subscriptions': 1}, '/robots/robot_a/right/camera/color/image_raw/compressed': {'publishers': 0, 'subscriptions': 1}}}
+Evidence retained: /Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/runs/checks/agenticros-check-c746bacc
+Traceback (most recent call last):
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_lan.py", line 298, in <module>
+    if __name__=='__main__':main()
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_lan.py", line 224, in main
+    docker('exec','-i',agent,'/usr/local/bin/agent-entrypoint','python','-',input=(ROOT/'tests/viewer_probe.py').read_text())
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_lan.py", line 145, in docker
+    return subprocess.run(['docker',*args],check=True,text=True,**kwargs)
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['docker', 'exec', '-i', 'agenticros-check-c746bacc-server', '/usr/local/bin/agent-entrypoint', 'python', '-']' returned non-zero exit status 1.
+Traceback (most recent call last):
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_viewer.py", line 7, in <module>
+    subprocess.run([sys.executable,str(Path(__file__).with_name('check_lan.py')),
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/subprocess.py", line 528, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['/Library/Developer/CommandLineTools/usr/bin/python3', '/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_lan.py', '--viewer-only', '--environment', 'aloha_tabletop']' returned non-zero exit status 1.

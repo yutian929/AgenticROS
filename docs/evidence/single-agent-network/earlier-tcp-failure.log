@@ -1,0 +1,28 @@
+Starting >>> agenticros_driver_interfaces
+Finished <<< agenticros_driver_interfaces [10.3s]
+
+Summary: 1 package finished [10.6s]
+{"label": "warm", "samples": 61, "failed": 0}
+{"label": "concurrent", "samples": 61, "failed": 0}
+{"label": "cold-0", "samples": 2, "failed": 0}
+{"label": "cold-1", "samples": 2, "failed": 0}
+{"label": "cold-2", "samples": 2, "failed": 0}
+{"label": "cold-3", "samples": 2, "failed": 0}
+{"label": "cold-4", "samples": 2, "failed": 0}
+{"label": "cold-5", "samples": 2, "failed": 0}
+{"label": "cold-6", "samples": 2, "failed": 0}
+{"label": "cold-7", "samples": 2, "failed": 0}
+{"label": "cold-8", "samples": 2, "failed": 0}
+{"label": "cold-9", "samples": 2, "failed": 0}
+resident PASS 111
+normal PASS
+Traceback (most recent call last):
+  File "<stdin>", line 39, in <module>
+AssertionError
+Evidence retained: /Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/runs/checks/agenticros-check-70194b54
+Traceback (most recent call last):
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_lan.py", line 298, in <module>
+    if __name__=='__main__':main()
+  File "/Users/admin/Documents/ChatGPT/Agentic Robot RSI/AgenticROS-single-agent-network/scripts/check_lan.py", line 258, in main
+    if proc.poll() is not None or time.monotonic()>deadline:raise RuntimeError('restart probe failed')
+RuntimeError: restart probe failed

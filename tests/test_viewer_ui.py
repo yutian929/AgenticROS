@@ -1,7 +1,6 @@
-"""Run with the Agent instance image's Python and Qt; never starts ROS or RViz."""
+"""Run with the Agent Server image's Python and Qt; never starts ROS or RViz."""
 import os
 os.environ['QT_QPA_PLATFORM'] = 'offscreen'
-os.environ.setdefault('AGENTICROS_INSTANCE', 'ui-test')
 import sys
 sys.path.insert(0, '/opt/viewer')
 import unittest

@@ -1,3 +1,5 @@
+> 历史开发记录：旧实例/join 命令不适用于当前单 Server 架构。当前部署见 [使用说明](usage.md)，迁移和实测结果见 [网络验证报告](network-validation.md)。
+
 # 开发记录
 
 容器使用 Ubuntu 22.04 / ROS 2 Humble；早期 Linux AMD64 验证与本次 macOS Apple Silicon 验证分别记录如下。

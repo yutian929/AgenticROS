@@ -1,4 +1,4 @@
-"""Instance robot selector and RViz launcher using only public ROS discovery."""
+"""Server robot selector and RViz launcher using only public ROS discovery."""
 import json
 import os
 from pathlib import Path
@@ -10,8 +10,10 @@ import urllib.request
 
 from PyQt5 import QtCore, QtWidgets
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from rclpy.action import get_action_names_and_types
 from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy, qos_profile_sensor_data
+from std_msgs.msg import String
 from sensor_msgs.msg import CompressedImage, PointCloud2
 from tf2_msgs.msg import TFMessage
 import yaml
@@ -63,8 +65,16 @@ class Discovery(QtCore.QThread):
 
     def run(self):
         rclpy.init()
-        node = rclpy.create_node('instance_viewer')
+        node = rclpy.create_node('server_viewer')
         edges, frames = set(), set()
+        directory = {'roster': {}, 'at': 0, 'sessions': {}}
+        def roster_message(msg):
+            roster=json.loads(msg.data)
+            sessions={r['robot_id']:r['session_id'] for r in roster.get('robots',[])}
+            if sessions != directory['sessions']:
+                edges.clear(); frames.clear()
+            directory.update(roster=roster, at=time.monotonic(), sessions=sessions)
+        node.create_subscription(String, '/agenticros/robots', roster_message, 10)
         def tf(message):
             edges.update((t.header.frame_id, t.child_frame_id) for t in message.transforms)
         qos = QoSProfile(depth=100, durability=DurabilityPolicy.TRANSIENT_LOCAL,
@@ -79,9 +89,9 @@ class Discovery(QtCore.QThread):
                     continue
                 next_poll = time.monotonic()+2
                 try:
-                    with urllib.request.urlopen(os.environ['AGENTICROS_REGISTRY_URL']+'/robots', timeout=3) as response:
-                        roster = robots(json.load(response), os.environ['AGENTICROS_INSTANCE_ID'])
-                    error = ''
+                    roster = robots(directory['roster'])
+                    age=time.monotonic()-directory['at']
+                    error = 'Registry status stale; showing last known robots' if age > 3 else ''
                 except Exception as exc:
                     roster, error = {}, 'Registry unavailable: '+type(exc).__name__
                 topics = node.get_topic_names_and_types()
@@ -103,23 +113,25 @@ class Discovery(QtCore.QThread):
                     if desired:
                         subscription = node.create_subscription(desired[1], desired[0],
                             lambda msg: frames.add(msg.header.frame_id), qos_profile_sensor_data)
-                self.updated.emit(dict(robots=roster, topics=topics, services=services, actions=actions, edges=list(edges), frames=list(frames), error=error))
+                self.updated.emit(dict(robots=roster, sessions=directory['sessions'], topics=topics, services=services, actions=actions, edges=list(edges), frames=list(frames), error=error))
+        except ExternalShutdownException:
+            pass
         finally:
             node.destroy_node()
-            rclpy.shutdown()
+            if rclpy.ok(): rclpy.shutdown()
 
 
 class Viewer(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle('AgenticROS — '+os.environ['AGENTICROS_INSTANCE'])
+        self.setWindowTitle('AgenticROS — '+'Server')
         self.setWindowFlags(QtCore.Qt.Window | QtCore.Qt.FramelessWindowHint | QtCore.Qt.WindowStaysOnTopHint)
         self.setGeometry(0, 0, 1440, 125)
         self.setStyleSheet('QWidget { background: #19222e; color: #edf3fa; font-size: 15px; }'
                           'QPushButton, QComboBox { padding: 7px; background: #30445a; }')
         layout = QtWidgets.QVBoxLayout(self)
         row = QtWidgets.QHBoxLayout()
-        row.addWidget(QtWidgets.QLabel('Instance: '+os.environ['AGENTICROS_INSTANCE']))
+        row.addWidget(QtWidgets.QLabel('Agent Server: '+'Server'))
         self.selector = QtWidgets.QComboBox()
         self.selector.setMinimumWidth(300)
         self.selector.currentIndexChanged.connect(self.select)
@@ -173,25 +185,30 @@ class Viewer(QtWidgets.QWidget):
         self.discovery.selected = namespace
         topics = scoped_topics(self.latest.get('topics', []), namespace) if namespace else []
         frame = fixed_frame(namespace, self.latest.get('edges', []), self.latest.get('frames', [])) if namespace else ''
-        signature = json.dumps([namespace, topics, frame])
+        config = configuration(topics, frame) if namespace and frame else {}
+        # Service/action discovery and subscriber-only graph changes do not alter
+        # the rendered view. Never restart RViz for those unrelated changes.
+        signature = json.dumps([namespace, self.latest.get('sessions',{}).get(name), config], sort_keys=True)
+        if namespace and frame:
+            self.status.setText(name+'  |  '+namespace+'  |  Frame: '+frame+'  |  '+self.latest.get('error',''))
         if signature == self.signature and not force:
             return
+        print(json.dumps(dict(event='rviz_reconfigure',namespace=namespace,frame=frame,session=self.latest.get('sessions',{}).get(name),displays=[d['Name'] for d in config.get('Visualization Manager',{}).get('Displays',[])])),flush=True)
         self.stop_rviz()
         self.signature = signature
         if not namespace or not frame:
             self.status.setText(self.latest.get('error') or ('Waiting for sensor frames…' if namespace else 'Waiting for clients…'))
             return
         path = Path('/tmp/current.rviz')
-        config = configuration(topics, frame)
         rviz_dock_layout(config)
         path.write_text(yaml.safe_dump(config, sort_keys=False))
-        self.process = subprocess.Popen(['rviz2', '-d', str(path), '--ros-args', '-r', '__node:=instance_rviz'])
+        self.process = subprocess.Popen(['rviz2', '-d', str(path), '--ros-args', '-r', '__node:=server_rviz'])
         self.status.setText(name+'  |  '+namespace+'  |  Frame: '+frame)
 
     def show_interfaces(self):
         if self.interfaces_dialog is None:
             self.interfaces_dialog = QtWidgets.QDialog(self)
-            self.interfaces_dialog.setWindowTitle('ROS interfaces — '+os.environ['AGENTICROS_INSTANCE'])
+            self.interfaces_dialog.setWindowTitle('ROS interfaces — '+'Server')
             self.interfaces_dialog.resize(1100, 650)
             layout = QtWidgets.QVBoxLayout(self.interfaces_dialog)
             layout.addWidget(QtWidgets.QLabel('Discovered interfaces · updates every 2 seconds · read-only'))
@@ -224,7 +241,7 @@ class Viewer(QtWidgets.QWidget):
             self.interface_tabs.setTabText(index, key.title()+f' ({len(entries)})')
 
     def heartbeat(self):
-        data = dict(instance=os.environ['AGENTICROS_INSTANCE'], robots=self.latest.get('robots', {}),
+        data = dict(server='Server', sessions=self.latest.get('sessions',{}), robots=self.latest.get('robots', {}),
                     selected=self.selector.currentText(), rviz_pid=self.process.pid if self.process and self.process.poll() is None else None,
                     error=self.latest.get('error',''),
                     interfaces={key: self.latest.get(key, []) for key in ('topics', 'services', 'actions')})

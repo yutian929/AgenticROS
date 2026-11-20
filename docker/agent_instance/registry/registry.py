@@ -1,4 +1,4 @@
-"""One instance's LAN membership and discovery service; never sends robot goals."""
+"""Single Server identity leases and discovery service; never sends robot goals."""
 import hmac
 import json
 import os
@@ -10,51 +10,62 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 
 class Registry:
-    def __init__(self, instance, instance_id, domain, host, dds_port, prefix, join_token, ttl=6, transport='udp'):
-        self.config = dict(instance=instance, instance_id=instance_id, domain_id=domain,
-                           discovery_host=host, discovery_port=dds_port, discovery_prefix=prefix,
-                           discovery_transport=transport)
-        self.join_token = join_token
+    """HTTP owns unique identity/control leases, never ROS readiness.
+
+    Presence combines enrollment and renewal. A new session cannot displace a live
+    lease; expired sessions cannot re-enroll. Restart the robot explicitly instead.
+    """
+    def __init__(self, domain, host, dds_port, prefix, ttl=6, transport='tcp'):
+        self.config = dict(domain_id=domain, discovery_host=host, discovery_port=dds_port,
+                           discovery_prefix=prefix, discovery_transport=transport)
         self.epoch = secrets.token_hex(16)
         self.ttl = ttl
         self.members = {}
+        self.retired = set()
         self.lock = threading.Lock()
 
-    def join(self, body, token):
-        if not hmac.compare_digest(token, self.join_token):
-            raise PermissionError('invalid join token')
-        if body.get('instance') != self.config['instance']:
-            raise PermissionError('Agent instance mismatch')
-        robot = body.get('robot_id', '')
-        session = body.get('session_id', '')
+    def presence(self, body, token=''):
+        robot, session = body.get('robot_id', ''), body.get('session_id', '')
         if not re.fullmatch(r'[a-z][a-z0-9_]{0,47}', robot) or not re.fullmatch(r'[0-9a-f]{12,32}', session):
             raise ValueError('invalid robot_id or session_id')
         with self.lock:
+            now = time.monotonic()
             old = self.members.get(robot)
-            if old and old['deadline'] > time.monotonic():
-                raise FileExistsError('robot_id already has an active Robot instance')
-            lease = secrets.token_hex(32)
-            self.members[robot] = dict(session_id=session, lease=lease,
-                                       deadline=time.monotonic()+self.ttl)
-            return dict(self.config, epoch=self.epoch, lease=lease, lease_seconds=self.ttl,
-                        robot_id=robot, session_id=session, namespace='/robots/'+robot+'/s_'+session)
-
-    def heartbeat(self, body, token):
-        with self.lock:
-            member = self.members.get(body.get('robot_id'))
-            if (not member or body.get('epoch') != self.epoch
-                    or body.get('session_id') != member['session_id']
-                    or not hmac.compare_digest(token, member['lease'])
-                    or member['deadline'] <= time.monotonic()):
-                raise PermissionError('lease expired or identity changed; explicit Robot instance restart required')
-            member['deadline'] = time.monotonic()+self.ttl
-            return dict(lease_seconds=self.ttl, epoch=self.epoch)
+            if body.get('epoch'):
+                if (not old or body['epoch'] != self.epoch or session != old['session_id']
+                        or not hmac.compare_digest(token, old['lease'])):
+                    raise PermissionError('identity changed or server restarted; explicitly restart robot')
+                if body.get('control_lease_lost'):
+                    old['deadline']=min(old['deadline'],now)
+                elif old['deadline'] <= now:
+                    raise PermissionError('lease expired; explicitly restart robot')
+            elif old and old['session_id'] == session:
+                # An initial reply may have been lost. Return the same live grant.
+                if old['deadline'] <= now:
+                    raise PermissionError('expired session cannot re-enroll')
+            else:
+                if (robot, session) in self.retired:
+                    raise PermissionError('retired session')
+                if old and old['deadline'] > now:
+                    raise FileExistsError('robot_id already in use')
+                if old:
+                    self.retired.add((robot, old['session_id']))
+                old = dict(session_id=session, lease=secrets.token_hex(32), deadline=now+self.ttl, last_seen=now)
+                self.members[robot] = old
+            old['last_seen']=now
+            if body.get('epoch') and not body.get('control_lease_lost'):
+                old['deadline'] = now+self.ttl
+            return dict(self.config, epoch=self.epoch, lease=old['lease'],
+                        lease_seconds=max(0, old['deadline']-now), robot_id=robot,
+                        session_id=session, namespace='/robots/'+robot)
 
     def roster(self):
         with self.lock:
             return dict(self.config, epoch=self.epoch, robots=[
-                dict(robot_id=k, namespace='/robots/'+k+'/s_'+v['session_id'], session_id=v['session_id'],
-                     connected=v['deadline'] > time.monotonic()) for k, v in sorted(self.members.items())])
+                dict(robot_id=k, namespace='/robots/'+k, session_id=v['session_id'],
+                     process_alive=True if time.monotonic()-v['last_seen'] < self.ttl else None,
+                     control_lease_valid=v['deadline'] > time.monotonic())
+                for k, v in sorted(self.members.items())])
 
 
 def http_server(registry, address):
@@ -87,7 +98,7 @@ def http_server(registry, address):
                 if not isinstance(body, dict):
                     raise ValueError('object required')
                 token = self.headers.get('Authorization', '').removeprefix('Bearer ')
-                method = {'/join': registry.join, '/heartbeat': registry.heartbeat}.get(self.path)
+                method = {'/presence': registry.presence}.get(self.path)
                 if not method:
                     return self.reply(404, {'error': 'not found'})
                 self.reply(200, method(body, token))
@@ -108,11 +119,9 @@ def main():
     from lan_profile import configure
     configure(os.environ['AGENTICROS_DDS_HOST'], os.environ['AGENTICROS_DDS_PORT'],
               os.environ['AGENTICROS_DDS_PREFIX'], server=True)
-    registry = Registry(os.environ['AGENTICROS_INSTANCE'], os.environ['AGENTICROS_INSTANCE_ID'],
-                        int(os.environ['ROS_DOMAIN_ID']), os.environ['AGENTICROS_DDS_HOST'],
+    registry = Registry(int(os.environ['ROS_DOMAIN_ID']), os.environ['AGENTICROS_DDS_HOST'],
                         int(os.environ['AGENTICROS_DDS_PORT']), os.environ['AGENTICROS_DDS_PREFIX'],
-                        os.environ['AGENTICROS_JOIN_TOKEN'],
-                        transport=os.getenv('AGENTICROS_DDS_TRANSPORT', 'udp'))
+                        transport=os.getenv('AGENTICROS_DDS_TRANSPORT', 'tcp'))
     if registry.config['discovery_transport'] == 'tcp':
         # Retain discovery metadata across registry-process restarts inside this
         # container. Memberships and control leases deliberately remain volatile.
@@ -121,7 +130,7 @@ def main():
         cache.mkdir(exist_ok=True)
         os.chdir(cache)
     rclpy.init()
-    node = Node('instance_registry', namespace='/agenticros')
+    node = Node('server_registry', namespace='/agenticros')
     pub = node.create_publisher(String, 'robots', 1)
     node.create_timer(1., lambda: pub.publish(String(data=json.dumps(registry.roster()))))
     server = http_server(registry, ('0.0.0.0', int(os.environ['AGENTICROS_REGISTRY_PORT'])))

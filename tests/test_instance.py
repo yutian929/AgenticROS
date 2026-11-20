@@ -11,6 +11,11 @@ spec.loader.exec_module(runtime)
 
 
 class Lifecycle(unittest.TestCase):
+    def test_reload_cli_forwards_to_supervisor(self):
+        with patch.object(runtime.sys,'argv',['runtime.py','clients-reload']), patch.object(runtime,'request',return_value={}) as request:
+            self.assertEqual(runtime.main(),0)
+            request.assert_called_once_with('clients-reload')
+
     def test_repeated_start_keeps_registry_process_and_epoch(self):
         process = Mock()
         process.poll.return_value = None

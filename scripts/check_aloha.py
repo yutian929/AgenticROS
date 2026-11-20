@@ -18,7 +18,7 @@ def main():
     evidence.mkdir(parents=True)
     subprocess.run([
         'docker', 'create', '--name', name, '--network', 'none',
-        '--entrypoint', '/bin/bash', 'agenticros-aloha_tabletop:lan', '-lc',
+        '--entrypoint', '/bin/bash', 'agenticros-aloha_tabletop:single', '-lc',
         'source /opt/ros/humble/setup.bash && '
         'source /opt/driver_ws/install/setup.bash && '
         '/opt/body-venv/bin/python /tmp/aloha_integration.py',

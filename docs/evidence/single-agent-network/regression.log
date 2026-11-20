@@ -1,0 +1,164 @@
+test_agent_starts_without_device_knowledge (test_docker_layout.DockerLayout) ... ok
+test_build_context (test_docker_layout.DockerLayout) ... ok
+test_no_supplied_adapter (test_docker_layout.DockerLayout) ... ok
+test_single_server_boundary (test_docker_layout.DockerLayout) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.180s
+
+OK
+test_deadline_latches_and_late_response_cannot_revive (test_lan.ClientSafety) ... ok
+test_renewal_uses_send_time_and_preserves_validity (test_lan.ClientSafety) ... ok
+test_snapshot_download_whitelist_and_integrity (test_lan.ClientSafety) ... ok
+test_discovery_profiles_have_no_shared_memory_and_use_super_client (test_lan.Configuration) ... ok
+test_invalid_names_and_addresses_rejected (test_lan.Configuration) ... ok
+test_http_presence (test_lan.Membership) ... ok
+test_lost_control_does_not_hide_live_process_or_reenable_it (test_lan.Membership) ... ok
+test_old_session_and_epoch_cannot_revive_or_displace (test_lan.Membership) ... ok
+test_presence_idempotent_and_duplicate_robot_rejected (test_lan.Membership) ... ok
+test_duplicate_ports_and_macos_udp_rejected (test_lan.Startup) ... ok
+test_live_server_not_replaced (test_lan.Startup) ... ok
+test_one_fixed_domain_and_configuration (test_lan.Startup) ... ok
+test_robot_config_no_join_or_registration_and_retained_binding (test_lan.Startup) ... ok
+test_rules_staged_before_attach_with_lock (test_lan.Startup) ... ok
+test_server_url_canonicalizes_default_port (test_lan.Startup) ... ok
+test_viewer_password_cli_uses_saved_server_without_runtime_dispatch (test_lan.Startup) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 1.057s
+
+OK
+test_lan_camera_publication_does_not_use_synchronous_mode (test_viewer.Configuration) ... ok
+test_server_only_mounts_dedicated_data_and_generic_config (test_viewer.Configuration) ... ok
+test_all_camera_views_are_enabled_inside_rviz (test_viewer.Discovery) ... ok
+test_frame_selection_never_connects_unrelated_robots (test_viewer.Discovery) ... ok
+test_roster_stable_namespaces_and_live_sessions (test_viewer.Discovery) ... ok
+test_views_use_discovered_sensor_topics_not_device_specific_paths (test_viewer.Discovery) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.099s
+
+OK
+test_desktop_stop_does_not_signal_registry (test_instance.Lifecycle) ... ok
+test_failed_desktop_shutdown_stops_container_instead_of_leaving_orphans (test_instance.Lifecycle) ... ok
+test_reload_cli_forwards_to_supervisor (test_instance.Lifecycle) ... ok
+test_repeated_start_keeps_registry_process_and_epoch (test_instance.Lifecycle) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.001s
+
+OK
+test_cancelled_switch_keeps_original_auth (test_connection.CloudConnection) ... ok
+test_chatgpt_uses_device_login_only_when_needed (test_connection.CloudConnection) ... ok
+test_device_login_without_menu_profile_offers_reuse (test_connection.CloudConnection) ... ok
+test_effort_is_validated_and_applied_for_both_auth_modes (test_connection.CloudConnection) ... ok
+test_effort_only_edit_retains_model_and_key (test_connection.CloudConnection) ... ok
+test_failed_menu_validation_keeps_previous_credentials (test_connection.CloudConnection) ... ok
+test_http_errors_never_echo_server_body_or_key (test_connection.CloudConnection) ... ok
+test_incomplete_stream_is_not_success (test_connection.CloudConnection) ... ok
+test_invalid_candidate_does_not_replace_saved_profile (test_connection.CloudConnection) ... ok
+test_keys_are_passed_only_in_environment (test_connection.CloudConnection) ... ok
+test_profile_is_atomic_private_and_persistent (test_connection.CloudConnection) ... ok
+test_redirect_is_refused_before_forwarding_key (test_connection.CloudConnection) ... ok
+test_returning_user_enters_saved_config_without_probe_or_rewrite (test_connection.CloudConnection) ... ok
+test_selecting_chatgpt_forces_new_login (test_connection.CloudConnection) ... ok
+test_streamed_tool_call_and_result_round_trip (test_connection.CloudConnection) ... ok
+test_switch_commits_only_verified_auth (test_connection.CloudConnection) ... ok
+test_unexpected_tool_or_nonce_is_rejected (test_connection.CloudConnection) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.022s
+
+OK
+test_existing_files_retained (test_workspace.WorkspacePreparation) ... ok
+test_legacy_workspaces_require_explicit_selection (test_workspace.WorkspacePreparation) ... ok
+test_new_workspace_permissions (test_workspace.WorkspacePreparation) ... ok
+test_symlink_rejected (test_workspace.WorkspacePreparation) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.005s
+
+OK
+Workspace: /var/folders/6h/0mvp6xsn5jd3483g2h060g040000gn/T/tmpbax9lhmh/runs/workspace
+Workspace: /var/folders/6h/0mvp6xsn5jd3483g2h060g040000gn/T/tmpvt76l8cf/runs/workspace
+test_image_defaults_do_not_downgrade_rules_or_manifest (test_agent_rules.Rules) ... ok
+test_instance_workspaces_stay_independent (test_agent_rules.Rules) ... ok
+test_launcher_preserves_codex_arguments (test_agent_rules.Rules) ... ok
+test_manifest_cannot_delete_files_outside_owned_paths (test_agent_rules.Rules) ... ok
+test_removed_but_locally_edited_rule_is_preserved (test_agent_rules.Rules) ... ok
+test_source_and_destination_symlinks_are_rejected_before_writes (test_agent_rules.Rules) ... ok
+test_stage_is_snapshot_and_never_changes_running_rules (test_agent_rules.Rules) ... ok
+test_staged_file_tampering_is_detected (test_agent_rules.Rules) ... ok
+test_update_add_remove_and_preserve_generated_files (test_agent_rules.Rules) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.535s
+
+OK
+test_all_interface_kinds_and_multiple_topic_types (test_capabilities.CapabilityChecks) ... ok
+test_evidence_cannot_escape_workspace (test_capabilities.CapabilityChecks) ... ok
+test_existing_interface_needs_no_generated_code (test_capabilities.CapabilityChecks) ... ok
+test_generated_node_must_be_present_once (test_capabilities.CapabilityChecks) ... ok
+test_missing_or_empty_evidence_rejected (test_capabilities.CapabilityChecks) ... ok
+test_missing_or_wrong_live_interface_rejected (test_capabilities.CapabilityChecks) ... ok
+test_unverified_interface_not_required_online (test_capabilities.CapabilityChecks) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.017s
+
+OK
+test_cleanup_removes_runs_not_source_and_never_prunes (test_clean_runtime.Cleanup) ... ok
+test_new_container_reference_blocks_host_deletion (test_clean_runtime.Cleanup) ... ok
+test_preview_never_mutates_and_excludes_other_projects (test_clean_runtime.Cleanup) ... ok
+test_runs_symlink_refused_before_docker (test_clean_runtime.Cleanup) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.006s
+
+OK
+test_cancel_timeout_reconciles_once_without_resending (test_ros_client.Transport) ... ok
+test_concurrent_uuid_reservation_has_one_winner (test_ros_client.Transport) ... ok
+test_malformed_uuid_cannot_escape_journal (test_ros_client.Transport) ... ok
+test_reconcile_only_calls_explicit_readonly_status (test_ros_client.Transport) ... ok
+test_service_failures_are_classified_without_retry (test_ros_client.Transport) ... ok
+test_status_never_equates_graph_or_liveness_with_control (test_ros_client.Transport) ... ok
+test_timeout_does_not_cancel_or_reissue_future (test_ros_client.Transport) ... ok
+test_uuid_is_reserved_across_process_restart (test_ros_client.Transport) ... ok
+
+----------------------------------------------------------------------
+Ran 8 tests in 0.009s
+
+OK
+test_active_source_is_not_copied (test_migration.Migration) ... ok
+test_dangling_destination_symlink_is_preserved (test_migration.Migration) ... ok
+test_missing_volume_does_not_create_an_empty_migration (test_migration.Migration) ... ok
+test_verified_copy_preserves_source_and_rejects_existing_destination (test_migration.Migration) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 0.006s
+
+OK
+Verified copy: /var/folders/6h/0mvp6xsn5jd3483g2h060g040000gn/T/tmpi_kt1_kq/runs/workspace; source retained
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.007s
+
+OK
+.....
+----------------------------------------------------------------------
+Ran 5 tests in 0.008s
+
+OK
+.
+----------------------------------------------------------------------
+Ran 1 test in 0.009s
+
+OK
+This plugin does not support propagateSizeHints()
+This plugin does not support raise()
+.This plugin does not support propagateSizeHints()
+.
+----------------------------------------------------------------------
+Ran 2 tests in 0.021s
+
+OK

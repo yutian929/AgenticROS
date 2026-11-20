@@ -10,7 +10,7 @@ RUN python3 -m venv --system-site-packages /opt/body-venv && \
     /opt/body-venv/bin/pip install --no-cache-dir mujoco==3.3.7 numpy==1.26.4 pillow==11.3.0
 COPY docker/robot_instances/cartesian_gripper/interfaces /opt/driver_ws/src/agenticros_driver_interfaces
 RUN source /opt/ros/humble/setup.bash && cd /opt/driver_ws && colcon build
-COPY docker/robot_instances/cartesian_gripper/world.py docker/robot_instances/cartesian_gripper/driver.py docker/robot_instances/cartesian_gripper/tabletop.xml docker/robot_instances/cartesian_gripper/evaluator.py docker/robot_instances/cartesian_gripper/sensors.py docker/robot_instances/cartesian_gripper/registration.py docker/shared/lan_profile.py /opt/body/
+COPY docker/robot_instances/cartesian_gripper/world.py docker/robot_instances/cartesian_gripper/driver.py docker/robot_instances/cartesian_gripper/tabletop.xml docker/robot_instances/cartesian_gripper/evaluator.py docker/robot_instances/cartesian_gripper/sensors.py docker/shared/registration.py docker/shared/lan_profile.py /opt/body/
 COPY docker/robot_instances/cartesian_gripper/desktop.py docker/robot_instances/cartesian_gripper/healthcheck.py docker/robot_instances/cartesian_gripper/robot.urdf docker/robot_instances/cartesian_gripper/observation.rviz docker/robot_instances/cartesian_gripper/openbox.xml /opt/agenticros/
 COPY docker/robot_instances/cartesian_gripper/interfaces /opt/device-public/interfaces
 COPY docker/robot_instances/cartesian_gripper/body.md /opt/device-public/body.md
