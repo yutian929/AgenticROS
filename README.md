@@ -15,24 +15,30 @@ Server 同时提供原生 RViz、相机面板和只读接口列表。机器人�
 
 依赖 Docker、Docker Compose、Python 3。Linux 使用 host 网络；macOS 使用 Docker Desktop 4.34+，开启 Settings → Resources → Network → Enable host networking，关闭 Enhanced Container Isolation。默认全网 TCP Discovery Server；同机测试不能证明跨机器 LAN 可用。
 
+先确认 **Server 主机在同一局域网中的 IPv4 地址**：macOS 可在“系统设置 → 网络”中查看当前连接的 IP；Linux 可用 `ip -4 addr` 查看实际联网网卡。选择机器人能访问的宿主机地址，不使用 `127.0.0.1` 或 Docker 容器/虚拟机内部地址。下面的 `192.168.1.10` 仅为示例，请替换为实际地址；建议用静态 IP 或路由器 DHCP 地址保留，避免地址变化。
+
 Server 主机：
 
 ```bash
-python3 scripts/lan.py server --host 192.168.1.10
+export SERVER_IP=192.168.1.10  # 替换为 Server 主机的实际局域网 IP
+python3 scripts/lan.py server --host "$SERVER_IP"
 bash scripts/agent.sh
 # 登录或恢复会话
 bash scripts/agent-login.sh
 bash scripts/agent.sh resume --last
 ```
 
-机器人主机（Server IP 固定，robot_id 全网唯一）：
+机器人主机（每台主机的终端都需设置同一个 `SERVER_IP`，这里填 Server 的地址；`robot_id` 全网唯一）：
 
 ```bash
-bash scripts/robot.sh aloha_tabletop --server http://192.168.1.10:7447 --robot-id aloha_a
-bash scripts/robot.sh cartesian_gripper --server http://192.168.1.10:7447 --robot-id gripper_b
+export SERVER_IP=192.168.1.10  # 与 Server 主机上设置的地址一致
+bash scripts/robot.sh aloha_tabletop --server "http://${SERVER_IP}:7447" --robot-id aloha_a
+bash scripts/robot.sh cartesian_gripper --server "http://${SERVER_IP}:7447" --robot-id gripper_b
 ```
 
 同一主机运行多台机器人时，第二台显式指定不同的 `--observation-port 8801`。不生成 join 码，不分配 Agent instance，不动态分配 ROS 域。`--host` 可显式指定机器人向 Server 公布的 IPv4 地址。
+
+首次启动会保存 Server 和机器人配置。之后仅修改终端中的 `SERVER_IP` 不会覆盖保存的地址；IP 变化时，先停止相关任务和服务，再按[使用说明](docs/usage.md)更新 `runs/server.json` 及机器人各自的 `client.json`，重新启动接入。
 
 重复运行使用保存配置，不重建镜像、不替换运行中的容器、不清空工作区。首次缺镜像时构建。升级代码的显式构建与停止步骤见[使用说明](docs/usage.md)。退出 Agent 终端不停止 Server、机器人或 RViz。
 
