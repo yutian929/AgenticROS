@@ -1,6 +1,0 @@
-{
-  "physical_hosts": 1,
-  "containers": 2,
-  "baseline": false,
-  "image_id": "sha256:d14e7bb857ba6cc9b38f51e8b7122d06411a845fb48b7385cd965e090761592a"
-}

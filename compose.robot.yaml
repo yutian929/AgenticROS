@@ -1,0 +1,20 @@
+services:
+  client:
+    build:
+      context: .
+      dockerfile: docker/robot_instances/${AGENTICROS_ENVIRONMENT:?}/Dockerfile
+    image: agenticros-${AGENTICROS_ENVIRONMENT:?}:single
+    network_mode: host
+    ipc: host
+    environment:
+      AGENTICROS_ROBOT_ID: ${AGENTICROS_ROBOT_ID:?}
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      ROS_LOCALHOST_ONLY: "0"
+      BODY_SEED: ${BODY_SEED:-0}
+      # Keep large ROS messages from blocking the publisher thread.
+      RMW_FASTRTPS_PUBLICATION_MODE: ASYNCHRONOUS
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true

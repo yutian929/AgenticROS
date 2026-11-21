@@ -1,26 +1,21 @@
 """Read-only public-interface benchmark, executed inside the isolated Agent container."""
 import concurrent.futures
-import hashlib
 import json
 import os
 from pathlib import Path
 import sys
 import threading
 import time
-import urllib.request
 import rclpy
 from rclpy.executors import MultiThreadedExecutor
 from std_srvs.srv import Trigger
-from agenticros_driver_interfaces.srv import Snapshot
+from sensor_msgs.msg import CompressedImage
+from rclpy.qos import qos_profile_sensor_data
 
 mode, count, label = sys.argv[1], int(sys.argv[2]), sys.argv[3]
 rows = []
 
-def http(url):
-    with urllib.request.urlopen(url, timeout=5) as response:
-        return response.read()
-
-namespaces = {robot:'/robots/'+robot for robot in ('robot_a','robot_b')}
+namespaces = {robot:'/robot/'+robot for robot in ('robot_a','robot_b')}
 sessions = {}
 rclpy.init()
 node = rclpy.create_node('network_benchmark_'+str(os.getpid()))
@@ -29,7 +24,7 @@ executor.add_node(node)
 worker = threading.Thread(target=executor.spin, daemon=True)
 worker.start()
 clients = {(robot, kind): node.create_client(typ, ns+'/driver/'+kind)
-           for robot, ns in namespaces.items() for kind, typ in [('status', Trigger), ('observe', Snapshot)]}
+           for robot, ns in namespaces.items() for kind, typ in [('status', Trigger)]}
 
 def call(robot, kind='status'):
     row = dict(layer='ros_data', phase=mode, robot=robot, operation=kind, success=False)
@@ -42,8 +37,6 @@ def call(robot, kind='status'):
     row['discovery_ms'] = (time.monotonic()-start)*1000
     start = time.monotonic()
     request=c.srv_type.Request()
-    if kind=='observe' and hasattr(request,'session_id'):
-        request.session_id=sessions[robot]
     f = c.call_async(request)
     done = threading.Event()
     f.add_done_callback(lambda _: done.set())
@@ -55,7 +48,7 @@ def call(robot, kind='status'):
             response = f.result()
             if kind == 'status' and not response.success:
                 raise RuntimeError('server failure')
-            payload = json.loads(response.message if kind == 'status' else response.snapshot_json)
+            payload = json.loads(response.message)
             if isinstance(payload,dict) and 'error' in payload:raise RuntimeError(payload['error'])
             row['success'] = True
             if kind == 'status': sessions[robot]=payload['session_id']
@@ -63,17 +56,6 @@ def call(robot, kind='status'):
             row['error'] = 'server_failure'
     row['response_ms'] = (time.monotonic()-start)*1000
     rows.append(row)
-    if kind == 'observe' and row['success']:
-        start = time.monotonic()
-        image = dict(layer='image_download', phase=mode, robot=robot, success=False)
-        try:
-            data = http(payload['rgb_url'])
-            assert hashlib.sha256(data).hexdigest() == payload['artifacts']['rgb.png']['sha256']
-            image.update(success=True, bytes=len(data))
-        except Exception as exc:
-            image['error'] = type(exc).__name__
-        image['response_ms'] = (time.monotonic()-start)*1000
-        rows.append(image)
 
 try:
     for _ in range(count):
@@ -83,8 +65,12 @@ try:
         else:
             call('robot_a')
     if mode != 'cold':
-        for _ in range(5):
-            call('robot_a', 'observe')
+        samples=[]
+        subscription=node.create_subscription(CompressedImage,namespaces['robot_a']+'/camera/color/image_raw/compressed',lambda msg:samples.append(msg),qos_profile_sensor_data)
+        deadline=time.monotonic()+20
+        while len(samples)<5 and time.monotonic()<deadline:time.sleep(.1)
+        rows.append(dict(layer='ros_image',phase=mode,robot='robot_a',success=len(samples)>=5 and all(len(m.data)>0 for m in samples),samples=len(samples)))
+        node.destroy_subscription(subscription)
 finally:
     executor.shutdown()
     worker.join()

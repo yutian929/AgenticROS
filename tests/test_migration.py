@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/'scripts'))
-spec=importlib.util.spec_from_file_location('migration',ROOT/'scripts/migrate_workspace.py')
+spec=importlib.util.spec_from_file_location('migration',ROOT/'tools/migrate_workspace.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 sys.path.pop(0)
 class Migration(unittest.TestCase):
@@ -19,14 +19,14 @@ class Migration(unittest.TestCase):
         (source/'link').symlink_to('adapter.py')
         with patch.object(m.subprocess,'check_output',return_value=''):
             m.migrate(str(source))
-        target=self.root/'runs/workspace'
+        target=self.root/'runs/42/agent_instance/agent/workspace'
         self.assertEqual(m.manifest(source),m.manifest(target))
         self.assertEqual((source/'adapter.py').read_text(),'generated code')
         self.assertEqual((target/'adapter.py').stat().st_mode&0o660,0o660)
         with self.assertRaisesRegex(ValueError,'destination exists'):m.migrate(str(source))
     def test_dangling_destination_symlink_is_preserved(self):
         (self.root/'runs').mkdir()
-        target=self.root/'runs/workspace';target.symlink_to('missing')
+        target=self.root/'runs/42/agent_instance/agent/workspace';target.parent.mkdir(parents=True);target.symlink_to('missing')
         with self.assertRaisesRegex(ValueError,'destination exists'):m.migrate(str(self.root))
         self.assertTrue(target.is_symlink())
 
@@ -36,9 +36,9 @@ class Migration(unittest.TestCase):
         mounts=json.dumps([{'Mounts':[{'Type':'bind','Source':str(source)}]}])
         with patch.object(m.subprocess,'check_output',side_effect=['active',mounts]):
             with self.assertRaisesRegex(ValueError,'active container'):m.migrate(str(source))
-        self.assertFalse((self.root/'runs/workspace').exists())
+        self.assertFalse((self.root/'runs/42/agent_instance/agent/workspace').exists())
     def test_missing_volume_does_not_create_an_empty_migration(self):
         import subprocess
         with patch.object(m.subprocess,'check_output',return_value=''),patch.object(m.subprocess,'run',side_effect=subprocess.CalledProcessError(1,'inspect')):
             with self.assertRaises(subprocess.CalledProcessError):m.migrate(volume='missing')
-        self.assertFalse((self.root/'runs/workspace').exists())
+        self.assertFalse((self.root/'runs/42/agent_instance/agent/workspace').exists())

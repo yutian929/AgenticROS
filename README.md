@@ -1,95 +1,123 @@
 # AgenticROS
 
-一个 Agent Server，在同一局域网接入多台机器人。Server 内一个监督 Agent 可使用多个执行子 agent；感知、规划、驱动仍可由多个 ROS 节点实现。当前仓库提供 Cartesian Gripper 和 ALOHA 双臂共享世界仿真，不包含真实硬件部署验证。
+通过 ROS 2 连接 Agent、Viewer 和多台机器人。各自运行在独立 Docker 容器中，使用原生 DDS 自动发现，统一 `ROS_DOMAIN_ID` 即可选择通信域，无需配置 Server IP。
 
-## 系统架构
-
-```mermaid
-flowchart LR
-    AGENT["Agent 容器<br/>Agent · ROS 2 · RViz<br/>固定 DDS Discovery Server"]
-    AGENT <-->|"同一 ROS 2 网络"| A["Robot A 容器<br/>/robots/robot_a/..."]
-    AGENT <-->|"同一 ROS 2 网络"| B["Robot B 容器<br/>/robots/robot_b/..."]
-```
-
-Robot 容器直接加入同一 ROS 2 网络。Agent 容器中的原生 `ros2 topic list`、订阅、Service 和 Action 可以直接访问机器人，不经过 HTTP 注册或控制网关。固定 Discovery Server 只负责发现，不转发动作。常驻通用客户端是供子 agent 复用连接的工具，原生 ROS 客户端不依赖它。首次 `topic list` 是短时图快照；完整冷发现检查用 `ros2 topic list --no-daemon --spin-time 3`，详见[原生 CLI 使用说明](docs/usage.md#原生-ros-cli)。
-
-所有机器人使用同一 ROS 域和 DDS 配置，各有唯一 `robot_id`。重启更新 session，保留 UUID、互斥、取消和停止核对，动作超时不自动重发。规则在进入 Agent 前同步，无需因提示词更新重建镜像。详细状态与安全语义见下文。
+当前提供 `aloha_tabletop` 和 `cartesian_gripper` 仿真环境，尚未完成真实硬件和跨物理机器的部署验证。
 
 ## 启动
 
-依赖 Docker、Docker Compose、Python 3。Linux 使用 host 网络；macOS 使用 Docker Desktop 4.34+，开启 Settings → Resources → Network → Enable host networking，关闭 Enhanced Container Isolation。默认全网 TCP Discovery Server；同机测试不能证明跨机器 LAN 可用。
+需要 Docker、Docker Compose 和 Python 3。跨机器部署使用 Linux host 网络，局域网须允许组播及 DDS 双向 UDP；仅设置相同域不能绕过网络隔离。
 
-先确认 **Server 主机在同一局域网中的 IPv4 地址**：macOS 可在“系统设置 → 网络”中查看当前连接的 IP；Linux 可用 `ip -4 addr` 查看实际联网网卡。选择机器人能访问的宿主机地址，不使用 `127.0.0.1` 或 Docker 容器/虚拟机内部地址。下面的 `192.168.1.10` 仅为示例，请替换为实际地址；建议用静态 IP 或路由器 DHCP 地址保留，避免地址变化。
-
-Server 主机：
+在仓库根目录执行，交互式命令分别使用不同终端：
 
 ```bash
-export SERVER_IP=192.168.1.10  # 替换为 Server 主机的实际局域网 IP
-python3 scripts/lan.py server --host "$SERVER_IP"
-bash scripts/agent.sh
-# 登录或恢复会话
-bash scripts/agent-login.sh
-bash scripts/agent.sh resume --last
+# Agent：启动后进入 Codex
+bash agent.sh agent
+
+# Viewer：独立启动
+bash agent.sh viewer
+
+# Robot：启动后进入容器 Bash，已加载 ROS 环境
+bash robot.sh aloha_tabletop
+# 或 bash robot.sh cartesian_gripper
 ```
 
-机器人主机（每台主机的终端都需设置同一个 `SERVER_IP`，这里填 Server 的地址；`robot_id` 全网唯一）：
+所有启动命令默认使用域 `42`，可追加 `--domain-id 43`。无需 `.env`，首次缺少镜像时自动构建。
+
+### 再次执行会怎样？
+
+| 命令 | 首次执行 | 再次执行（同一个域） |
+| --- | --- | --- |
+| `bash agent.sh agent` | 创建 Agent 容器并进入 Codex | 复用已有容器，再进入 Codex |
+| `bash agent.sh viewer` | 创建 Viewer，打印地址和密码 | 复用已有容器，再打印地址和密码 |
+| `bash robot.sh <型号>` | 创建机器人并进入 Bash | **创建另一台机器人**，生成新的短 ID |
+
+Agent、Viewer 已停止时，再次启动会恢复已有容器；工作区和数据卷保留。已有镜像不会自动重建。换一个域则使用该域自己的实例和数据。
+
+机器人在终端输出完整 ID：`<型号>_<8位随机后缀>`，例如 `aloha_tabletop_a1b2c3d4`，话题位于 `/robot/<ID>/...`。同型号可以同时启动多个实例。
+
+在机器人 Shell 中按 **Ctrl+D** 或输入 `exit` 只退出 Shell，容器和机器人继续运行。退出 Agent 终端也不会停止容器。非交互调用 `robot.sh` 时只启动容器，不打开 Shell。
+
+Viewer 是通过 noVNC 访问的普通 RViz。顶部只显示发现的机器人；机器人上线或离线不会切换、重配或重启 RViz。请在 RViz 的 Add 和 Fixed Frame 中自行选择话题与坐标系。机器人图像和点云使用 Reliable QoS，兼容 RViz 默认订阅；彩色图请选择 `camera/color/image_raw`。
+
+域 42 的 Viewer 地址为 [http://127.0.0.1:8080/vnc.html](http://127.0.0.1:8080/vnc.html)，其他域的网页端口为 `8038 + 域编号`。启动成功后，终端会直接显示访问地址和密码；再次执行 `bash agent.sh viewer` 也可查看。
+
+## 重新进入机器人容器
+
+使用启动时输出的完整 ID。忘记 ID 时，查看对应域、型号的目录，子目录名就是 ID：
 
 ```bash
-export SERVER_IP=192.168.1.10  # 与 Server 主机上设置的地址一致
-bash scripts/robot.sh aloha_tabletop --server "${SERVER_IP}" --robot-id aloha_a
-bash scripts/robot.sh cartesian_gripper --server "${SERVER_IP}" --robot-id gripper_b
+ls runs/42/robot_instance/aloha_tabletop/
 ```
 
-同一主机运行多台机器人时，第二台显式指定不同的 `--observation-port 8801`。不生成 join 码，不分配 Agent instance，不动态分配 ROS 域。`--host` 可显式指定机器人向 Server 公布的 IPv4 地址。
-
-首次启动会保存 Server 和机器人配置。之后仅修改终端中的 `SERVER_IP` 不会覆盖保存的地址；IP 变化时，先停止相关任务和服务，再按[使用说明](docs/usage.md)更新 `runs/server.json` 及机器人各自的 `client.json`，重新启动接入。
-
-重复运行使用保存配置，不重建镜像、不替换运行中的容器、不清空工作区。首次缺镜像时构建。升级代码的显式构建与停止步骤见[使用说明](docs/usage.md)。退出 Agent 终端不停止 Server、机器人或 RViz。
+将下面的 `<ID>` 替换为实际 ID：
 
 ```bash
-python3 scripts/lan.py status
-python3 scripts/lan.py info
-python3 scripts/lan.py stop-viewer
-python3 scripts/lan.py viewer
-python3 scripts/lan.py robot --robot-id aloha_a --stop
-python3 scripts/lan.py stop-server
+python3 scripts/runtime.py robot --robot-id <ID> --domain-id 42 --shell
 ```
 
-Viewer 默认 `http://127.0.0.1:8080/vnc.html`。通过 `python3 scripts/lan.py info` 查看地址、`python3 scripts/lan.py viewer-password` 查看口令；口令保存在专用 `viewer-auth` 卷中。Server 管理命令会加载 `runs/server.json`。
-
-## 状态与安全语义
-
-| 信号 | 证明什么 |
-| --- | --- |
-| `process_alive` | 新鲜 ROS 状态证明该发布进程近期存活；无证据为未知，不证明进程死亡 |
-| `ros_discoverable` | ROS 图已发现发布者或服务端点；自身订阅不算，仍可能包含未过期的旧发现记录 |
-| `service_callable` | 按端点记录实际 RPC 响应、时间与服务端成功标志；未调用为无证据 |
-| `observation_fresh` | 收到匹配当前 session 的新鲜状态样本；图像时间须单独核对 |
-| `control_available` | 按状态端点分别报告新鲜度、session 一致性、驱动空闲/故障条件；未出现的臂为未知，驱动最终裁决动作 |
-
-不再有 HTTP 注册、心跳续租或 7447 端口；ROS 2 / DDS 自带的发现与存活检测仍保留。`robot_id` 由部署者保证全网唯一；同名进程会污染同一 ROS 名称空间，不能同时启动。检测到不同新鲜 session 时常驻客户端报告 `session_conflict`，不宣告控制可用；这不替代部署约束。
-
-机器人重启生成新 session，旧 session 命令被拒绝。发现服务或 Agent 离线不会触发额外租约停机：已接受的有限动作由本地驱动继续执行，取消、故障和停止核对仍由机器人负责。动作超时表示结果未知，必须核对 UUID/session，不能自动重发。此方案用于可信局域网仿真，未启用 SROS2；真实硬件的安全停机必须由本地控制器独立保证。
-
-## 数据与规则
-
-- 唯一工作区：`runs/workspace/`，保存生成代码、IDL、证据、能力清单及动作发送日志。
-- Server 配置：`runs/server.json`；机器人配置/图像：`runs/robots/<robot_id>/`。
-- 账号：默认沿用 `agenticros_codex-home`；Viewer 口令默认沿用 `agenticros_viewer-auth`。不挂载宿主机 home、凭据、源码根目录或 Docker socket。
-- 每次进入 Agent 前同步最新 AGENTS.md、contract、skills 和执行子 agent 规则；提示词修改不需要重建镜像。运行中的 Agent 不被覆盖。
-- 旧工作区不会自动选择、合并或删除。迁移方法见[使用说明](docs/usage.md#迁移)。
-
-## 验证
+这个命令复用已有机器人；若容器已停止，会先启动再进入。不会生成新 ID，Shell 已加载 ROS 环境。进入后可执行：
 
 ```bash
-bash scripts/test.sh
-python3 scripts/check_native_ros.py --environment aloha_tabletop --samples 10 --restart --discovery-cycles 5
-python3 scripts/check_lan.py             # 独立 Server + 两个机器人容器，真实 DDS 通信
-python3 scripts/check_lan.py --transport udp
-python3 scripts/check_viewer.py          # ALOHA 三相机、原生 RViz 面板、接口列表
-python3 scripts/check_startup.py         # 隔离 project/数据/端口，实测 Compose host 启动与热同步
-python3 scripts/check_aloha.py --cartesian
-python3 scripts/audit_agent_image.py
+ros2 topic list
+ros2 node list
+exit
 ```
 
-测试只操作自己创建的隔离仿真，保留 `runs/checks/` 和数据卷。网络测试记录发现/请求/服务端错误，分开测量原生 ROS 发现、ROS 数据及图像下载（图像 HTTP 文件服务保留）；包含常驻查询、冷启动、并发查询、机器人重启、客户端重连和动作超时核对。实际前后数据与未覆盖环境见[原生 ROS 验证报告](docs/direct-ros-validation.md)。
+**不要用 `bash robot.sh <型号>` 重新进入旧机器人，它会创建新实例。**
+
+## 状态、停止与清理
+
+管理命令默认使用域 42；其他域追加 `--domain-id <域编号>`。
+
+```bash
+# 查看当前域的机器人状态
+python3 scripts/runtime.py status
+
+# 停止指定机器人、Viewer 或 Agent，保留数据
+python3 scripts/runtime.py robot --robot-id <ID> --stop
+python3 scripts/runtime.py stop-viewer
+python3 scripts/runtime.py stop-server
+```
+
+清理先预览，再确认执行；会删除本项目的容器、数据卷（含登录数据）和 `runs/`，请先保存需要的数据：
+
+```bash
+bash scripts/clean-runtime.sh
+bash scripts/clean-runtime.sh --yes
+```
+
+## 目录与数据
+
+```text
+agent.sh / robot.sh       # 日常启动入口
+compose.agent.yaml       # Agent、Viewer 容器配置
+compose.robot.yaml       # 通用机器人容器配置
+docker/
+  agent_instance/
+    agent/
+    viewer/
+  robot_instances/
+    aloha_tabletop/
+    cartesian_gripper/
+    common/              # 最小公共身份逻辑
+    robot_docs/          # 按型号分类的公开手册、接口定义
+    _template/           # 新机器人模板
+scripts/                 # 运行管理与清理
+tests/                   # 单元测试、隔离容器验证
+tools/                   # 审计、评估、迁移等维护工具
+runs/<DOMAIN_ID>/
+  agent_instance/
+    agent/workspace/     # Agent 生成的代码和资料
+    viewer/
+  robot_instance/<型号>/<ID>/
+```
+
+运行目录、容器项目和数据卷按域隔离。`robot_docs/` 只读挂载到 Agent 的 `/workspace/robot_docs/`；机器人实现与评测代码不挂载给 Agent。
+
+## 更多
+
+- 查看可用型号：`bash robot.sh --list`。
+- 接入新型号：复制[最小机器人模板](docker/robot_instances/_template/README.md)，启动器自动发现。
+- 运行测试：`bash tests/test.sh`；隔离启动验证：`python3 tests/check_startup.py`。
+- 详细配置、镜像更新与迁移见[使用说明](docs/usage.md)，历史验证见[开发记录](docs/development-record.md)。

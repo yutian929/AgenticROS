@@ -16,15 +16,13 @@ from rclpy.action import ActionServer, CancelResponse, GoalResponse
 from rclpy.callback_groups import ReentrantCallbackGroup
 from rclpy.executors import MultiThreadedExecutor, ExternalShutdownException
 from rclpy.node import Node
-from rcl_interfaces.msg import ParameterDescriptor
 from sensor_msgs.msg import JointState, Image, CompressedImage, CameraInfo, PointCloud2, PointField
 from geometry_msgs.msg import TransformStamped
 from std_msgs.msg import String
 from tf2_ros import StaticTransformBroadcaster
-from rclpy.qos import qos_profile_sensor_data
+from rclpy.qos import QoSProfile, ReliabilityPolicy
 from std_srvs.srv import Trigger
 from agenticros_driver_interfaces.action import Actuate
-from agenticros_driver_interfaces.srv import Snapshot
 from world import Simulation
 from evaluator import start_evaluator
 from sensors import point_cloud_buffer
@@ -40,30 +38,15 @@ def valid_goal(positions, duration):
             and np.all(q <= HIGH) and math.isfinite(duration) and .1 <= duration <= 30)
 
 
+# Compatible with RViz defaults and Best Effort sensor subscribers.
+SENSOR_QOS = QoSProfile(depth=5, reliability=ReliabilityPolicy.RELIABLE)
+
+
 class Driver(Node):
     def __init__(self, lan=None):
         self.lan = lan
         self.robot_namespace = lan.namespace if lan else ''
         super().__init__('raw_body_driver', namespace=self.robot_namespace or '/')
-        # Public device metadata is discovered over standard ROS parameter services.
-        # No simulator source, scene state, evaluator or client program is exported.
-        public = Path('/opt/device-public')
-        sources = {name: (public / 'interfaces' / name).read_text() for name in (
-            'package.xml', 'CMakeLists.txt', 'action/Actuate.action', 'srv/Snapshot.srv')}
-        documentation = (public / 'body.md').read_text()
-        if lan:
-            documentation = documentation.replace('`/driver/', '`'+self.robot_namespace+'/driver/').replace('`/camera/', '`'+self.robot_namespace+'/camera/')
-            documentation += ('\nLAN mode (headless): identity '+json.dumps(lan.identity())+
-                '\nAll endpoints and frames are scoped to this robot. No robot_description publisher or RViz desktop in LAN mode. '
-                'Snapshot returns rgb_url, depth_url, snapshot_json_url instead of local paths. '
-                'Download these immutable public artifacts into your workspace; validate session, identity and SHA256. '
-                'Keep URLs private: they carry read-only snapshot tokens. '
-                'No HTTP control lease; accepted actions continue under local driver supervision.\n')
-        self.declare_parameter('device_documentation', documentation,
-                               ParameterDescriptor(read_only=True, description='Public device manual'))
-        self.declare_parameter('interface_sources', json.dumps({
-            'package': 'agenticros_driver_interfaces', 'files': sources}),
-            ParameterDescriptor(read_only=True, description='Public ROS interface package sources; build locally to use custom types'))
         self.sim = Simulation(int(os.getenv('BODY_SEED', '0')))
         if lan:
             self.sim.session = lan.session
@@ -80,13 +63,12 @@ class Driver(Node):
                                    cancel_callback=lambda _: CancelResponse.ACCEPT,
                                    callback_group=group)
         self.create_service(Trigger, 'driver/status', self.status, callback_group=group)
-        self.create_service(Snapshot, 'driver/observe', self.observe, callback_group=group)
         self.joints = self.create_publisher(JointState, 'driver/joint_states', 10)
-        self.rgb = self.create_publisher(Image, 'camera/color/image_raw', qos_profile_sensor_data)
-        self.rgb_compressed = self.create_publisher(CompressedImage, 'camera/color/image_raw/compressed', qos_profile_sensor_data)
-        self.depth = self.create_publisher(Image, 'camera/depth/image_raw', qos_profile_sensor_data)
-        self.camera_info = self.create_publisher(CameraInfo, 'camera/camera_info', qos_profile_sensor_data)
-        self.points = self.create_publisher(PointCloud2, 'camera/depth/color/points', qos_profile_sensor_data)
+        self.rgb = self.create_publisher(Image, 'camera/color/image_raw', SENSOR_QOS)
+        self.rgb_compressed = self.create_publisher(CompressedImage, 'camera/color/image_raw/compressed', SENSOR_QOS)
+        self.depth = self.create_publisher(Image, 'camera/depth/image_raw', SENSOR_QOS)
+        self.camera_info = self.create_publisher(CameraInfo, 'camera/camera_info', SENSOR_QOS)
+        self.points = self.create_publisher(PointCloud2, 'camera/depth/color/points', SENSOR_QOS)
         self.telemetry = self.create_publisher(String, 'driver/state', 10)
         self.camera_tf = StaticTransformBroadcaster(self)
         self.camera_tf_sent = False
@@ -188,15 +170,6 @@ class Driver(Node):
         response.success, response.message = True, json.dumps(state)
         return response
 
-    def observe(self, request, response):
-        if (self.lan or request.session_id) and request.session_id != self.sim.session:
-            response.snapshot_json = json.dumps(dict(error='session_mismatch', session_id=self.sim.session))
-            return response
-        snapshot = self.render.submit(self.sim.snapshot, os.getenv('OBSERVATION_ROOT', '/observations')).result()
-        if self.lan:
-            snapshot = self.lan.export(snapshot)
-        response.snapshot_json = json.dumps(snapshot)
-        return response
 
     def publish(self):
         state = self.measured_state()
@@ -215,6 +188,8 @@ class Driver(Node):
     def capture_frame(self):
         rgb, depth, calibration, _ = self.sim.observe()
         stamp = self.get_clock().now().to_msg()
+        stamp.sec = int(calibration['captured_at_unix'])
+        stamp.nanosec = int((calibration['captured_at_unix']-stamp.sec)*1e9)
         if self.rgb_compressed.get_subscription_count():
             buffer = io.BytesIO()
             PILImage.fromarray(rgb).save(buffer, format='JPEG', quality=75)
@@ -266,8 +241,8 @@ class Driver(Node):
 def main():
     lan = None
     if os.getenv('AGENTICROS_ROBOT_ID'):
-        from robot_network import RobotNetwork
-        lan = RobotNetwork()
+        from robot_identity import RobotIdentity
+        lan = RobotIdentity()
     rclpy.init()
     driver = Driver(lan)
     evaluator = start_evaluator(driver)
@@ -284,8 +259,6 @@ def main():
         executor.shutdown()
         driver.render.shutdown()
         driver.destroy_node()
-        if lan:
-            lan.close()
         if rclpy.ok():
             rclpy.shutdown()
 

@@ -1,1 +1,0 @@
-Expanded test failed discovery-server restart despite initialPeersList; interrupted after repeated failures. TCP connection to port 11811 was established. Existing Viewer subscriptions remained fresh. No full acceptance claimed.

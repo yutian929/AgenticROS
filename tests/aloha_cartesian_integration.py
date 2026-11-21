@@ -28,6 +28,7 @@ def wait(future, timeout=50):
 
 
 def main():
+    Path("/tmp/test-evidence").mkdir(exist_ok=True)
     # Analytic frame convention checks independent of solver and robot motion.
     r90 = np.array([[0.,-1,0],[1,0,0],[0,0,1]])
     start = (np.array([1.,2.,3.]), r90)
@@ -72,7 +73,7 @@ def main():
         h,gid,feedback=sent; assert h.accepted
         r=json.loads(wait(h.get_result_async()).result.receipt_json)
         reports.append(r)
-        Path('/observations/integration.json').write_text(json.dumps(dict(receipts=reports),indent=2))
+        Path('/tmp/test-evidence/integration.json').write_text(json.dumps(dict(receipts=reports),indent=2))
         print(arm,r['reason'],r.get('position_error'),r.get('orientation_error'),flush=True)
         assert r['goal_id']==gid and r['session_id']==world.session and r['arm']==arm
         assert r['stop_confirmed'],r
@@ -148,7 +149,7 @@ def main():
         world.failure='injected-test-fault'
         assert not state('right')['control_available']
         assert not send('right','move_delta',goal('right','move_delta'))[0].accepted
-        Path('/observations/integration.json').write_text(json.dumps(dict(passed=True,receipts=reports,
+        Path('/tmp/test-evidence/integration.json').write_text(json.dumps(dict(passed=True,receipts=reports,
             cases=['both_arms_both_actions_both_frames','rotation_and_translation','invalid_and_stale',
                    'unreachable_no_execution','joint_speed_limit','planning_cancel','shutdown','shared_exclusion','concurrent_arms','cancel','local_fault']),indent=2))
         print('PASS: Cartesian integration',flush=True)

@@ -25,139 +25,185 @@ def load(name, path):
     return module
 
 
-client = load('lan_client', 'docker/shared/robot_network.py')
-profile = load('lan_profile', 'docker/shared/lan_profile.py')
-launcher = load('lan_launcher', 'scripts/lan.py')
+client = load('lan_client', 'docker/robot_instances/common/robot_identity.py')
+launcher = load('lan_launcher', 'scripts/runtime.py')
 
 
-class SensorArtifacts(unittest.TestCase):
+class Identity(unittest.TestCase):
     def test_robot_identity_starts_offline_with_new_session(self):
-        with tempfile.TemporaryDirectory() as temp, patch.dict(os.environ,dict(
-                AGENTICROS_ROBOT_ID='arm_a',AGENTICROS_CLIENT_HOST='127.0.0.1',
-                AGENTICROS_OBSERVATION_PORT='0',OBSERVATION_ROOT=temp)), \
-                patch.object(urllib.request,'urlopen',side_effect=AssertionError('no registration allowed')):
-            first=client.RobotNetwork()
-            try:
-                self.assertEqual(first.identity(),dict(robot_id='arm_a',namespace='/robots/arm_a'))
-                old=first.session
-            finally:first.close()
-            restarted=client.RobotNetwork()
-            try:self.assertNotEqual(old,restarted.session)
-            finally:restarted.close()
-
-    def test_snapshot_download_whitelist_and_integrity(self):
-        with tempfile.TemporaryDirectory() as temp:
-            c = client.RobotNetwork.__new__(client.RobotNetwork)
-            c.root = Path(temp).resolve()
-            c.session = 'a'*12
-            c.secret = b'secret'
-            c.host = '127.0.0.1'
-            c.robot_id = 'arm_a'
-            c.namespace = '/robots/arm_a'
-            # Port zero is only used by this isolated test.
-            c.port = 0
-            c.http = c.artifact_server()
-            c.port = c.http.server_port
-            worker = threading.Thread(target=c.http.serve_forever, daemon=True)
-            worker.start()
-            sid = c.session+'-'+'b'*12
-            folder = c.root/'snapshots'/sid
-            folder.mkdir(parents=True)
-            (folder/'rgb.png').write_bytes(b'rgb fixture')
-            (folder/'depth.npy').write_bytes(b'depth fixture')
-            snap = dict(snapshot_id=sid, session_id=c.session, state={'frame':'base'}, calibration={},
-                        rgb_path='local', depth_path='local', snapshot_json_path='local')
-            try:
-                result = c.export(snap)
-                self.assertNotIn('rgb_path', result)
-                self.assertEqual(result['state']['frame'], 'robots/arm_a/base')
-                with urllib.request.urlopen(result['rgb_url']) as response:
-                    data = response.read()
-                self.assertEqual(client.hashlib.sha256(data).hexdigest(), result['artifacts']['rgb.png']['sha256'])
-                for path in ['/../../opt/body/world.py', '/snapshots/'+sid+'/other.txt', '/snapshots/'+sid+'/rgb.png']:
-                    with self.assertRaises(urllib.error.HTTPError):
-                        urllib.request.urlopen(f'http://127.0.0.1:{c.port}'+path)
-            finally:
-                c.http.shutdown()
-                c.http.server_close()
-                worker.join()
+        with patch.dict(os.environ, AGENTICROS_ROBOT_ID='arm_a'), patch.object(socket, 'socket', side_effect=AssertionError('no network required')):
+            first=client.RobotIdentity()
+            self.assertEqual(first.identity(),dict(robot_id='arm_a',namespace='/robot/arm_a'))
+            self.assertNotEqual(first.session,client.RobotIdentity().session)
 
 
 class Configuration(unittest.TestCase):
-    def test_discovery_profiles_have_no_shared_memory_and_use_super_client(self):
-        ns = {'f':'http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles'}
-        for server in (False, True):
-            root = ET.fromstring(profile.profile('127.0.0.1', 12811, '01.02.03.04.05.06.07.08.09.0a.0b.0c', server))
-            self.assertEqual(root.find('.//f:discoveryProtocol', ns).text, 'SERVER' if server else 'SUPER_CLIENT')
-            self.assertEqual(root.find('.//f:useBuiltinTransports', ns).text, 'false')
-
-    def test_tcp_uses_volatile_fixed_discovery_and_bounded_sync(self):
-        ns={'f':'http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles'}
-        for server in (False,True):
-            root=ET.fromstring(profile.profile('192.168.1.10',11811,launcher.PREFIX,server,'tcp'))
-            self.assertEqual(root.find('.//f:discoveryProtocol',ns).text,'SERVER' if server else 'SUPER_CLIENT')
-            self.assertEqual(root.find('.//f:clientAnnouncementPeriod/f:nanosec',ns).text,'100000000')
-            self.assertEqual(root.find('.//f:max_logical_port',ns).text,'0')
-            if not server:
-                self.assertEqual(ET.tostring(root.find('.//f:initialPeersList/f:locator',ns)),
-                                 ET.tostring(root.find('.//f:RemoteServer/f:metatrafficUnicastLocatorList/f:locator',ns)))
-                peers=root.findall('.//f:initialPeersList/f:locator',ns)
-                self.assertEqual(len(peers),3)
-                self.assertEqual(peers[2].find("f:tcpv4/f:address",ns).text,"127.0.0.1")
-                self.assertEqual(peers[1].find('f:tcpv4/f:wan_address',ns).text,'192.168.1.10')
-            else:
-                self.assertEqual(len(root.findall('.//f:builtin/f:metatrafficUnicastLocatorList/f:locator',ns)),1)
-
-    def test_remote_robot_does_not_use_loopback_discovery_peer(self):
-        ns={'f':'http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles'}
-        root=ET.fromstring(profile.profile('192.168.1.10',11811,launcher.PREFIX,False,'tcp','192.168.1.20'))
-        self.assertEqual(len(root.findall('.//f:initialPeersList/f:locator',ns)),2)
-        self.assertNotIn('127.0.0.1',ET.tostring(root).decode())
-
     def test_invalid_names_and_addresses_rejected(self):
         for name in ('../bad', 'A', 'robot-a', '1arm'):
             with self.assertRaises(argparse.ArgumentTypeError):
                 launcher.robot_name(name)
-        for address in ('0.0.0.0', '224.0.0.1'):
-            with self.assertRaises(argparse.ArgumentTypeError):
-                launcher.ipv4(address)
+
 
 
 class Startup(unittest.TestCase):
     def setUp(self):
         self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
         p=patch.object(launcher,'ROOT',Path(self.temp.name));p.start();self.addCleanup(p.stop)
+        for name in ('cartesian_gripper','aloha_tabletop'):
+            path=launcher.ROOT/'docker/robot_instances'/name/'Dockerfile'
+            path.parent.mkdir(parents=True);path.write_text('FROM scratch\n')
     def test_one_fixed_domain_and_configuration(self):
-        a=launcher.server_config('127.0.0.1');self.assertEqual(a['ROS_DOMAIN_ID'],42)
+        a=launcher.server_config();self.assertEqual(a['ROS_DOMAIN_ID'],42)
         self.assertEqual(launcher.server_config(),a)
         self.assertNotIn('AGENTICROS_REGISTRY_PORT',a)
         self.assertNotIn('AGENTICROS_JOIN_TOKEN',a)
-        with self.assertRaisesRegex(ValueError,'saved configuration'):launcher.server_config('192.168.1.1')
-    def test_duplicate_ports_and_macos_udp_rejected(self):
-        with self.assertRaises(ValueError):launcher.server_config('127.0.0.1',discovery_port=8080)
-        with patch.object(launcher.sys,'platform','darwin'):
-            with self.assertRaises(ValueError):launcher.server_config('127.0.0.1',transport='udp')
+        self.assertEqual(launcher.server_config(43)['ROS_DOMAIN_ID'],43)
+        with patch.dict(os.environ, ROS_DOMAIN_ID='99'):
+            self.assertEqual(launcher.server_config()['ROS_DOMAIN_ID'],42)
+    def test_domains_isolate_compose_resources_and_viewer_config(self):
+        rendered=[]
+        for domain in (42,43):
+            config=launcher.server_config(domain)
+            viewer=launcher.server_config(domain,'viewer')
+            viewer['AGENTICROS_VIEWER_PORT']=18000+domain
+            launcher.server_file(domain,'viewer').write_text(json.dumps(viewer))
+            self.assertNotEqual(launcher.server_config(domain)['AGENTICROS_VIEWER_PORT'],
+                                launcher.server_config(domain,'viewer')['AGENTICROS_VIEWER_PORT'])
+            with patch.dict(os.environ, ROS_DOMAIN_ID='99', AGENTICROS_CODEX_VOLUME='wrong'):
+                env=launcher.environment(config)
+            data=json.loads(subprocess.check_output(launcher.compose(config)+['--profile','viewer','config','--format','json'],cwd=ROOT,env=env,text=True))
+            rendered.append(data)
+            self.assertEqual(data['services']['server']['environment']['ROS_DOMAIN_ID'],str(domain))
+            mount=next(m for m in data['services']['server']['volumes'] if m['target']=='/workspace')
+            self.assertIn('/runs/'+str(domain)+'/agent_instance/agent/workspace',mount['source'])
+        self.assertNotEqual(rendered[0]['name'],rendered[1]['name'])
+        for volume in ('codex-home','viewer-auth'):
+            self.assertNotEqual(rendered[0]['volumes'][volume]['name'],rendered[1]['volumes'][volume]['name'])
+        for port in ('AGENTICROS_VIEWER_PORT','AGENTICROS_VNC_PORT'):
+            self.assertNotEqual(rendered[0]['services']['viewer']['environment'][port],rendered[1]['services']['viewer']['environment'][port])
+
+    def test_new_type_is_discovered_without_launcher_changes(self):
+        root=launcher.ROOT/'docker/robot_instances'
+        for name in ('new_robot_with_underscores','common','robot_docs','Bad-Type'):
+            path=root/name;path.mkdir(exist_ok=True);(path/'Dockerfile').write_text('FROM scratch')
+        (root/'empty_type').mkdir()
+        self.assertEqual(launcher.robot_types(),['aloha_tabletop','cartesian_gripper','new_robot_with_underscores'])
+        args=argparse.Namespace(robot_id=None,domain_id=43,environment='new_robot_with_underscores',stop=False)
+        config=launcher.client_config(args)
+        identity=args.robot_id
+        self.assertRegex(identity,r'^new_robot_with_underscores_[0-9a-f]{8}$')
+        args.environment=None
+        self.assertEqual(launcher.client_config(args),config)
+        self.assertEqual(launcher.client_file(identity,43).parent.parent.name,'new_robot_with_underscores')
+        # Stop still works from saved metadata if the source directory is removed.
+        (root/'new_robot_with_underscores/Dockerfile').unlink()
+        args.stop=True
+        self.assertEqual(launcher.client_config(args),config)
+
+    def test_short_robot_id_collision_retries_without_reusing_instance(self):
+        args = argparse.Namespace(robot_id=None, domain_id=42, environment='aloha_tabletop', stop=False)
+        with patch.object(launcher.secrets, 'token_hex', return_value='1234abcd'):
+            first = launcher.client_config(args)
+        args.robot_id = None
+        with patch.object(launcher.secrets, 'token_hex', side_effect=['1234abcd', 'abcd5678']):
+            second = launcher.client_config(args)
+        self.assertEqual(second['AGENTICROS_ROBOT_ID'], 'aloha_tabletop_abcd5678')
+        self.assertEqual(json.loads(launcher.client_file(first['AGENTICROS_ROBOT_ID'],42).read_text()), first)
+
+    def test_unknown_type_and_unknown_id_do_not_create_configuration(self):
+        for kind in (None,'missing','../escape'):
+            args=argparse.Namespace(robot_id=None,domain_id=42,environment=kind,stop=False)
+            with self.assertRaises(ValueError):launcher.client_config(args)
+        with self.assertRaises(ValueError):launcher.client_file('aloha_tabletop_unknown')
+        self.assertFalse((launcher.ROOT/'runs').exists())
+
+    def test_robot_image_requires_its_own_healthcheck(self):
+        config=dict(AGENTICROS_ENVIRONMENT='anything')
+        with patch.object(launcher.subprocess,'run',return_value=argparse.Namespace(returncode=0)):
+            for health in (None,{},dict(Test=['NONE'])):
+                with patch.object(launcher.subprocess,'check_output',return_value=json.dumps(health)):
+                    with self.assertRaisesRegex(ValueError,'HEALTHCHECK'):launcher.ensure_image(config,'client',True)
+            with patch.object(launcher.subprocess,'check_output',return_value=json.dumps(dict(Test=['CMD','/custom-ready']))):
+                self.assertEqual(launcher.ensure_image(config,'client',True),'agenticros-anything:single')
+
+    def test_invalid_domain_rejected(self):
+        with self.assertRaises(ValueError): launcher.server_config(102)
+    def test_robot_type_generates_distinct_stable_ids(self):
+        ids=[]
+        for _ in range(2):
+            args=argparse.Namespace(robot_id=None,environment='cartesian_gripper',domain_id=55,stop=False)
+            config=launcher.client_config(args)
+            ids.append(config['AGENTICROS_ROBOT_ID'])
+            self.assertRegex(ids[-1],r'^cartesian_gripper_[0-9a-f]{8}$')
+            self.assertEqual(launcher.client_config(args),config)
+        self.assertNotEqual(*ids)
+
+    def test_robot_needs_only_domain(self):
+        a=argparse.Namespace(robot_id='arm_a',domain_id=55,environment='cartesian_gripper',stop=False)
+        c=launcher.client_config(a)
+        self.assertEqual(c['ROS_DOMAIN_ID'],55)
+        self.assertFalse(any(k.startswith('AGENTICROS_DDS_') for k in c))
     def test_live_server_not_replaced(self):
-        config=launcher.server_config('127.0.0.1')
+        config=launcher.server_config()
         with patch.object(launcher,'health',return_value='ok'),patch.object(launcher,'run') as run:
             self.assertEqual(launcher.ensure_server(config),'ok');run.assert_not_called()
         with patch.object(launcher,'health',side_effect=ValueError('mismatch')),patch.object(launcher,'run') as run:
             with self.assertRaises(ValueError):launcher.ensure_server(config)
             run.assert_not_called()
     def test_robot_config_no_join_or_registration_and_retained_binding(self):
-        a=argparse.Namespace(robot_id='arm_a',server='127.0.0.1',domain_id=None,discovery_port=None,transport=None,host='127.0.0.1',observation_port=None,environment='aloha_tabletop',stop=False)
+        a=argparse.Namespace(robot_id='arm_a',server='127.0.0.1',domain_id=None,discovery_port=None,transport=None,environment='aloha_tabletop',stop=False)
         with patch.object(urllib.request,'urlopen') as http:
             c=launcher.client_config(a);self.assertEqual(launcher.client_config(a),c);http.assert_not_called()
-        a.server='127.0.0.2'
-        with self.assertRaisesRegex(ValueError,'binding'):launcher.client_config(a)
+        a.domain_id=43
+        other=launcher.client_config(a)
+        self.assertEqual(other['ROS_DOMAIN_ID'],43)
+        self.assertNotEqual(launcher.client_file('arm_a',42),launcher.client_file('arm_a',43))
     def test_viewer_password_cli_uses_saved_server_without_runtime_dispatch(self):
-        config=launcher.server_config('127.0.0.1')
-        with patch.object(launcher.sys,'argv',['lan.py','viewer-password']),patch.object(launcher,'run') as run:
+        config=launcher.server_config()
+        with patch.object(launcher.sys,'argv',['runtime.py','viewer-password']),patch.object(launcher,'run') as run:
             launcher.main()
-        run.assert_called_once_with(config,['exec','-T','server','cat','/viewer-auth/password'])
+        run.assert_called_once_with(config,['exec','-T','viewer','cat','/viewer-auth/password'])
+
+    def test_agent_domain_starts_server_and_preserves_codex_arguments(self):
+        with patch.object(launcher.sys,'argv',['runtime.py','agent','--domain-id','55','--','resume','--last']), \
+                patch.object(launcher,'ensure_server') as ensure, \
+                patch.object(launcher,'agent_command',return_value=['docker','exec','fixture']) as command, \
+                patch.object(launcher.os,'chdir'), patch.object(launcher.os,'execvpe') as execute:
+            launcher.main()
+        self.assertEqual(ensure.call_args.args[0]['ROS_DOMAIN_ID'],55)
+        self.assertEqual(command.call_args.args[2],['resume','--last'])
+        self.assertEqual(execute.call_args.args[2]['ROS_DOMAIN_ID'],'55')
+
+    def test_agent_shell_forwards_domain_separately(self):
+        import sys
+        stub=Path(self.temp.name)/'python3'
+        stub.write_text('#!'+sys.executable+'\nimport json,sys; print(json.dumps(sys.argv[1:]))\n')
+        stub.chmod(0o755)
+        env=dict(os.environ,PATH=self.temp.name+os.pathsep+os.environ['PATH'])
+        for arguments, expected in [(['agent'],['--']),(['agent','--domain-id','55','resume','--last'],['--domain-id','55','--','resume','--last'])]:
+            output=subprocess.check_output(['bash',str(ROOT/'agent.sh'),*arguments],env=env,text=True)
+            self.assertEqual(json.loads(output),['scripts/runtime.py','agent',*expected])
+        self.assertNotEqual(subprocess.run(['bash',str(ROOT/'agent.sh'),'agent','--domain-id'],env=env,capture_output=True).returncode,0)
+        output=subprocess.check_output(['bash',str(ROOT/'agent.sh'),'viewer','--domain-id','55'],env=env,text=True)
+        self.assertEqual(json.loads(output),['scripts/runtime.py','viewer','--domain-id','55'])
+
+    def test_viewer_starts_without_agent(self):
+        with patch.object(launcher.sys,'argv',['runtime.py','viewer','--domain-id','55']), \
+                patch.object(launcher,'ensure_image') as image,patch.object(launcher,'run') as run, \
+                patch.object(launcher,'ensure_server') as agent, \
+                patch.object(launcher.subprocess,'check_output',return_value='test-pass\n') as password, \
+                patch('builtins.print') as output:
+            launcher.main()
+        output.assert_any_call('Viewer: http://127.0.0.1:8093/vnc.html')
+        output.assert_any_call('Password: test-pass')
+        self.assertEqual(password.call_args.args[0][-4:], ['-T','viewer','cat','/viewer-auth/password'])
+        agent.assert_not_called()
+        self.assertEqual(image.call_args.args[1],'viewer')
+        self.assertEqual(run.call_args.args[0]['ROS_DOMAIN_ID'],55)
+        self.assertEqual(run.call_args.args[1][-1],'viewer')
 
     def test_rules_staged_before_attach_with_lock(self):
-        config=launcher.server_config('127.0.0.1')
+        config=launcher.server_config()
         with patch.object(launcher,'stage_agent_rules',return_value='/workspace/staged/entrypoint.sh'):
             cmd=launcher.agent_command(config,['agenticros','start'],['resume','--last'],False)
         self.assertLess(cmd.index('attach'),cmd.index('/workspace/staged/entrypoint.sh'))

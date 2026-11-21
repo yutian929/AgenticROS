@@ -12,11 +12,10 @@ from rclpy.executors import MultiThreadedExecutor
 from std_srvs.srv import Trigger
 from unique_identifier_msgs.msg import UUID
 from aloha_driver_interfaces.action import Actuate
-from aloha_driver_interfaces.srv import Snapshot
 from driver import Driver, CameraPublisher
 from world import World
 import numpy as np
-from sensor_msgs.msg import CameraInfo
+from sensor_msgs.msg import CameraInfo, Image
 from tf2_msgs.msg import TFMessage
 from rclpy.qos import qos_profile_sensor_data
 
@@ -31,6 +30,7 @@ def wait(future, timeout=30):
 
 
 def main():
+    Path("/tmp/test-evidence").mkdir(exist_ok=True)
     rclpy.init()
     world = World()
     drivers = [Driver(world, arm) for arm in ('left', 'right')]
@@ -48,10 +48,15 @@ def main():
             assert action.wait_for_server(timeout_sec=20)
         for status in statuses:
             assert status.wait_for_service(timeout_sec=20)
-        infos, transforms = {}, {}
+        infos, transforms, images, depths = {}, {}, {}, {}
         for camera in ('left', 'overhead', 'right'):
             client.create_subscription(CameraInfo, '/'+camera+'/camera/camera_info',
                 lambda msg, camera=camera: infos.update({camera: msg}), qos_profile_sensor_data)
+        for camera in ('left', 'overhead', 'right'):
+            client.create_subscription(Image, '/'+camera+'/camera/color/image_raw',
+                lambda msg, camera=camera: images.update({camera: msg}), qos_profile_sensor_data)
+            client.create_subscription(Image, '/'+camera+'/camera/depth/image_raw',
+                lambda msg, camera=camera: depths.update({camera: msg}), qos_profile_sensor_data)
         client.create_subscription(TFMessage, '/tf',
             lambda msg: transforms.update({t.child_frame_id:t for t in msg.transforms}), 100)
         time.sleep(2)
@@ -83,25 +88,23 @@ def main():
             assert receipt['stop_confirmed'], receipt
             state = json.loads(wait(statuses[i].call_async(Trigger.Request())).message)
             assert receipt['goal_id'] in state['receipts'] and not state['busy']
-        snapshots = {}
-        for camera in ('left', 'overhead', 'right'):
-            snapshot = client.create_client(Snapshot, '/'+camera+'/driver/observe')
-            assert snapshot.wait_for_service(timeout_sec=10)
-            value = json.loads(wait(snapshot.call_async(Snapshot.Request()),60).snapshot_json)
-            assert Path(value['rgb_path']).is_file() and Path(value['depth_path']).is_file()
-            assert value['calibration']['camera'] == camera
+        deadline=time.monotonic()+30
+        while not all(camera in images and camera in depths and camera in infos for camera in ('left','overhead','right')):
+            assert time.monotonic()<deadline, 'camera topics unavailable'
+            time.sleep(.1)
+        for camera in ('left','overhead','right'):
             assert infos[camera].header.frame_id == camera+'/camera_optical_frame'
-            assert np.allclose(np.array(infos[camera].k).reshape(3,3), value['calibration']['K'])
-            snapshots[camera] = value
-        assert len({Path(v['rgb_path']).read_bytes() for v in snapshots.values()}) == 3
+            assert images[camera].encoding=='rgb8' and depths[camera].encoding=='32FC1'
+            assert (images[camera].width, images[camera].height)==(320,240)
+        assert len({bytes(v.data) for v in images.values()}) == 3
         assert set(transforms) >= {'left/camera_optical_frame', 'right/camera_optical_frame'}
-        assert not np.allclose(before['optical_to_base_rotation'],
-                               snapshots['right']['calibration']['optical_to_base_rotation'], atol=1e-4)
-        assert np.allclose(snapshots['right']['calibration']['K'][0][0], 120/np.tan(np.deg2rad(29)))
-        value = snapshots['left']
+        after=world.render.submit(drivers[1].sim.observe).result()[2]
+        assert not np.allclose(before['optical_to_base_rotation'],after['optical_to_base_rotation'],atol=1e-4)
+        assert np.allclose(infos['right'].k[0],120/np.tan(np.deg2rad(29)))
         report = dict(shared_session=world.session, concurrent_arms=True, same_arm_rejected=True,
-                      stale_session_rejected=True, cancelled_and_stopped=True, receipts=receipts, snapshot=value, cameras=snapshots)
-        Path('/observations/integration.json').write_text(json.dumps(report,indent=2))
+                      stale_session_rejected=True, cancelled_and_stopped=True, receipts=receipts,
+                      cameras=list(images), ros_rgb_depth_received=True)
+        Path('/tmp/test-evidence/integration.json').write_text(json.dumps(report,indent=2))
         print('PASS: shared world, concurrent arms, exclusion, stale session, UUID receipts, cancellation, RGB-D')
     finally:
         for d in drivers:

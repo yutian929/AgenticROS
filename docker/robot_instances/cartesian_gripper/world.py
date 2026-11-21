@@ -2,12 +2,10 @@
 from pathlib import Path
 import threading
 import uuid
-import json
 import math
 import time
 import numpy as np
 import mujoco
-from PIL import Image
 
 MODEL = Path(__file__).resolve().parent / "tabletop.xml"
 
@@ -51,6 +49,7 @@ class Simulation:
 
     def observe(self):
         with self.lock:
+            captured_at_unix = time.time()
             with mujoco.Renderer(self.model, height=480, width=640) as renderer:
                 renderer.update_scene(self.data, camera="overhead")
                 rgb = renderer.render().copy()
@@ -60,24 +59,9 @@ class Simulation:
             focal = 240 / math.tan(float(cam.fovy[0]) * math.pi / 360)
             # MuJoCo camera: +x right, +y up, -z forward. ROS optical: +y down, +z forward.
             rotation = self.data.cam_xmat[cam.id].reshape(3, 3) @ np.diag([1., -1., -1.])
-            calibration = {"width": 640, "height": 480,
+            calibration = {"width": 640, "height": 480, "captured_at_unix": captured_at_unix,
                            "K": [[focal, 0, 320], [0, focal, 240], [0, 0, 1]],
                            "depth_units": "metres along optical z",
                            "optical_to_base_rotation": rotation.tolist(),
                            "optical_to_base_translation": self.data.cam_xpos[cam.id].tolist()}
             return rgb, depth, calibration, self.state()
-
-    def snapshot(self, root):
-        rgb, depth, calibration, state = self.observe()
-        sid = f"{self.session}-{uuid.uuid4().hex[:12]}"
-        folder = Path(root).resolve() / "snapshots" / sid
-        folder.mkdir(parents=True, exist_ok=False)
-        Image.fromarray(rgb).save(folder / "rgb.png")
-        np.save(folder / "depth.npy", depth)
-        result = {"snapshot_id": sid, "session_id": self.session,
-                  "captured_at_unix": time.time(), "snapshot_json_path": str(folder / "snapshot.json"),
-                  "rgb_path": str(folder / "rgb.png"),
-                  "depth_path": str(folder / "depth.npy"),
-                  "calibration": calibration, "state": state}
-        (folder / "snapshot.json").write_text(json.dumps(result, indent=2))
-        return result

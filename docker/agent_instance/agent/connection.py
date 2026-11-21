@@ -269,7 +269,7 @@ def start(arguments):
         print(str(error))
         saved = None
     if saved is None:
-        # agent-login.sh can have saved a login without creating a menu profile.
+        # runtime.py login can have saved a login without creating a menu profile.
         existing = {'kind': 'chatgpt', 'model': default_model()}
         if chatgpt_status(existing):
             saved = existing

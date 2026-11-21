@@ -13,7 +13,9 @@
 
 优先用 `agenticros-ros graph/status/request` 访问共享的常驻 ROS 进程，复用订阅和 Service/Action Client，避免每次轮询启动 ROS CLI。`request` 接收 JSON，支持 `service/read/goal/result/cancel`；端点与类型从公开接口发现。发送动作需 `goal_id`、`request.session_id`、`status_endpoint`；超时的 `outcome=unknown` 仍须按下文核对，查询成功不代表停止成功。
 
-机器人端点固定为 `/robots/<robot_id>/...`，session 放在状态、请求和回执中，不进入端点名称。按机器人隔离能力、证据和坐标系；重启或 session 改变后清除旧观测缓存并读取当前状态。分别判断进程存活、ROS 发现、服务响应、观测新鲜度和控制可用性；机器人直接加入 ROS 网络，无 HTTP 注册或控制租约；发现服务离线不代表已接受动作停止，`status` 的样本新鲜度不代表图像采集时间。
+机器人端点固定为 `/robot/<robot_id>/...`，session 放在状态、请求和回执中，不进入端点名称。按机器人隔离能力、证据和坐标系；重启或 session 改变后清除旧观测缓存并读取当前状态。分别判断进程存活、ROS 发现、服务响应、观测新鲜度和控制可用性；机器人直接加入 ROS 网络，无 HTTP 注册或控制租约；发现服务离线不代表已接受动作停止，`status` 的样本新鲜度不代表图像采集时间。
+
+机器人观测使用原生 ROS 传感器话题；Agent 按需订阅并在自身工作区保存。RGB、深度和 CameraInfo 配对时间戳与坐标系，动态 TF 对应采集时刻；状态独立检查新鲜度与 session。不存在机器人快照文件 Service 或 HTTP 观测下载。
 
 ## 动作执行
 
@@ -24,11 +26,12 @@
 
 ## 工作区与进程
 
+- `/workspace/robot_docs/`：按型号分类的只读公开资料，不代表在线机器人；核对适用型号和版本，不在此写入或构建。
 - `/workspace/ros_ws/src/`：生成的 ROS 包和取得的公开接口源码；在 `ros_ws` 内构建。
 - `/workspace/capabilities/manifest.json`：能力清单，格式见下文。
 - `/workspace/evidence/`：观测、动作回执、验证记录和进程日志。
 
-所有节点继承同一 Server 的 ROS 域和 DDS / Discovery Server profile，不按任务或子 agent 改变网络配置。新接口绑定构建后，在无未核对动作时用 `python3 /opt/instance/runtime.py clients-reload` 仅重载通信客户端。
+所有节点继承同一 ROS_DOMAIN_ID，使用原生 DDS 自动发现，不按任务或子 agent 改变网络配置。新接口绑定构建后，在无未核对动作时用 `python3 /opt/instance/runtime.py clients-reload` 仅重载通信客户端。
 
 节点应有可重复的构建、启停和健康检查方法。启动前检查已有实例；用受管理进程或后台 launch 保持运行，记录 PID/进程组和日志，各终端按需加载 overlay。只停止自己管理的进程；退出控制节点前核对动作与停止状态。重启或换会话后重新核对环境，启动节点不得自动运动或重放目标。
 

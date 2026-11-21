@@ -8,12 +8,12 @@ import unittest
 import uuid
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
-spec=importlib.util.spec_from_file_location('ros_client',Path(__file__).resolve().parents[1]/'docker/agent_instance/ros_client.py')
+spec=importlib.util.spec_from_file_location('ros_client',Path(__file__).resolve().parents[1]/'docker/agent_instance/agent/ros_client.py')
 m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
 class Transport(unittest.TestCase):
     def test_uuid_is_reserved_across_process_restart(self):
         with tempfile.TemporaryDirectory() as tmp:
-            gid=uuid.uuid4().hex;record=dict(session_id='old',endpoint='/robots/a/action')
+            gid=uuid.uuid4().hex;record=dict(session_id='old',endpoint='/robot/a/action')
             m.Journal(tmp).reserve(gid,record)
             restarted=m.Journal(tmp)
             self.assertEqual(restarted.load(gid),record)
@@ -34,7 +34,7 @@ class Transport(unittest.TestCase):
         self.assertFalse(future.cancelled());future.set_result('late');self.assertEqual(m.wait(future,1),'late')
     def test_reconcile_only_calls_explicit_readonly_status(self):
         client=m.Clients.__new__(m.Clients);client.call=Mock(return_value={'response':{}})
-        record=dict(status_endpoint='/robots/a/status',status_type='example/srv/Status')
+        record=dict(status_endpoint='/robot/a/status',status_type='example/srv/Status')
         self.assertEqual(client.reconcile(record),{'response':{}})
         self.assertEqual(client.call.call_args.args[0]['endpoint'],record['status_endpoint'])
         self.assertEqual(client.call.call_count,1)
@@ -46,7 +46,7 @@ class Transport(unittest.TestCase):
         client.service=Mock(return_value=endpoint)
         client.populate=lambda message,data:message
         client.fields=lambda message:dict(success=message.success)
-        request=dict(endpoint='/robots/a/query',type='example/srv/Query',timeout=.001)
+        request=dict(endpoint='/robot/a/query',type='example/srv/Query',timeout=.001)
         endpoint.wait_for_service.return_value=False
         with self.assertRaises(m.Failure) as exc:client.call(request)
         self.assertEqual(exc.exception.category,'discovery_failure');endpoint.call_async.assert_not_called()
@@ -54,8 +54,8 @@ class Transport(unittest.TestCase):
         endpoint.call_async.return_value=concurrent.futures.Future()
         with self.assertRaises(m.Failure) as exc:client.call(request)
         self.assertEqual(exc.exception.category,'request_timeout')
-        self.assertIsNone(client.service_calls['/robots/a/query']['callable'])
-        self.assertEqual(client.service_calls['/robots/a/query']['error'],'request_timeout')
+        self.assertIsNone(client.service_calls['/robot/a/query']['callable'])
+        self.assertEqual(client.service_calls['/robot/a/query']['error'],'request_timeout')
         self.assertEqual(endpoint.call_async.call_count,1);endpoint.remove_pending_request.assert_called_once()
         future=concurrent.futures.Future();future.set_result(SimpleNamespace(success=False))
         endpoint.call_async.return_value=future
@@ -68,14 +68,14 @@ class Transport(unittest.TestCase):
         client.sessions={};client.service_calls={}
         client.node=SimpleNamespace(count_publishers=Mock(return_value=1))
         client.services={};client.actions={};client.subscriptions={}
-        client.graph=lambda:dict(topics=[('/robots/a/state',['std_msgs/msg/String'])],services=[],actions=[])
+        client.graph=lambda:dict(topics=[('/robot/a/state',['std_msgs/msg/String'])],services=[],actions=[])
         sample=dict(session_id='new',state={},control_available=True)
         client.subscribe=lambda *args:dict(message={'data':json.dumps(sample)},age_seconds=.1)
         status=client.status()['robots'][0]
         self.assertTrue(status['process_alive']);self.assertTrue(status['ros_discoverable'])
         self.assertEqual(status['session_id'],'new')
-        self.assertTrue(status['control_available']['/robots/a/state'])
-        client.service_calls={'/robots/a/status':dict(at=time.monotonic(),callable=True,server_success=True,error=None)}
+        self.assertTrue(status['control_available']['/robot/a/state'])
+        client.service_calls={'/robot/a/status':dict(at=time.monotonic(),callable=True,server_success=True,error=None)}
         sample['session_id']='restarted'
         self.assertEqual(client.status()['robots'][0]['service_callable'],{})
         client.subscribe=lambda *args:dict(message={'data':json.dumps(sample)},age_seconds=4)
@@ -88,7 +88,7 @@ class Transport(unittest.TestCase):
     def test_cancel_timeout_reconciles_once_without_resending(self):
         client=m.Clients.__new__(m.Clients)
         gid=uuid.uuid4().hex
-        record=dict(endpoint='/robots/a/action',session_id='old')
+        record=dict(endpoint='/robot/a/action',session_id='old')
         client.journal=Mock();client.journal.load.return_value=record
         client.call=Mock(side_effect=m.Failure('request_timeout'))
         client.reconcile=Mock(return_value={'response':{'state':'unknown'}})

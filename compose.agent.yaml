@@ -1,0 +1,76 @@
+# Single Agent Server. Robots run independently via compose.robot.yaml.
+name: agenticros-${ROS_DOMAIN_ID:-42}
+services:
+  server:
+    build:
+      context: .
+      dockerfile: docker/agent_instance/agent/Dockerfile
+      target: server
+    image: agenticros-server:single
+    network_mode: host
+    ipc: host
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      ROS_LOCALHOST_ONLY: "0"
+      ROS_LOG_DIR: /workspace/ros_logs
+      RMW_FASTRTPS_PUBLICATION_MODE: ASYNCHRONOUS
+    command: [python3, /opt/instance/runtime.py, serve]
+    volumes:
+      - type: bind
+        source: ${AGENTICROS_WORKSPACE:-./runs/${ROS_DOMAIN_ID:-42}/agent_instance/agent/workspace}
+        target: /workspace
+        bind:
+          create_host_path: true
+      - type: bind
+        source: ./docker/robot_instances/robot_docs
+        target: /workspace/robot_docs
+        read_only: true
+        bind:
+          create_host_path: false
+      - codex-home:/home/agent/.codex
+      - ./docker/agent_instance/agent/codex.toml:/config/codex.toml:ro
+    group_add: ["${AGENTICROS_WORKSPACE_GID:-1000}"]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stdin_open: true
+    tty: true
+    init: true
+    stop_grace_period: 60s
+    healthcheck:
+      test: [CMD, python3, /opt/instance/runtime.py, health]
+      interval: 3s
+      timeout: 10s
+      retries: 20
+      start_period: 15s
+  viewer:
+    profiles: [viewer]
+    build:
+      context: .
+      dockerfile: docker/agent_instance/viewer/Dockerfile
+    image: agenticros-viewer:single
+    network_mode: host
+    ipc: host
+    init: true
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      ROS_LOCALHOST_ONLY: "0"
+      AGENTICROS_VIEWER_PORT: ${AGENTICROS_VIEWER_PORT:-8080}
+      AGENTICROS_VNC_PORT: ${AGENTICROS_VNC_PORT:-5900}
+      AGENTICROS_VIEWER_BIND: ${AGENTICROS_VIEWER_BIND:-127.0.0.1}
+    volumes:
+      - viewer-auth:/viewer-auth
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    stop_grace_period: 60s
+    healthcheck:
+      test: [CMD, python3, /opt/viewer/healthcheck.py]
+      interval: 3s
+      timeout: 10s
+      retries: 20
+      start_period: 15s
+
+volumes:
+  viewer-auth:
+    name: ${AGENTICROS_VIEWER_VOLUME:-agenticros-${ROS_DOMAIN_ID:-42}_viewer-auth}
+  codex-home:
+    name: ${AGENTICROS_CODEX_VOLUME:-agenticros-${ROS_DOMAIN_ID:-42}_codex-home}

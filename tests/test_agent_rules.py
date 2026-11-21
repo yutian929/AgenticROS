@@ -119,13 +119,13 @@ class Rules(unittest.TestCase):
 
     def test_launcher_preserves_codex_arguments(self):
         scripts=self.root/'scripts';scripts.mkdir()
-        shutil.copyfile(ROOT/'scripts/agent.sh',scripts/'agent.sh')
+        shutil.copyfile(ROOT/'agent.sh',self.root/'agent.sh')
         bins=self.root/'bin';bins.mkdir();calls=self.root/'calls.json'
         fake=bins/'python3'
         fake.write_text('#!'+sys.executable+'\nimport json,os,sys\nopen(os.environ["CALLS"],"w").write(json.dumps(sys.argv[1:]))\n')
         fake.chmod(0o755)
-        subprocess.run(['bash',str(scripts/'agent.sh'),'resume','--last','argument with spaces'],
+        subprocess.run(['bash',str(self.root/'agent.sh'),'agent','resume','--last','argument with spaces'],
             env=dict(os.environ,PATH=str(bins)+':'+os.environ['PATH'],CALLS=str(calls)),check=True)
-        self.assertEqual(json.loads(calls.read_text()),['scripts/lan.py','agent','--','resume','--last','argument with spaces'])
+        self.assertEqual(json.loads(calls.read_text()),['scripts/runtime.py','agent','--','resume','--last','argument with spaces'])
 
 if __name__=='__main__':unittest.main()

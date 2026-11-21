@@ -9,13 +9,12 @@ from rclpy.action import ActionClient
 from rclpy.executors import MultiThreadedExecutor
 from std_srvs.srv import Trigger
 from agenticros_driver_interfaces.action import Actuate
-from agenticros_driver_interfaces.srv import Snapshot
 from unique_identifier_msgs.msg import UUID
 rclpy.init();node=rclpy.create_node('restart_probe')
 executor=MultiThreadedExecutor(num_threads=3);executor.add_node(node)
 worker=threading.Thread(target=executor.spin,daemon=True);worker.start()
-client=node.create_client(Trigger,'/robots/robot_a/driver/status')
-action=ActionClient(node,Actuate,'/robots/robot_a/driver/actuate')
+client=node.create_client(Trigger,'/robot/robot_a/driver/status')
+action=ActionClient(node,Actuate,'/robot/robot_a/driver/actuate')
 root=Path('/workspace/evidence');rows=[]
 def wait(future,timeout=10):
     event=threading.Event();future.add_done_callback(lambda _:event.set())
@@ -49,15 +48,11 @@ try:
         g=Actuate.Goal(session_id=session,positions=new['state']['joint_positions'],duration=2.)
         return wait(action.send_goal_async(g,goal_uuid=UUID(uuid=list(uuid.uuid4().bytes))))
     assert not send(old['session_id']).accepted
-    snapshot=node.create_client(Snapshot,'/robots/robot_a/driver/observe')
-    assert snapshot.wait_for_service(timeout_sec=20)
-    rejected=json.loads(wait(snapshot.call_async(Snapshot.Request(session_id=old['session_id']))).snapshot_json)
-    assert rejected['error']=='session_mismatch' and rejected['session_id']==new['session_id']
     handle=send(new['session_id']);assert handle.accepted
     receipt=json.loads(wait(handle.get_result_async(),45).result.receipt_json)
     assert receipt['session_id']==new['session_id'] and receipt['stop_confirmed']
     for _ in range(10):assert status()
-    (root/'restart.json').write_text(json.dumps(dict(namespace='/robots/robot_a',old_session=old['session_id'],new_session=new['session_id'],
+    (root/'restart.json').write_text(json.dumps(dict(namespace='/robot/robot_a',old_session=old['session_id'],new_session=new['session_id'],
           old_session_rejected=True,cached_clients_reconnected=True),indent=2))
     print('robot restart PASS',flush=True)
 finally:

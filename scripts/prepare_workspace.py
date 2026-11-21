@@ -51,15 +51,11 @@ def docker(*args, **kwargs):
 
 
 def prepare():
-    destination = ROOT/'runs/workspace'
+    destination = ROOT/'runs'/str(int(os.environ.get('ROS_DOMAIN_ID', '42')))/'agent_instance/agent/workspace'
     for path in [destination, *destination.parents]:
         if path == ROOT: break
         if path.is_symlink():
             raise RuntimeError('Workspace paths must be real directories, not symlinks')
-    if not destination.exists():
-        candidates = list((ROOT/'runs/agent_instances').glob('*/workspace')) + list((ROOT/'runs/instances').glob('*/workspace'))
-        if candidates:
-            raise RuntimeError('Existing workspaces retained; select one with scripts/migrate_workspace.py before startup')
     destination.mkdir(parents=True, exist_ok=True)
     destination.chmod(stat.S_IMODE(destination.stat().st_mode) | 0o2770)
     print('Workspace: '+str(destination))

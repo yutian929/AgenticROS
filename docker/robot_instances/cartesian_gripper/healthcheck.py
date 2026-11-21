@@ -1,13 +1,16 @@
-"""Check live sensor production, GUI processes, noVNC and the authenticated RFB server."""
+"""Check this robot's camera; standalone desktop mode also checks its GUI."""
 import json
 import os
 from pathlib import Path
 import socket
+import sys
 import time
 import urllib.request
 
 ready = Path('/tmp/body-camera-ready')
 assert ready.exists() and time.time()-ready.stat().st_mtime < 15, 'Camera stalled'
+if os.getenv('AGENTICROS_ROBOT_ID'):
+    sys.exit(0)
 status = json.loads(Path('/tmp/desktop-status.json').read_text())
 assert time.time()-status['updated'] < 5, 'Supervisor stalled'
 for pid in status['pids'].values():

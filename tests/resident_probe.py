@@ -15,7 +15,7 @@ rows=[]
 
 def service(robot):
     start=time.monotonic()
-    r=request(dict(op='service',endpoint=f'/robots/{robot}/driver/status',type='std_srvs/srv/Trigger'))
+    r=request(dict(op='service',endpoint=f'/robot/{robot}/driver/status',type='std_srvs/srv/Trigger'))
     rows.append(dict(layer='resident_rpc',phase='restarted' if restart else 'resident',robot=robot,
                      success='error' not in r, total_ms=(time.monotonic()-start)*1000,**r))
     assert 'error' not in r,r
@@ -27,7 +27,7 @@ try:
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:list(pool.map(service,['robot_a','robot_b']))
     for _ in range(10 if not restart else 2):
         start=time.monotonic()
-        reply=subprocess.run(['agenticros-ros','request',json.dumps(dict(op='service',endpoint='/robots/robot_a/driver/status',type='std_srvs/srv/Trigger'))],capture_output=True,text=True)
+        reply=subprocess.run(['agenticros-ros','request',json.dumps(dict(op='service',endpoint='/robot/robot_a/driver/status',type='std_srvs/srv/Trigger'))],capture_output=True,text=True)
         result=json.loads(reply.stdout)
         rows.append(dict(layer='resident_cli_cold',phase='restarted' if restart else 'resident',success=reply.returncode==0,total_ms=(time.monotonic()-start)*1000,**result))
         assert reply.returncode==0,result
@@ -42,8 +42,8 @@ try:
         assert result['replay_allowed'] is False and 'response' in result['reconciliation']
     else:
         q=state['state']['joint_positions']
-        goal=dict(op='goal',endpoint='/robots/robot_a/driver/actuate',type='agenticros_driver_interfaces/action/Actuate',
-                  goal_id=uuid.uuid4().hex,status_endpoint='/robots/robot_a/driver/status',
+        goal=dict(op='goal',endpoint='/robot/robot_a/driver/actuate',type='agenticros_driver_interfaces/action/Actuate',
+                  goal_id=uuid.uuid4().hex,status_endpoint='/robot/robot_a/driver/status',
                   request=dict(session_id=state['session_id'],positions=q,duration=20.),timeout=5)
         record.write_text(json.dumps(goal))
         sent=request(goal);assert sent.get('accepted'),sent

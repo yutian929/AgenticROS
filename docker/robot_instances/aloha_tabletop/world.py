@@ -1,6 +1,5 @@
 """One shared physics clock for both arms. No task-level controller."""
 from concurrent.futures import ThreadPoolExecutor
-import json
 import math
 import threading
 import time
@@ -8,7 +7,6 @@ import uuid
 from pathlib import Path
 import mujoco
 import numpy as np
-from PIL import Image
 from cartesian import tcp_pose, matrix_quat
 
 JOINTS = ('waist', 'shoulder', 'elbow', 'forearm_roll', 'wrist_angle', 'wrist_rotate', 'left_finger')
@@ -132,16 +130,3 @@ class Simulation:
         renderer.enable_depth_rendering()
         depth = renderer.render().copy()
         return rgb, depth, calibration, state
-
-    def snapshot(self, root):
-        rgb, depth, calibration, state = self.observe()
-        sid = self.session+'-'+uuid.uuid4().hex[:12]
-        folder = Path(root).resolve()/'snapshots'/sid
-        folder.mkdir(parents=True)
-        Image.fromarray(rgb).save(folder/'rgb.png')
-        np.save(folder/'depth.npy', depth)
-        value = dict(snapshot_id=sid, session_id=self.session, captured_at_unix=calibration['captured_at_unix'],
-                     rgb_path=str(folder/'rgb.png'), depth_path=str(folder/'depth.npy'),
-                     snapshot_json_path=str(folder/'snapshot.json'), calibration=calibration, state=state)
-        (folder/'snapshot.json').write_text(json.dumps(value))
-        return value
