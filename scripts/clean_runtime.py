@@ -1,19 +1,79 @@
 """Preview or delete AgenticROS runtime data. Never run a global Docker prune."""
 import argparse
+import errno
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
+import sys
+import time
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def docker(*args):
-    return subprocess.check_output(['docker', *args], text=True).strip()
+    return subprocess.check_output(['docker', *args], text=True, stderr=subprocess.PIPE).strip()
+
+
+def missing_resource(error):
+    message = error.stderr or error.output or ''
+    if isinstance(message, bytes):
+        message = message.decode(errors='replace')
+    return bool(re.search(r'No such (?:container|image|volume|network|object):|'
+                          r'(?:network|volume|container|image) \S+ not found', message))
 
 
 def inspect(kind, ids):
-    return json.loads(docker(kind, 'inspect', *ids)) if ids else []
+    if not ids:
+        return []
+    try:
+        return json.loads(docker(kind, 'inspect', *ids))
+    except subprocess.CalledProcessError as error:
+        if not missing_resource(error):
+            raise
+        if len(ids) == 1:
+            return []
+        # A resource can disappear between listing and inspection.
+        return [item for identity in ids for item in inspect(kind, [identity])]
+
+
+def remove_resource(kind, identity, force=False):
+    try:
+        docker(kind, 'rm', *(['-f'] if force else []), identity)
+    except subprocess.CalledProcessError as error:
+        if not missing_resource(error):
+            raise
+
+
+def check_consumers(directories):
+    for item in inspect('container', docker('ps', '-aq').split()):
+        for mount in item.get('Mounts', []):
+            if mount.get('Type') == 'bind' and any(
+                    Path(mount['Source']) == Path(p) or Path(p) in Path(mount['Source']).parents
+                    for p in directories):
+                raise RuntimeError('Host data acquired a container consumer; refusing deletion')
+
+
+def remove_directory(path):
+    # Docker bind mounts or another cleaner may briefly change directory entries.
+    # Retry only those races, and never retry past a newly attached container.
+    for attempt in range(3):
+        if any(parent.is_symlink() for parent in (path, *path.parents)):
+            raise RuntimeError('Refusing symlink directory: '+str(path))
+        check_consumers([str(path)])
+        try:
+            shutil.rmtree(path)
+            return
+        except OSError as error:
+            if error.errno not in (errno.ENOENT, errno.ENOTEMPTY):
+                raise
+            if not path.exists():
+                return
+            if attempt == 2:
+                raise RuntimeError('Directory keeps changing during cleanup: '+str(path)+
+                                   '; stop tests/writers before retrying; remaining data retained') from error
+            time.sleep(.1 * (attempt+1))
 
 
 def owned(name):
@@ -58,26 +118,18 @@ def inventory(images=False):
 
 def clean(plan):
     for item in plan['containers']:
-        docker('container', 'rm', '-f', item['id'])
+        remove_resource('container', item['id'], force=True)
     for volume in plan['volumes']:
-        docker('volume', 'rm', volume)
+        remove_resource('volume', volume)
     for network in plan['networks']:
-        docker('network', 'rm', network)
+        remove_resource('network', network)
     # Recheck references immediately before deleting host data.
-    for item in inspect('container', docker('ps', '-aq').split()):
-        for mount in item.get('Mounts', []):
-            if mount.get('Type') == 'bind' and any(
-                    Path(mount['Source']) == Path(p) or Path(p) in Path(mount['Source']).parents
-                    for p in plan['directories']):
-                raise RuntimeError('Host data acquired a container consumer; refusing deletion')
+    check_consumers(plan['directories'])
     for directory in plan['directories']:
         path = Path(directory)
-        if path.is_symlink():
-            raise RuntimeError('Refusing symlink directory: '+directory)
-        if path.exists():
-            shutil.rmtree(path)
+        remove_directory(path)
     for tag in plan['images']:
-        docker('image', 'rm', tag)
+        remove_resource('image', tag)
 
 
 def main():
@@ -95,4 +147,11 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except subprocess.CalledProcessError as error:
+        print('Cleanup stopped: '+str(error.stderr or error).strip(), file=sys.stderr)
+        sys.exit(1)
+    except (OSError, RuntimeError) as error:
+        print('Cleanup stopped: '+str(error), file=sys.stderr)
+        sys.exit(1)

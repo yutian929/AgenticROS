@@ -8,6 +8,7 @@ import re
 import subprocess
 import sys
 import secrets
+import shutil
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -67,6 +68,7 @@ def environment(config):
     env = os.environ.copy()
     env.update({k: str(v) for k, v in config.items()})
     env['AGENTICROS_WORKSPACE_GID'] = str(os.getgid())
+    env['AGENTICROS_HOST_UID'] = str(os.getuid())
     domain = domain_id(config.get('ROS_DOMAIN_ID'))
     env['ROS_DOMAIN_ID'] = str(domain)
     for key, value in dict(AGENTICROS_CODEX_VOLUME=f'agenticros-{domain}_codex-home',
@@ -150,6 +152,37 @@ def prepare_workspace(config):
     subprocess.run([sys.executable,'scripts/prepare_workspace.py'],cwd=ROOT,env=environment(config),check=True)
 
 
+def prepare_sam3(config):
+    """Stage only public IDL; model weights and implementation stay outside Agent."""
+    root = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/sam3'
+    for name in ('models', 'records'):
+        path = root/name
+        if any(p.is_symlink() for p in (path, *path.parents)):
+            raise ValueError('SAM3 data directories must not be symlinks')
+        path.mkdir(parents=True, exist_ok=True)
+    if not (root/'models/sam3.pt').is_file():
+        raise ValueError('Missing authorized SAM3 weights at '+str(root/'models/sam3.pt')+
+                         '; run bash scripts/prepare_sam3.sh --domain-id '+str(config['ROS_DOMAIN_ID']))
+    prepare_workspace(config)
+    source = ROOT/'docker/agent_instance/sam3/interfaces'
+    target = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/agent/workspace/ros_ws/src/agenticros_perception_interfaces'
+    if any(p.is_symlink() for p in (target, *target.parents)):
+        raise ValueError('Public interface destination must not be a symlink')
+    if target.exists():
+        expected = {p.relative_to(source): p.read_bytes() for p in source.rglob('*') if p.is_file()}
+        actual = {p.relative_to(target): p.read_bytes() for p in target.rglob('*') if p.is_file()}
+        if any(p.is_symlink() for p in target.rglob('*')) or expected != actual:
+            raise ValueError('Existing perception interfaces differ; preserve and reconcile them explicitly: '+str(target))
+    else:
+        for path in reversed((target.parent, target.parent.parent)):
+            if not path.exists():
+                path.mkdir()
+                path.chmod(0o2770)
+        shutil.copytree(source, target)
+        for path in (target, *target.rglob('*')):
+            path.chmod(0o2775 if path.is_dir() else 0o664)
+
+
 def ensure_server(config):
     try:
         return health(config)
@@ -222,8 +255,8 @@ def validate_network(config):
     domain_id(config['ROS_DOMAIN_ID'])
 
 
-def recreate_stopped(config, client=False):
-    service='client' if client else 'server'
+def recreate_stopped(config, client=False, service=None):
+    service=service or ('client' if client else 'server')
     ids=subprocess.check_output(compose(config,client)+['ps','-aq',service],cwd=ROOT,env=environment(config),text=True).split()
     if ids:
         states=json.loads(subprocess.check_output(['docker','inspect',*ids],text=True))
@@ -239,10 +272,11 @@ def main():
     server=sub.add_parser('server')
     server.add_argument('--recreate',action='store_true',help='replace only a stopped Server container, retaining data')
     server.add_argument('--domain-id',type=int)
-    for name in ('agent','login','status','info','stop-server','viewer','stop-viewer','reload-clients','viewer-password'):
+    for name in ('agent','login','status','info','stop-server','viewer','stop-viewer','reload-clients','viewer-password','sam3','stop-sam3','sam3-status'):
         p=sub.add_parser(name)
         p.add_argument('--domain-id',type=int)
         if name in ('agent','login'): p.add_argument('codex_args',nargs=argparse.REMAINDER)
+        if name == 'sam3': p.add_argument('--recreate',action='store_true',help='replace only a stopped SAM3 container, retaining records and weights')
     robot=sub.add_parser('robot')
     robot.add_argument('--robot-id',type=robot_name,help='existing instance ID for stop/recreate; generated on new starts')
     robot.add_argument('--domain-id',type=int)
@@ -275,7 +309,8 @@ def main():
                     'if [ -f /opt/driver_ws/install/setup.bash ]; then source /opt/driver_ws/install/setup.bash; fi; '
                     'exec bash --norc -i'],True)
         return
-    role = 'viewer' if args.command in ('viewer','stop-viewer','viewer-password','info') else 'agent'
+    role = ('sam3' if args.command in ('sam3','stop-sam3','sam3-status') else
+            'viewer' if args.command in ('viewer','stop-viewer','viewer-password','info') else 'agent')
     config=server_config(getattr(args,'domain_id',None), role)
     if args.command=='server' and args.recreate: recreate_stopped(config)
     if args.command=='stop-server': run(config,['stop','server'])
@@ -288,6 +323,19 @@ def main():
         print('Password: '+password)
     elif args.command=='stop-viewer':
         run(config,['stop','viewer'])
+    elif args.command=='sam3':
+        prepare_sam3(config)
+        if args.recreate: recreate_stopped(config, service='sam3')
+        ensure_image(config,'sam3')
+        run(config,['up','-d','--no-build','--pull','never','--no-recreate','sam3'])
+        run(config,['exec','-T','sam3','/usr/local/bin/sam3-entrypoint','python3',
+                    '/opt/sam3/healthcheck.py','--wait','--timeout','900'])
+        print('SAM3: /perception/sam3/segment (ROS_DOMAIN_ID '+str(config['ROS_DOMAIN_ID'])+')')
+        print('Records: '+str(runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/sam3/records'))
+    elif args.command=='stop-sam3':
+        run(config,['stop','sam3'])
+    elif args.command=='sam3-status':
+        run(config,['exec','-T','sam3','/usr/local/bin/sam3-entrypoint','python3','/opt/sam3/healthcheck.py','--status'])
     elif args.command=='reload-clients':
         run(config,['exec','-T','server','python3','/opt/instance/runtime.py','clients-reload'])
     elif args.command=='viewer-password':

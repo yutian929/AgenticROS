@@ -20,7 +20,9 @@ class Discovery(QtCore.QThread):
 
     def run(self):
         rclpy.init()
-        node = rclpy.create_node('server_viewer')
+        # Graph-only observer: no executor services parameter requests.
+        # Do not advertise parameter RPCs that would never receive a reply.
+        node = rclpy.create_node('server_viewer', start_parameter_services=False)
         try:
             while not self.stop.is_set():
                 topics = node.get_topic_names_and_types()

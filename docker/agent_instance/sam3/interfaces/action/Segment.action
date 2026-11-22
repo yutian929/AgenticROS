@@ -1,0 +1,32 @@
+# Service startup session, read from /perception/sam3/status.
+string session_id
+string image_topic
+# LATEST or EXACT. EXACT waits for this stamp; no substitution.
+string frame_policy
+builtin_interfaces/Time image_stamp
+# Compared against ROS clock at selection and again before inference.
+float32 max_image_age_sec
+float32 image_timeout_sec
+string text_prompt
+float32 score_threshold
+uint32 max_instances
+---
+bool success
+# OK, CANCELLED, INVALID_REQUEST, STALE_FRAME, FRAME_TIMEOUT,
+# INFERENCE_FAILED, RECORDING_FAILED, INTERNAL_ERROR.
+string code
+string message
+string session_id
+string goal_id
+std_msgs/Header source_header
+string image_topic
+uint32 width
+uint32 height
+# Small instance metadata; pixel masks are on result_topic.
+string instances_json
+string result_topic
+# Relative to SAM3 records root, not an Agent filesystem path.
+string record_id
+---
+string stage
+float32 elapsed_sec

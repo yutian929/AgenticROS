@@ -1,8 +1,10 @@
 """Cleanup boundaries tested against disposable host directories and mocked Docker."""
 import importlib.util
+import errno
 import json
 from pathlib import Path
 import tempfile
+import subprocess
 import unittest
 from unittest.mock import patch
 
@@ -12,6 +14,42 @@ spec.loader.exec_module(cleanup)
 
 
 class Cleanup(unittest.TestCase):
+    def test_disappeared_network_is_success_but_other_failures_propagate(self):
+        missing = subprocess.CalledProcessError(1, ['docker'], stderr='Error response from daemon: network old not found')
+        with patch.object(cleanup, 'docker', side_effect=missing):
+            cleanup.remove_resource('network', 'old')
+        for message in ('network old has active endpoints', 'permission denied', 'Cannot connect to Docker daemon'):
+            error = subprocess.CalledProcessError(1, ['docker'], stderr=message)
+            with patch.object(cleanup, 'docker', side_effect=error):
+                with self.assertRaises(subprocess.CalledProcessError):
+                    cleanup.remove_resource('network', 'old')
+
+    def test_directory_race_retries_without_touching_source(self):
+        original = cleanup.shutil.rmtree
+        calls = []
+        def remove(path):
+            calls.append(path)
+            if len(calls) == 1:
+                raise OSError(errno.ENOTEMPTY, 'Directory not empty')
+            original(path)
+        with patch.object(cleanup, 'docker', return_value=''), patch.object(cleanup.shutil, 'rmtree', side_effect=remove), patch.object(cleanup.time, 'sleep'):
+            cleanup.remove_directory(self.root/'runs')
+        self.assertEqual(len(calls), 2)
+        self.assertFalse((self.root/'runs').exists())
+        self.assertTrue((self.root/'source.py').exists())
+
+    def test_persistent_writer_stops_after_bounded_retries(self):
+        with patch.object(cleanup, 'docker', return_value=''), patch.object(cleanup.shutil, 'rmtree', side_effect=OSError(errno.ENOTEMPTY, 'busy')) as remove, patch.object(cleanup.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'keeps changing'):
+                cleanup.remove_directory(self.root/'runs')
+            self.assertEqual(remove.call_count, 3)
+
+    def test_new_consumer_blocks_directory_retry(self):
+        with patch.object(cleanup, 'check_consumers', side_effect=[None, RuntimeError('consumer')]), patch.object(cleanup.shutil, 'rmtree', side_effect=OSError(errno.ENOTEMPTY, 'busy')) as remove, patch.object(cleanup.time, 'sleep'):
+            with self.assertRaisesRegex(RuntimeError, 'consumer'):
+                cleanup.remove_directory(self.root/'runs')
+            self.assertEqual(remove.call_count, 1)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
