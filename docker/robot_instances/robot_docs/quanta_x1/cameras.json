@@ -1,0 +1,90 @@
+{
+  "source": "Pinned X2Real EX001 USD wrist attributes and ex001_head_front_camera.py head override",
+  "cameras": {
+    "left": {
+      "width": 640,
+      "height": 480,
+      "k": [
+        279.756005859375,
+        0.0,
+        331.2239990234375,
+        0.0,
+        279.88400878906253,
+        247.660009765625,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "d": [
+        -0.017799999564886093,
+        -0.0002800000074785203,
+        -0.004399999976158142,
+        0.0010999999940395355
+      ],
+      "native_calibration_size": [
+        1600,
+        1200
+      ],
+      "distortion_model": "equidistant",
+      "model_camera_path": "/World/left_arm_gripper_camera_color_frame/Left_Gripper_Camera",
+      "nominal_simulation_rate_hz": 30
+    },
+    "right": {
+      "width": 640,
+      "height": 480,
+      "k": [
+        279.756005859375,
+        0.0,
+        323.4800048828125,
+        0.0,
+        279.88400878906253,
+        249.539990234375,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "d": [
+        -0.019200000911951065,
+        0.0012000000569969416,
+        -0.008700000122189522,
+        0.0034000000450760126
+      ],
+      "native_calibration_size": [
+        1600,
+        1200
+      ],
+      "distortion_model": "equidistant",
+      "model_camera_path": "/World/right_arm_gripper_camera_color_frame/Right_Gripper_Camera",
+      "nominal_simulation_rate_hz": 30
+    },
+    "head": {
+      "width": 1280,
+      "height": 720,
+      "k": [
+        720.3193,
+        0.0,
+        640.3909,
+        0.0,
+        719.8599,
+        351.073,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "d": [
+        -0.01953918673098087,
+        0.00478989025577903,
+        0.0005033669294789433,
+        -0.00021549213852267712,
+        0.0
+      ],
+      "native_calibration_size": [
+        1280,
+        720
+      ],
+      "distortion_model": "plumb_bob",
+      "model_camera_path": "/World/camera_head_front_color_optical_frame/Head_Front_Color_Camera",
+      "nominal_simulation_rate_hz": 30
+    }
+  }
+}

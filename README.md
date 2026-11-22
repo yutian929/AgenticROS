@@ -4,6 +4,8 @@
 
 当前提供 `aloha_tabletop` 和 `cartesian_gripper` 仿真环境，尚未完成真实硬件和跨物理机器的部署验证。
 
+另有需要 NVIDIA GPU 的 `quanta_x1`：独立 Isaac Sim 加载 Quanta X1 **整机与 G 夹爪**原生模型和简单桌面，不安装 X2Real 场景库。运行时与约 379 MB 整机资产全部包含在机器人镜像中，无需 prepare 脚本或宿主机资产目录。直接执行 `bash robot.sh quanta_x1`；已有本地镜像直接启动，缺少时从 Dockerfile 构建。首次构建较大，也可使用预先拉取并标记为 `agenticros-quanta_x1:single` 的完整镜像。安装与验证范围见[型号说明](docker/robot_instances/quanta_x1/README.md)。
+
 ## 启动
 
 需要 Docker、Docker Compose 和 Python 3。跨机器部署使用 Linux host 网络，局域网须允许组播及 DDS 双向 UDP；仅设置相同域不能绕过网络隔离。

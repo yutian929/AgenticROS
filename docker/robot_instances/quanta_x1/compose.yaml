@@ -1,0 +1,6 @@
+# Only this robot needs a GPU. The common robot service remains CPU-compatible.
+services:
+  client:
+    gpus: all
+    environment:
+      NVIDIA_DRIVER_CAPABILITIES: graphics,compute,utility

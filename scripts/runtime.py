@@ -82,7 +82,13 @@ def environment(config):
 def compose(config, client=False):
     name = 'agenticros-'+str(domain_id(config['ROS_DOMAIN_ID']))
     if client: name += '-robot-'+config['AGENTICROS_ROBOT_ID'].replace('_','-')
-    return ['docker','compose','-p',name,'-f','compose.robot.yaml' if client else 'compose.agent.yaml']
+    command = ['docker','compose','-p',name,'-f','compose.robot.yaml' if client else 'compose.agent.yaml']
+    if client:
+        kind = require_robot_type(config['AGENTICROS_ENVIRONMENT'])
+        override = ROOT/'docker/robot_instances'/kind/'compose.yaml'
+        if override.is_file():
+            command += ['-f', str(override)]
+    return command
 
 
 def run(config, args, client=False):

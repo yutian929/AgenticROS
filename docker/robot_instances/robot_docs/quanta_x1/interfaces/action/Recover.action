@@ -1,0 +1,7 @@
+# Confirm an existing hold after an unconfirmed stop. Never replay the failed goal.
+string session_id
+string failed_goal_id
+---
+string receipt_json
+---
+float64[] positions

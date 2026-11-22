@@ -1,0 +1,8 @@
+# One arm: six revolute joint setpoints (rad), then G gripper drive angle (rad, 0 closed .. 1.89 open).
+string session_id
+float64[7] positions
+float64 duration
+---
+string receipt_json
+---
+float64[7] positions

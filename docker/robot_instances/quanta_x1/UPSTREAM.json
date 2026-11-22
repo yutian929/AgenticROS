@@ -1,0 +1,23 @@
+{
+  "repository": "https://github.com/X-Square-Robot/x2real",
+  "code_revision": "7ed53b4fac4f9836475a7aced38f64ad123b3c73",
+  "asset_repository": "https://huggingface.co/datasets/x-square-robot/x2real-assets",
+  "asset_revision": "3155121a6d6d2460aae48caa83c26af41fc0b28a",
+  "asset_path": "simready/robots/ex001/v00.05.05/ex001.usd",
+  "sha256": "8affd2eebf7dd4c7dad984add4d0289a006ef844f34b3694370c38589be38efa",
+  "variant": "G",
+  "license": "Apache-2.0",
+  "upstream_model": "Quanta X1 / EX001",
+  "requested_hardware": "X1Pro (exact hardware revision mapping unverified)",
+  "stationary_mode": "root anchored; head and lift held at upstream home",
+  "configuration_sources": [
+    "manaenv/assets/robots/ex001.py",
+    "manaenv/assets/sensors/ex001_left_gripper_camera.py",
+    "manaenv/assets/sensors/ex001_right_gripper_camera.py",
+    "manaenv/assets/sensors/ex001_head_front_camera.py"
+  ],
+  "sensor_dependency": {
+    "path": "simready/robots/ex001/v00.05.05/sensors/Example_Rotary_2D.usda",
+    "sha256": "cc2d463efe853293307d1ee72e0009f8043a9b00bfd25c675f52e7a49218ad3a"
+  }
+}

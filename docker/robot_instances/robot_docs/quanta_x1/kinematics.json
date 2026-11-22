@@ -1,0 +1,2861 @@
+{
+  "source": "X2Real ex001 v00.05.05 G; SHA256 8affd2eebf7dd4c7dad984add4d0289a006ef844f34b3694370c38589be38efa",
+  "length_units": "metres",
+  "angular_units": "degrees for USD revolute limits; radians for ROS Actuate",
+  "quaternion_order": "wxyz",
+  "joints": [
+    {
+      "name": "chassis_base_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "base_link"
+      ],
+      "child": [
+        "chassis_base_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "a_d_laser_link_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "a_d_laser_link"
+      ],
+      "parent_anchor": [
+        0.23499999940395355,
+        0.0,
+        0.21899999678134918
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "a_d_laser_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "a_d_laser_link"
+      ],
+      "child": [
+        "a_d_laser_base"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "a_d_laser_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "a_d_laser_base"
+      ],
+      "child": [
+        "a_d_laser"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0297200009226799
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "base_front_camera_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "base_front_camera_frame_link"
+      ],
+      "parent_anchor": [
+        0.27300000190734863,
+        0.0,
+        0.15800000727176666
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.8191532492637634,
+        0.0,
+        0.5735747218132019,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "chassis_front_camera_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "base_front_camera_frame_link"
+      ],
+      "child": [
+        "camera_chassis_front_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_bottom_screw_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_link"
+      ],
+      "child": [
+        "camera_chassis_front_bottom_screw_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_color_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chassis_front_color_frame"
+      ],
+      "parent_anchor": [
+        0.024000000208616257,
+        -0.013500132597982883,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_color_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_color_frame"
+      ],
+      "child": [
+        "camera_chassis_front_color_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_depth_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chassis_front_depth_frame"
+      ],
+      "parent_anchor": [
+        0.027310000732541084,
+        0.03150000050663948,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_depth_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_depth_frame"
+      ],
+      "child": [
+        "camera_chassis_front_depth_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_infra1_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chassis_front_infra1_frame"
+      ],
+      "parent_anchor": [
+        0.027310000732541084,
+        0.03150000050663948,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_infra1_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_infra1_frame"
+      ],
+      "child": [
+        "camera_chassis_front_infra1_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_infra2_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chassis_front_infra2_frame"
+      ],
+      "parent_anchor": [
+        0.027310000732541084,
+        -0.03150000050663948,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chassis_front_infra2_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chassis_front_infra2_frame"
+      ],
+      "child": [
+        "camera_chassis_front_infra2_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "imu_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "imu_link"
+      ],
+      "parent_anchor": [
+        0.16798000037670135,
+        9.000000136438757e-05,
+        0.20759999752044678
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_front_ultrasonic_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "left_front_ultrasonic_link"
+      ],
+      "parent_anchor": [
+        0.2612000107765198,
+        0.1720000058412552,
+        0.1781100034713745
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7865661978721619,
+        0.07945946604013443,
+        0.6035531163215637,
+        -0.1035536602139473
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_rear_ultrasonic_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "left_rear_ultrasonic_link"
+      ],
+      "parent_anchor": [
+        -0.2610200047492981,
+        0.17141999304294586,
+        0.21810999512672424
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.12412092834711075,
+        0.6012647151947021,
+        0.09524127095937729,
+        -0.7835838794708252
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_tof_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "left_tof_link"
+      ],
+      "parent_anchor": [
+        0.2843799889087677,
+        0.10199999809265137,
+        0.17463000118732452
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.608761191368103,
+        0.0,
+        0.7933535575866699,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_wheel_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "left_wheel_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.23999999463558197,
+        0.08600100129842758
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -Infinity,
+      "upperLimit": Infinity
+    },
+    {
+      "name": "lift_joint",
+      "type": "PhysicsPrismaticJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "lift_link"
+      ],
+      "parent_anchor": [
+        -0.03849999979138374,
+        0.0,
+        0.36000001430511475
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": 0.0,
+      "upperLimit": 0.7799999713897705
+    },
+    {
+      "name": "chest_camera_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "chest_camera_frame_link"
+      ],
+      "parent_anchor": [
+        0.22544816136360168,
+        0.0,
+        0.21355776488780975
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.34202009439468384,
+        0.0,
+        0.9396925568580627,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "chest_front_camera_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chest_camera_frame_link"
+      ],
+      "child": [
+        "camera_chest_front_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_bottom_screw_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_link"
+      ],
+      "child": [
+        "camera_chest_front_bottom_screw_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_color_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chest_front_color_frame"
+      ],
+      "parent_anchor": [
+        0.024000000208616257,
+        -0.013500132597982883,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_color_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_color_frame"
+      ],
+      "child": [
+        "camera_chest_front_color_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_depth_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chest_front_depth_frame"
+      ],
+      "parent_anchor": [
+        0.027310000732541084,
+        0.03150000050663948,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_depth_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_depth_frame"
+      ],
+      "child": [
+        "camera_chest_front_depth_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_infra1_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chest_front_infra1_frame"
+      ],
+      "parent_anchor": [
+        0.027310000732541084,
+        0.03150000050663948,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_infra1_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_infra1_frame"
+      ],
+      "child": [
+        "camera_chest_front_infra1_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_infra2_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_chest_front_infra2_frame"
+      ],
+      "parent_anchor": [
+        0.027310000732541084,
+        -0.03150000050663948,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_chest_front_infra2_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_chest_front_infra2_frame"
+      ],
+      "child": [
+        "camera_chest_front_infra2_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "front_chest_tof_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "front_chest_tof_link"
+      ],
+      "parent_anchor": [
+        0.1635199934244156,
+        0.0,
+        -0.05350999906659126
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.4999999403953552,
+        0.4999999403953552,
+        -0.5,
+        0.5
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "head_yaw_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "head_yaw_link"
+      ],
+      "parent_anchor": [
+        0.15950000286102295,
+        0.0,
+        0.37450000643730164
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -90.00020599365234,
+      "upperLimit": 90.00020599365234
+    },
+    {
+      "name": "head_pitch_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "head_yaw_link"
+      ],
+      "child": [
+        "head_pitch_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.06199999898672104
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -44.375579833984375,
+      "upperLimit": 35.60932540893555
+    },
+    {
+      "name": "head_camera_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "head_pitch_link"
+      ],
+      "child": [
+        "head_camera_frame_link"
+      ],
+      "parent_anchor": [
+        0.02383499965071678,
+        -0.007670000195503235,
+        0.07282699644565582
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.4671574831008911,
+        0.0,
+        0.884174108505249,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "head_front_camera_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "head_camera_frame_link"
+      ],
+      "child": [
+        "camera_head_front_bottom_screw_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_bottom_screw_frame"
+      ],
+      "child": [
+        "camera_head_front_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_RGB_IR_ROS_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_link"
+      ],
+      "child": [
+        "camera_head_front_color_frame"
+      ],
+      "parent_anchor": [
+        0.014480000361800194,
+        0.007670000195503235,
+        0.012299999594688416
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_color_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_color_frame"
+      ],
+      "child": [
+        "camera_head_front_color_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_USB_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_link"
+      ],
+      "child": [
+        "camera_head_front_USB_frame"
+      ],
+      "parent_anchor": [
+        -0.001970000099390745,
+        -0.029725000262260437,
+        0.012299999594688416
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_depth_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_link"
+      ],
+      "child": [
+        "camera_head_front_depth_frame"
+      ],
+      "parent_anchor": [
+        0.01257999986410141,
+        0.019999999552965164,
+        0.012299999594688416
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_depth_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_depth_frame"
+      ],
+      "child": [
+        "camera_head_front_depth_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_left_IR_ROS_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_link"
+      ],
+      "child": [
+        "camera_head_front_infra1_frame"
+      ],
+      "parent_anchor": [
+        0.01257999986410141,
+        0.019999999552965164,
+        0.012299999594688416
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_infra1_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_infra1_frame"
+      ],
+      "child": [
+        "camera_head_front_infra1_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_right_IR_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_link"
+      ],
+      "child": [
+        "camera_head_front_infra2_frame"
+      ],
+      "parent_anchor": [
+        0.01257999986410141,
+        -0.019999999552965164,
+        0.012299999594688416
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "camera_head_front_infra2_optical_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "camera_head_front_infra2_frame"
+      ],
+      "child": [
+        "camera_head_front_infra2_optical_frame"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "left_arm_frame_link"
+      ],
+      "parent_anchor": [
+        0.23051999509334564,
+        0.26600000262260437,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_arm_frame_link"
+      ],
+      "child": [
+        "left_arm_base_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_base_link"
+      ],
+      "child": [
+        "left_arm_link1"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.06129999831318855
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -159.9984588623047,
+      "upperLimit": 159.9984588623047
+    },
+    {
+      "name": "left_arm_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_link1"
+      ],
+      "child": [
+        "left_arm_link2"
+      ],
+      "parent_anchor": [
+        0.02500000037252903,
+        0.0,
+        0.05420000106096268
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": 0.0,
+      "upperLimit": 210.00047302246094
+    },
+    {
+      "name": "left_arm_joint3",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_link2"
+      ],
+      "child": [
+        "left_arm_link3"
+      ],
+      "parent_anchor": [
+        -0.25999999046325684,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -159.9984588623047,
+      "upperLimit": 0.0
+    },
+    {
+      "name": "left_arm_joint4",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_link3"
+      ],
+      "child": [
+        "left_arm_link4"
+      ],
+      "parent_anchor": [
+        0.23149999976158142,
+        0.0,
+        0.07500000298023224
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -90.00020599365234,
+      "upperLimit": 90.00020599365234
+    },
+    {
+      "name": "left_arm_joint5",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_link4"
+      ],
+      "child": [
+        "left_arm_link5"
+      ],
+      "parent_anchor": [
+        0.08250000327825546,
+        0.0,
+        0.08500000089406967
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -90.00020599365234,
+      "upperLimit": 90.00020599365234
+    },
+    {
+      "name": "left_arm_joint6",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_link5"
+      ],
+      "child": [
+        "left_arm_link6"
+      ],
+      "parent_anchor": [
+        0.039500001817941666,
+        0.0,
+        -0.09449999779462814
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lowerLimit": -110.00215911865234,
+      "upperLimit": 110.00215911865234
+    },
+    {
+      "name": "left_gripper_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_arm_link6"
+      ],
+      "child": [
+        "left_arm_gripper_base_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_gripper",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_gripper_base_link"
+      ],
+      "child": [
+        "left_arm_gripper_motor_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lowerLimit": 0.0,
+      "upperLimit": 108.28901672363281
+    },
+    {
+      "name": "left_arm_gripper_camera_base_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_arm_gripper_base_link"
+      ],
+      "child": [
+        "left_arm_gripper_camera_base_link"
+      ],
+      "parent_anchor": [
+        0.08900000154972076,
+        0.0,
+        0.03200000151991844
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.6293203830718994,
+        0.0,
+        0.7771459817886353,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_gripper_camera_color_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_arm_gripper_camera_base_link"
+      ],
+      "child": [
+        "left_arm_gripper_camera_color_frame"
+      ],
+      "parent_anchor": [
+        0.014800000004470348,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        -2.562999725341797e-06,
+        0.0,
+        0.7071068286895752,
+        -0.7071067690849304
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_gripper_left_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_gripper_base_link"
+      ],
+      "child": [
+        "left_arm_gripper_left_link"
+      ],
+      "parent_anchor": [
+        0.07699999958276749,
+        0.02500000037252903,
+        -0.009999999776482582
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -4.182700157165527,
+      "upperLimit": 49.959999084472656
+    },
+    {
+      "name": "left_arm_gripper_left_tip_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_arm_gripper_left_link"
+      ],
+      "child": [
+        "left_arm_gripper_left_tip_link"
+      ],
+      "parent_anchor": [
+        0.14000000059604645,
+        -0.014999999664723873,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_arm_gripper_right_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "left_arm_gripper_base_link"
+      ],
+      "child": [
+        "left_arm_gripper_right_link"
+      ],
+      "parent_anchor": [
+        0.07699999958276749,
+        -0.02500000037252903,
+        -0.009999999776482582
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -49.959999084472656,
+      "upperLimit": 4.182700157165527
+    },
+    {
+      "name": "left_arm_gripper_right_tip_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_arm_gripper_right_link"
+      ],
+      "child": [
+        "left_arm_gripper_right_tip_link"
+      ],
+      "parent_anchor": [
+        0.14000000059604645,
+        0.014999999664723873,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_up_camera_base_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "left_up_camera_base_link"
+      ],
+      "parent_anchor": [
+        0.23051999509334564,
+        0.30300000309944153,
+        -0.02590000070631504
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.9999999403953552,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "left_up_camera_color_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "left_up_camera_base_link"
+      ],
+      "child": [
+        "left_up_camera_color_frame"
+      ],
+      "parent_anchor": [
+        0.013129999861121178,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "right_arm_frame_link"
+      ],
+      "parent_anchor": [
+        0.23051999509334564,
+        -0.26600000262260437,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_arm_frame_link"
+      ],
+      "child": [
+        "right_arm_base_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_joint1",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_base_link"
+      ],
+      "child": [
+        "right_arm_link1"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.06129999831318855
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -159.9984588623047,
+      "upperLimit": 159.9984588623047
+    },
+    {
+      "name": "right_arm_joint2",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_link1"
+      ],
+      "child": [
+        "right_arm_link2"
+      ],
+      "parent_anchor": [
+        0.02500000037252903,
+        0.0,
+        0.05420000106096268
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": 0.0,
+      "upperLimit": 210.00047302246094
+    },
+    {
+      "name": "right_arm_joint3",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_link2"
+      ],
+      "child": [
+        "right_arm_link3"
+      ],
+      "parent_anchor": [
+        -0.25999999046325684,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -159.9984588623047,
+      "upperLimit": 0.0
+    },
+    {
+      "name": "right_arm_joint4",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_link3"
+      ],
+      "child": [
+        "right_arm_link4"
+      ],
+      "parent_anchor": [
+        0.23149999976158142,
+        0.0,
+        0.07500000298023224
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -90.00020599365234,
+      "upperLimit": 90.00020599365234
+    },
+    {
+      "name": "right_arm_joint5",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_link4"
+      ],
+      "child": [
+        "right_arm_link5"
+      ],
+      "parent_anchor": [
+        0.08250000327825546,
+        0.0,
+        0.08500000089406967
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -90.00020599365234,
+      "upperLimit": 90.00020599365234
+    },
+    {
+      "name": "right_arm_joint6",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_link5"
+      ],
+      "child": [
+        "right_arm_link6"
+      ],
+      "parent_anchor": [
+        0.039500001817941666,
+        0.0,
+        -0.09449999779462814
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lowerLimit": -110.00215911865234,
+      "upperLimit": 110.00215911865234
+    },
+    {
+      "name": "right_gripper_connector",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_arm_link6"
+      ],
+      "child": [
+        "right_arm_gripper_base_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_gripper",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_gripper_base_link"
+      ],
+      "child": [
+        "right_arm_gripper_motor_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "X",
+      "lowerLimit": 0.0,
+      "upperLimit": 108.28901672363281
+    },
+    {
+      "name": "right_arm_gripper_camera_base_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_arm_gripper_base_link"
+      ],
+      "child": [
+        "right_arm_gripper_camera_base_link"
+      ],
+      "parent_anchor": [
+        0.08900000154972076,
+        0.0,
+        0.03200000151991844
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.6293203830718994,
+        0.0,
+        0.7771459817886353,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_gripper_camera_color_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_arm_gripper_camera_base_link"
+      ],
+      "child": [
+        "right_arm_gripper_camera_color_frame"
+      ],
+      "parent_anchor": [
+        0.014800000004470348,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        -2.562999725341797e-06,
+        0.0,
+        0.7071068286895752,
+        -0.7071067690849304
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_gripper_left_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_gripper_base_link"
+      ],
+      "child": [
+        "right_arm_gripper_left_link"
+      ],
+      "parent_anchor": [
+        0.07699999958276749,
+        0.02500000037252903,
+        -0.009999999776482582
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -4.182700157165527,
+      "upperLimit": 49.959999084472656
+    },
+    {
+      "name": "right_arm_gripper_left_tip_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_arm_gripper_left_link"
+      ],
+      "child": [
+        "right_arm_gripper_left_tip_link"
+      ],
+      "parent_anchor": [
+        0.14000000059604645,
+        -0.014999999664723873,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_arm_gripper_right_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "right_arm_gripper_base_link"
+      ],
+      "child": [
+        "right_arm_gripper_right_link"
+      ],
+      "parent_anchor": [
+        0.07699999958276749,
+        -0.02500000037252903,
+        -0.009999999776482582
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Z",
+      "lowerLimit": -49.959999084472656,
+      "upperLimit": 4.182700157165527
+    },
+    {
+      "name": "right_arm_gripper_right_tip_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_arm_gripper_right_link"
+      ],
+      "child": [
+        "right_arm_gripper_right_tip_link"
+      ],
+      "parent_anchor": [
+        0.14000000059604645,
+        0.014999999664723873,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_up_camera_base_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "lift_link"
+      ],
+      "child": [
+        "right_up_camera_base_link"
+      ],
+      "parent_anchor": [
+        0.23051999509334564,
+        -0.30300000309944153,
+        -0.02590000070631504
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.9999999403953552,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_up_camera_color_frame_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "right_up_camera_base_link"
+      ],
+      "child": [
+        "right_up_camera_color_frame"
+      ],
+      "parent_anchor": [
+        0.013129999861121178,
+        0.0,
+        0.0
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.0,
+        0.0,
+        0.7071067094802856,
+        -0.7071067094802856
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_front_ultrasonic_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "right_front_ultrasonic_link"
+      ],
+      "parent_anchor": [
+        0.2612000107765198,
+        -0.1720000058412552,
+        0.1781100034713745
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.7865661978721619,
+        -0.07945946604013443,
+        0.6035531163215637,
+        0.1035536602139473
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_rear_ultrasonic_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "right_rear_ultrasonic_link"
+      ],
+      "parent_anchor": [
+        -0.2610200047492981,
+        -0.17141999304294586,
+        0.21810999512672424
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.12412092834711075,
+        -0.6012647151947021,
+        0.09524127095937729,
+        0.7835838794708252
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_tof_joint",
+      "type": "PhysicsFixedJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "right_tof_link"
+      ],
+      "parent_anchor": [
+        0.2843799889087677,
+        -0.10199999809265137,
+        0.17463000118732452
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        0.608761191368103,
+        0.0,
+        0.7933535575866699,
+        0.0
+      ],
+      "child_rotation": [
+        0.7071067690849304,
+        0.0,
+        0.7071067690849304,
+        0.0
+      ]
+    },
+    {
+      "name": "right_wheel_joint",
+      "type": "PhysicsRevoluteJoint",
+      "parent": [
+        "chassis_base_link"
+      ],
+      "child": [
+        "right_wheel_link"
+      ],
+      "parent_anchor": [
+        0.0,
+        -0.23999999463558197,
+        0.08599899709224701
+      ],
+      "child_anchor": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "parent_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "child_rotation": [
+        1.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "axis": "Y",
+      "lowerLimit": -Infinity,
+      "upperLimit": Infinity
+    }
+  ]
+}
