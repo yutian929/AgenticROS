@@ -91,12 +91,6 @@ services:
       HF_HUB_OFFLINE: "1"
     volumes:
       - type: bind
-        source: ./runs/${ROS_DOMAIN_ID:-42}/agent_instance/sam3/models
-        target: /models
-        read_only: true
-        bind:
-          create_host_path: false
-      - type: bind
         source: ./runs/${ROS_DOMAIN_ID:-42}/agent_instance/sam3/records
         target: /records
         bind:

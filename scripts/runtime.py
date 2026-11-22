@@ -161,14 +161,11 @@ def prepare_workspace(config):
 def prepare_sam3(config):
     """Stage only public IDL; model weights and implementation stay outside Agent."""
     root = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/sam3'
-    for name in ('models', 'records'):
+    for name in ('records',):
         path = root/name
         if any(p.is_symlink() for p in (path, *path.parents)):
             raise ValueError('SAM3 data directories must not be symlinks')
         path.mkdir(parents=True, exist_ok=True)
-    if not (root/'models/sam3.pt').is_file():
-        raise ValueError('Missing authorized SAM3 weights at '+str(root/'models/sam3.pt')+
-                         '; run bash scripts/prepare_sam3.sh --domain-id '+str(config['ROS_DOMAIN_ID']))
     prepare_workspace(config)
     source = ROOT/'docker/agent_instance/sam3/interfaces'
     target = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/agent/workspace/ros_ws/src/agenticros_perception_interfaces'

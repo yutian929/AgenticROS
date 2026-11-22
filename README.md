@@ -48,23 +48,9 @@ Viewer 是通过 noVNC 访问的普通 RViz。顶部只显示发现的机器人�
 
 SAM3 与 Agent、Viewer 并列，代码位于 `docker/agent_instance/sam3/`，独立启动，不依赖 Agent 或机器人容器的生命周期。默认启动 Agent 不会启动 SAM3。
 
-使用 SAM3 需要额外配置支持 GPU 的 Docker NVIDIA Container Toolkit，模型默认从 [ModelScope facebook/sam3](https://modelscope.cn/models/facebook/sam3) 下载原始 `sam3.pt`。普通 Agent、Viewer 和机器人启动不需要这些依赖。模型推理使用独立 Python 3.12 环境，ROS 节点仍使用 Humble；不在宿主机安装 ROS 或模型依赖。
+使用 SAM3 需要额外配置支持 GPU 的 Docker NVIDIA Container Toolkit，模型默认从 [ModelScope facebook/sam3](https://modelscope.cn/models/facebook/sam3) 下载原始 `sam3.pt`。普通 Agent、Viewer 和 CPU 仿真机器人不需要这些 GPU 依赖；Quanta X1 同样需要。模型推理使用独立 Python 3.12 环境，ROS 节点仍使用 Humble；不在宿主机安装 ROS 或模型依赖。
 
-首次配置使用专用脚本；默认下载模型、构建镜像并检查环境，不启动服务：
-
-```bash
-bash scripts/prepare_sam3.sh --check-only
-# 默认从 ModelScope 下载，不需要 Hugging Face Token。
-bash scripts/prepare_sam3.sh --domain-id 42
-```
-
-脚本下载到专用 models 目录，支持同一模型版本的断点续传，并按 ModelScope 提供的固定文件版本、文件大小和 SHA256 校验后才启用权重。无需安装 ModelScope SDK 或输入 Hugging Face Token。已有权重不会覆盖。构建后会在临时容器中检查 CUDA。`--check-only` 仅初始化目录并报告缺失项。Python 下载实现为内部辅助脚本，不需要另一个日常入口。
-
-脚本自动检查 NVIDIA Docker runtime。若缺少或未配置 NVIDIA Container Toolkit，会先说明宿主安装与 Docker 重启的影响，再询问是否安装配置（`[y/N]`）；输入 `y` 或 `yes` 才继续，拒绝、直接回车或非交互运行均退出。无需额外安装参数，已有可用 runtime 时直接继续模型准备。
-
-自动安装仅支持本地 Debian/Ubuntu 的 rootful Docker，遵循 [NVIDIA 官方说明](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)，可能需要 sudo。安装前和 Docker 重启前都会检查运行中的容器；发现容器就退出，要求先明确停止并核对其任务。它不会安装完整 CUDA Toolkit 或替换 GPU 驱动。下载和使用仍遵循模型仓库的许可要求。
-
-也可以将已有的授权 `sam3.pt` 手动放到 `runs/42/agent_instance/sam3/models/sam3.pt`。准备完成后启动：
+直接启动，无需单独 prepare/setup：
 
 ```bash
 bash agent.sh sam3 --domain-id 42
@@ -72,15 +58,21 @@ python3 scripts/runtime.py sam3-status --domain-id 42
 python3 scripts/runtime.py stop-sam3 --domain-id 42
 ```
 
-首次启动构建镜像，随后在容器启动时加载本地权重并完成图像、文本推理预热，健康检查确认 `READY` 才返回。模型缺失、GPU 不可用或加载失败会明确报错，不在第一次请求时加载。模型目录只读挂载，不挂载宿主凭据，不自动下载受限权重。加载状态可通过 `/perception/sam3/status` 查询，图像是否可用在具体请求中独立检查。
+首次启动在本地没有镜像时自动构建。Docker 构建阶段从 ModelScope 下载固定版本的 `sam3.pt`（约 3.45 GB），校验固定的大小和 SHA256，再将权重复制进最终镜像 `/models/sam3.pt`。下载缓存留在 BuildKit 中，断点续传和重建可复用；运行时不下载模型。容器启动时加载权重并完成图像、文本推理预热，健康检查确认 `READY` 后返回。
 
-再次启动复用已有容器，不自动替换。更新实现后先停止 SAM3、重建镜像，再显式重建已停止的容器；其他容器和记录保持不变：
+宿主机仍需提前安装 NVIDIA 驱动和 NVIDIA Container Toolkit；启动器不会安装系统软件或重启 Docker。权重版本、大小及校验值见 `docker/agent_instance/sam3/checkpoint.json`；下载和使用遵循模型提供方条款。
+
+SAM3 仅挂载独立的 `records` 目录保存推理记录，不再挂载宿主 `models` 目录。旧 `runs/<DOMAIN_ID>/agent_instance/sam3/models/` 会原样保留，但新版不再使用。`clean-runtime --yes` 会删除记录、工作区等运行数据，保留镜像中的权重；加 `--images` 后才需要重新构建，已有构建缓存可复用。
+
+已有旧镜像不会自动升级。迁移时先确认没有正在执行的推理任务，然后显式停止、重建并替换 SAM3；Agent 和机器人无需重启：
 
 ```bash
 python3 scripts/runtime.py stop-sam3 --domain-id 42
 docker compose -f compose.agent.yaml build sam3
-python3 scripts/runtime.py sam3 --domain-id 42 --recreate
+bash agent.sh sam3 --domain-id 42 --recreate
 ```
+
+再次启动复用已有容器，不会自动替换正在运行的服务。
 
 SAM3 使用 UDP 传输和原生 DDS 自动发现，以兼容宿主网络下的独立 IPC；不依赖跨容器共享内存。容器 `healthy` 仅证明内部模型就绪，Agent 到 SAM3 的通信还需从 Agent 侧验证。
 

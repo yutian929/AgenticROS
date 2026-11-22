@@ -21,7 +21,7 @@ def load(name, path):
 
 core = load('sam3_core', 'docker/agent_instance/sam3/core.py')
 launcher = load('sam3_launcher', 'scripts/runtime.py')
-setup = load('sam3_setup', 'scripts/setup_sam3.py')
+setup = load('sam3_setup', 'docker/agent_instance/sam3/download_checkpoint.py')
 
 
 def request():
@@ -94,86 +94,6 @@ for line in sys.stdin:
 
 
 class Setup(unittest.TestCase):
-    def test_missing_toolkit_requires_explicit_interactive_yes(self):
-        import pty
-        import subprocess
-        with tempfile.TemporaryDirectory() as directory:
-            folder = Path(directory)
-            for name, body in {
-                'docker': '#!/bin/bash\nif [[ "$*" == "info --format {{json .Runtimes}}" ]]; then echo "{}"; fi\n',
-                'nvidia-smi': '#!/bin/bash\nexit 0\n',
-                'apt-get': '#!/bin/bash\necho INSTALL_REACHED\nexit 77\n',
-                'sudo': '#!/bin/bash\nexec "$@"\n',
-            }.items():
-                path = folder/name
-                path.write_text(body)
-                path.chmod(0o755)
-            env = dict(os.environ, PATH=directory+os.pathsep+os.environ['PATH'],DOCKER_HOST='unix:///var/run/docker.sock')
-            command = ['bash',str(ROOT/'scripts/prepare_sam3.sh')]
-            result = subprocess.run(command,input='yes\n',env=env,text=True,capture_output=True)
-            self.assertNotEqual(result.returncode,0)
-            self.assertIn('interactive terminal',result.stderr)
-            self.assertNotIn('INSTALL_REACHED',result.stdout)
-            for answer, accepted in [('\n',False),('n\n',False),('yes\n',True)]:
-                with self.subTest(answer=answer):
-                    master, slave = pty.openpty()
-                    try:
-                        process = subprocess.Popen(command,stdin=slave,stdout=subprocess.PIPE,stderr=subprocess.PIPE,env=env,text=True)
-                        os.write(master,answer.encode())
-                        stdout, stderr = process.communicate(timeout=10)
-                        self.assertEqual('INSTALL_REACHED' in stdout,accepted,(stdout,stderr))
-                        self.assertEqual(process.returncode,77 if accepted else 1)
-                    finally:
-                        os.close(master)
-                        os.close(slave)
-
-    def test_prepare_shell_defaults_and_check_only(self):
-        import subprocess
-        import sys
-        with tempfile.TemporaryDirectory() as directory:
-            folder = Path(directory)
-            python = folder/'python3'
-            python.write_text('#!'+sys.executable+'''\nimport json,sys
-if sys.argv[1:2] == ['-c']:
-    sys.exit(0 if 'nvidia' in json.load(sys.stdin) else 1)
-print(json.dumps(sys.argv[1:]))
-''')
-            python.chmod(0o755)
-            docker = folder/'docker'
-            docker.write_text('#!/bin/bash\nif [[ "$*" == "info --format {{json .Runtimes}}" ]]; then echo \'{"nvidia":{}}\'; fi\n')
-            docker.chmod(0o755)
-            env = dict(os.environ, PATH=directory+os.pathsep+os.environ['PATH'])
-            for args, tail in [(['--domain-id','55'],['--domain-id','55','--download','--build']),
-                               (['--check-only'],[])]:
-                output = subprocess.check_output(['bash',str(ROOT/'scripts/prepare_sam3.sh'),*args],env=env,text=True)
-                self.assertEqual(json.loads(output),['scripts/setup_sam3.py',*tail])
-
-    def test_prepare_refuses_toolkit_restart_with_live_containers(self):
-        import subprocess
-        import sys
-        with tempfile.TemporaryDirectory() as directory:
-            folder = Path(directory)
-            for name, body in {
-                'docker': '''#!/bin/bash
-case "$*" in
-  'info --format {{json .Runtimes}}') echo '{}' ;;
-  'ps -q') echo live-body ;;
-esac
-''',
-                'nvidia-smi': '#!/bin/bash\nexit 0\n',
-                'apt-get': '#!/bin/bash\nexit 99\n',
-                'sudo': '#!/bin/bash\necho "UNEXPECTED MUTATION"; exit 99\n',
-            }.items():
-                path = folder/name
-                path.write_text(body)
-                path.chmod(0o755)
-            result = subprocess.run(['bash',str(ROOT/'scripts/prepare_sam3.sh')],
-                env=dict(os.environ, PATH=directory+os.pathsep+os.environ['PATH'],DOCKER_HOST='unix:///var/run/docker.sock'),
-                text=True,capture_output=True)
-            self.assertNotEqual(result.returncode,0)
-            self.assertIn('containers are running',result.stderr)
-            self.assertNotIn('UNEXPECTED MUTATION',result.stdout)
-
     def test_modelscope_download_is_pinned_verified_and_anonymous(self):
         import hashlib
         import io
@@ -188,20 +108,24 @@ esac
         class Opener:
             def open(self, request, timeout):
                 calls.append(request)
-                return Response(json.dumps(metadata).encode() if len(calls)==1 else data)
+                return Response(data)
         with tempfile.TemporaryDirectory() as directory:
             folder = Path(directory)
             # A previous source failed before writing any bytes: metadata alone
             # must not prevent starting a fresh ModelScope download.
             (folder/'download.json').write_text(json.dumps({'source':'huggingface','revision':'old'}))
-            setup.download(folder,Opener())
+            manifest=dict(source='modelscope',repo='facebook/sam3',revision=commit,filename='sam3.pt',sha256=hashlib.sha256(data).hexdigest(),size=len(data))
+            setup.download(folder,Opener(),manifest)
             self.assertEqual((folder/'sam3.pt').read_bytes(),data)
-            self.assertIn('Revision='+commit+'&FilePath=sam3.pt',calls[1].full_url)
+            self.assertIn('Revision='+commit+'&FilePath=sam3.pt',calls[0].full_url)
             self.assertTrue(all(call.get_header('Authorization') is None for call in calls))
             self.assertTrue(all(call.full_url.startswith(setup.MODEL_API) for call in calls))
             self.assertEqual(json.loads((folder/'download.json').read_text())['source'],'modelscope')
-            setup.download(folder,Opener())
-            self.assertEqual(len(calls),2)
+            setup.download(folder,Opener(),manifest)
+            self.assertEqual(len(calls),1)
+            (folder/'sam3.pt').write_bytes(b'corrupted')
+            with self.assertRaisesRegex(ValueError,'SHA256 mismatch'):
+                setup.download(folder,Opener(),manifest)
 
     def test_download_resumes_and_rejects_bad_digest(self):
         import hashlib
@@ -228,7 +152,7 @@ esac
             (folder/'download.json').write_text(json.dumps(state))
             (folder/'sam3.pt.part').write_bytes(data[:5])
             opener = Opener()
-            setup.download(folder,opener)
+            setup.download(folder,opener,state)
             self.assertEqual(opener.range,'bytes=5-')
             self.assertEqual((folder/'sam3.pt').read_bytes(),data)
         with tempfile.TemporaryDirectory() as directory:
@@ -236,8 +160,28 @@ esac
             (folder/'download.json').write_text(json.dumps(state))
             (folder/'sam3.pt.part').write_bytes(b'x'*len(data))
             with self.assertRaisesRegex(ValueError,'SHA256 mismatch'):
-                setup.download(folder,Opener())
+                setup.download(folder,Opener(),state)
             self.assertFalse((folder/'sam3.pt').exists())
+
+    def test_parallel_ranges_are_ordered_and_checked(self):
+        import io
+        data=b'0123456789abcdef'
+        class Response(io.BytesIO):
+            status=206
+        def fetch(url,headers):
+            start,end=map(int,headers['Range'].split('=')[1].split('-'))
+            response=Response(data[start:end+1])
+            response.headers={'Content-Range':f'bytes {start}-{end}/{len(data)}'}
+            return response
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'partial'
+            path.write_bytes(data[:3])
+            setup.download_ranges(fetch,'https://example.test',path,3,len(data),chunk_size=4,workers=2)
+            self.assertEqual(path.read_bytes(),data)
+            def invalid(url,headers):
+                response=fetch(url,headers);response.status=200;return response
+            with self.assertRaisesRegex(ValueError,'exact checkpoint byte range'):
+                setup.download_ranges(invalid,'https://example.test',path,0,len(data),chunk_size=4,workers=2)
 
     def test_cross_host_redirect_strips_auth_and_rejects_http(self):
         import urllib.request
@@ -317,9 +261,7 @@ class Lifecycle(unittest.TestCase):
             workspace = root/'agent_instance/agent/workspace'
             workspace.mkdir(parents=True)
             with patch.object(launcher,'prepare_workspace'):
-                with self.assertRaisesRegex(ValueError,'authorized SAM3 weights'):
-                    launcher.prepare_sam3({'ROS_DOMAIN_ID':42})
-                (root/'agent_instance/sam3/models/sam3.pt').write_bytes(b'test')
+                self.assertFalse((root/'agent_instance/sam3/models').exists())
                 launcher.prepare_sam3({'ROS_DOMAIN_ID':42})
                 launcher.prepare_sam3({'ROS_DOMAIN_ID':42})
                 target = workspace/'ros_ws/src/agenticros_perception_interfaces'
@@ -345,8 +287,7 @@ class Lifecycle(unittest.TestCase):
         self.assertEqual(service['profiles'], ['sam3'])
         self.assertEqual(service['environment']['ROS_DOMAIN_ID'],'43')
         mounts = {item['target']:item for item in service['volumes']}
-        self.assertEqual(set(mounts), {'/records','/models'})
-        self.assertTrue(mounts['/models']['read_only'])
+        self.assertEqual(set(mounts), {'/records'})
         self.assertTrue(all('/runs/43/agent_instance/sam3/' in item['source'] for item in mounts.values()))
         self.assertNotIn('depends_on',service)
         self.assertFalse(any('sam3' in item['source'] for item in config['services']['server']['volumes']))

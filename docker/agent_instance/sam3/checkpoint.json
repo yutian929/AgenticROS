@@ -1,0 +1,8 @@
+{
+  "source": "modelscope",
+  "repo": "facebook/sam3",
+  "revision": "f8ee5d16d5c30d0e87b1d22cbd358ce97761df56",
+  "filename": "sam3.pt",
+  "sha256": "9999e2341ceef5e136daa386eecb55cb414446a00ac2b55eb2dfd2f7c3cf8c9e",
+  "size": 3450062241
+}

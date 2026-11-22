@@ -22,10 +22,15 @@ RUN --mount=type=cache,id=agenticros-sam3-uv,target=/root/.cache/uv \
     uv pip install --python /opt/inference/bin/python . 'setuptools<81' pillow einops scipy psutil pycocotools && \
     printf '%s\n' "$SAM3_REVISION" > /opt/sam3-model-revision
 
+FROM ros-dependencies AS weights
+COPY docker/agent_instance/sam3/download_checkpoint.py docker/agent_instance/sam3/checkpoint.json /opt/download/
+RUN --mount=type=cache,id=agenticros-sam3-checkpoint,target=/var/cache/sam3,sharing=locked \
+    python3 /opt/download/download_checkpoint.py --cache /var/cache/sam3 --output /models
+
 FROM ros-dependencies AS transport
 COPY docker/agent_instance/sam3/interfaces /opt/perception_ws/src/agenticros_perception_interfaces
 RUN source /opt/ros/humble/setup.bash && cd /opt/perception_ws && colcon build
-COPY docker/agent_instance/sam3/*.py docker/agent_instance/sam3/fastdds.xml /opt/sam3/
+COPY docker/agent_instance/sam3/core.py docker/agent_instance/sam3/healthcheck.py docker/agent_instance/sam3/node.py docker/agent_instance/sam3/worker.py docker/agent_instance/sam3/fastdds.xml /opt/sam3/
 COPY docker/agent_instance/sam3/entrypoint.sh /usr/local/bin/sam3-entrypoint
 RUN chmod +x /usr/local/bin/sam3-entrypoint
 ENV RMW_IMPLEMENTATION=rmw_fastrtps_cpp ROS_LOCALHOST_ONLY=0 PYTHONUNBUFFERED=1 \
@@ -35,8 +40,9 @@ CMD ["python3", "/opt/sam3/node.py"]
 HEALTHCHECK --interval=5s --timeout=8s --start-period=600s --retries=3 CMD ["/usr/local/bin/sam3-entrypoint", "python3", "/opt/sam3/healthcheck.py"]
 
 FROM transport AS sam3
+COPY --from=weights /models /models
 COPY --from=inference /opt/python /opt/python
 COPY --from=inference /opt/inference /opt/inference
 COPY --from=inference /opt/sam3-model-revision /opt/sam3-model-revision
-ENV SAM3_PYTHON=/opt/inference/bin/python
+ENV SAM3_PYTHON=/opt/inference/bin/python SAM3_CHECKPOINT=/models/sam3.pt HF_HUB_OFFLINE=1
 RUN /opt/inference/bin/python -c 'from sam3.model_builder import build_sam3_image_model; from sam3.model.sam3_image_processor import Sam3Processor'
