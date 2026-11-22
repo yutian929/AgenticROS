@@ -93,6 +93,65 @@ python3 tests/check_sam3.py --host-network --agent-image agenticros-server:singl
 
 该测试覆盖通用 ROS 客户端、720p 图像与 mask 传输、取消、超时核对和记录落盘；它不证明真实 SAM3 的检测质量、自主适配、任务成功或跨物理主机 LAN 行为。
 
+## 可选 Valen 4B 视觉决策
+
+Valen 与 Agent、Viewer、SAM3 独立，默认不启动。使用公开 Apache-2.0 权重
+[`Valen-Team/Valen-Decision-1.5-4B`](https://huggingface.co/Valen-Team/Valen-Decision-1.5-4B)，
+固定 revision `9b0cacc976d7fb72f252ee1adb1564f5f15e462c`。模型、推理依赖与实现不装入 Agent，
+Agent 只取得公开接口和规则。需要已配置的 NVIDIA Docker runtime，不在宿主机安装模型依赖。
+
+```bash
+# 首次缺少镜像时自动构建；启动独立服务，已运行则复用
+bash agent.sh valen --domain-id 42
+python3 scripts/runtime.py valen-status --domain-id 42
+python3 scripts/runtime.py stop-valen --domain-id 42
+```
+
+与 SAM3 相同，Docker 构建时下载约 9.1 GB 的固定版本模型，验证权重 SHA256 和小文件 Git blob 校验值，
+再打包到最终镜像 `/models/Valen-Decision-1.5-4B`。完整文件清单和校验值固定在
+`docker/agent_instance/valen/model.json`；构建不查询浮动版本或动态生成校验基准。
+BuildKit 按版本保留下载缓存与断点，重建可复用；已有文件不同则保留并报错。
+容器运行时再次校验镜像固定清单，禁止在线下载，完成图像推理预热后才就绪。
+BF16 不可用的 GPU 使用 FP16 骨干，训练好的决策头保持 FP32。显存、驱动和延迟仍需在部署机器实测，
+不要在未核对资源的在线仿真旁运行 GPU 压力测试。
+
+ROS 接口为 `/decision/valen/decide` Action 和 `/decision/valen/status` Service，
+使用同域 DDS 自动发现。启动器只预置 `agenticros_decision_interfaces` 公开接口包，
+构建与调用见 Agent 的 [perception skill](docker/agent_instance/agent/skills/perception/SKILL.md)。
+服务接受 JSON 状态、Choice/Noul/Score 问题和一个公开 RGB 图像话题；返回原候选内的答案与概率，
+不执行运动。选帧、推理前后检查时间，过期结果失败；客户端运动前仍须复核新鲜度与机器人 session。
+
+Agent 可按子任务生成有限步数的局部执行节点：定义工具坐标、候选动作、预算和结束条件，
+每轮执行一个小动作、确认停止、重新观察；预算耗尽、模型建议结束或出现异常后交还 Agent。
+规则已说明该流程，但模型服务本身不包含机器人适配器、现成任务程序或自动运动循环。
+
+每次请求的证据保留在 `runs/<域>/agent_instance/valen/records/<服务session>/<Goal UUID>/`。
+模型属于镜像，只挂载可写记录目录；不挂载源仓库、宿主 home、凭据或 Docker socket。
+启动和构建不会改动旧 `runs/<域>/agent_instance/valen/models/`，新版不再依赖它；清理运行数据仍会删除该旧目录。
+普通 `clean-runtime.sh --yes` 删除运行数据但保留镜像中的模型；只有加 `--images` 才会移除项目镜像。
+BuildKit 缓存不受该脚本清理；若镜像和构建缓存都被额外删除，则需要重新下载模型。
+更新服务先显式停止，再重建镜像，最后 `python3 scripts/runtime.py valen --domain-id 42 --recreate`；
+拒绝重建运行中的容器，模型与记录保留。
+
+隔离通信测试不使用真实模型、GPU或在线机器人：
+
+```bash
+docker build --target transport -f docker/agent_instance/valen/Dockerfile -t agenticros-valen:transport-test .
+python3 tests/check_valen.py --agent-image agenticros-server:single
+```
+
+它验证独立容器 DDS、720p 图像、取消、超时核对、过期结果和记录落盘，不证明真实模型质量、
+局部控制收敛、抓取成功或跨物理主机 LAN 行为。
+
+打包校验可在无 GPU、无网络、无宿主模型挂载的临时容器中运行：
+
+```bash
+# 微型合成权重：验证真实 weights 构建流程和离线缓存复用，不下载真实模型
+python3 tests/check_valen_bundle.py --fixture
+# 完整镜像构建后：核对真实模型全部文件、版本和校验值，不执行推理
+python3 tests/check_valen_bundle.py --image agenticros-valen:single
+```
+
 ## 重新进入机器人容器
 
 使用启动时输出的完整 ID。忘记 ID 时，查看对应域、型号的目录，子目录名就是 ID：

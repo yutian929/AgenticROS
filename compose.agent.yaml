@@ -109,6 +109,47 @@ services:
     init: true
     stop_grace_period: 60s
 
+  valen:
+    profiles: [valen]
+    build:
+      context: .
+      dockerfile: docker/agent_instance/valen/Dockerfile
+      target: valen
+    image: agenticros-valen:single
+    network_mode: host
+    ipc: private
+    shm_size: 1gb
+    user: "${AGENTICROS_HOST_UID:-1000}:${AGENTICROS_WORKSPACE_GID:-1000}"
+    environment:
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-42}
+      ROS_LOCALHOST_ONLY: "0"
+      RMW_FASTRTPS_PUBLICATION_MODE: ASYNCHRONOUS
+      VALEN_MODEL: /models/Valen-Decision-1.5-4B
+      VALEN_RECORDS: /records
+      HOME: /tmp
+      ROS_LOG_DIR: /tmp/ros_logs
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    volumes:
+      - type: bind
+        source: ./runs/${ROS_DOMAIN_ID:-42}/agent_instance/valen/records
+        target: /records
+        bind:
+          create_host_path: false
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    init: true
+    stop_grace_period: 60s
+
 volumes:
   viewer-auth:
     name: ${AGENTICROS_VIEWER_VOLUME:-agenticros-${ROS_DOMAIN_ID:-42}_viewer-auth}

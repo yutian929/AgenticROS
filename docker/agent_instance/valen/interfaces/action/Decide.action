@@ -1,0 +1,29 @@
+# Valen service session, distinct from robot/session identifiers in state_json.
+string session_id
+# JSON data only; never interpreted as paths, URLs or native chat messages.
+string state_json
+# Mapping of named choice/noul/score questions. No executable actions.
+string questions_json
+# One public RGB topic. Empty for text-only decisions.
+string image_topic
+string frame_policy
+builtin_interfaces/Time image_stamp
+float32 max_image_age_sec
+float32 image_timeout_sec
+---
+bool success
+# OK, CANCELLED, INVALID_REQUEST, FRAME_TIMEOUT, STALE_FRAME,
+# INFERENCE_FAILED, RECORDING_FAILED, INTERNAL_ERROR.
+string code
+string message
+string session_id
+string goal_id
+std_msgs/Header source_header
+string image_topic
+uint32 width
+uint32 height
+string answers_json
+string record_id
+---
+string stage
+float32 elapsed_sec

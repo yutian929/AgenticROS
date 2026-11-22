@@ -1,0 +1,138 @@
+{
+  "repo": "Valen-Team/Valen-Decision-1.5-4B",
+  "revision": "9b0cacc976d7fb72f252ee1adb1564f5f15e462c",
+  "files": [
+    {
+      "path": "LICENSE",
+      "algorithm": "sha1",
+      "digest": "1d5180a42f1c3383ba7c7bd0a50f0837ef0168df",
+      "size": 11343
+    },
+    {
+      "path": "README.md",
+      "algorithm": "sha1",
+      "digest": "41526a73edd1955f28b27a066378aa7d3f3df7b6",
+      "size": 11073
+    },
+    {
+      "path": "batching.py",
+      "algorithm": "sha1",
+      "digest": "6bd343e1d7a8479c6bbc45d73b987b1d1d2d5c28",
+      "size": 2953
+    },
+    {
+      "path": "block_attention.py",
+      "algorithm": "sha1",
+      "digest": "1b39f785dea722cea7d4e1d73bb56fc848f49bf0",
+      "size": 9512
+    },
+    {
+      "path": "chat_template.jinja",
+      "algorithm": "sha1",
+      "digest": "a585dec894e63da457d9440ec6aa7caa16d20860",
+      "size": 7756
+    },
+    {
+      "path": "compiler.py",
+      "algorithm": "sha1",
+      "digest": "49d6aea35d9ac09cb3061ab64ecffc8d01b1d8c5",
+      "size": 16608
+    },
+    {
+      "path": "config.json",
+      "algorithm": "sha1",
+      "digest": "58f3b95b9fe077b3451fd8180a8b81671b5a7983",
+      "size": 3691
+    },
+    {
+      "path": "configuration_valen.py",
+      "algorithm": "sha1",
+      "digest": "65250c06ce4b2519446900ecf29a1983f4fba91a",
+      "size": 1954
+    },
+    {
+      "path": "data_types.py",
+      "algorithm": "sha1",
+      "digest": "ce1d6a8d6ee0f46600b13865ea941dcd7d803de0",
+      "size": 258
+    },
+    {
+      "path": "decisions.py",
+      "algorithm": "sha1",
+      "digest": "342eb3a568672e8652fb1b1f3f96f22fb1741e30",
+      "size": 8585
+    },
+    {
+      "path": "grounding.py",
+      "algorithm": "sha1",
+      "digest": "80e2bbb6f11830642400cedaf83ec82e7e6fadc0",
+      "size": 7040
+    },
+    {
+      "path": "heads.py",
+      "algorithm": "sha1",
+      "digest": "47627b2dc79bfafeea627683628f949f80ab7692",
+      "size": 6605
+    },
+    {
+      "path": "model-00001-of-00002.safetensors",
+      "algorithm": "sha256",
+      "digest": "e79499386c15eebd0caffe0126372e17a895e722c1c6f234db549ec7ace7365f",
+      "size": 4973336472
+    },
+    {
+      "path": "model-00002-of-00002.safetensors",
+      "algorithm": "sha256",
+      "digest": "18e13d4365d7181ab5eefad8de38bf526ca83792998c7623f99d287b57f40c34",
+      "size": 4137396676
+    },
+    {
+      "path": "model.safetensors.index.json",
+      "algorithm": "sha1",
+      "digest": "bfc494607ce8e3cf432537c890150e6aea1c3cbd",
+      "size": 72009
+    },
+    {
+      "path": "modeling_valen.py",
+      "algorithm": "sha1",
+      "digest": "8637c5f3e44d140540e867a0a0b475671a011dfe",
+      "size": 5719
+    },
+    {
+      "path": "processor_config.json",
+      "algorithm": "sha1",
+      "digest": "33818c7f9e991ad735fd240209f4fa73e6c28c50",
+      "size": 1191
+    },
+    {
+      "path": "responses.py",
+      "algorithm": "sha1",
+      "digest": "78f8642d2b69eb778ddee53211d1824b04632b49",
+      "size": 1750
+    },
+    {
+      "path": "runtime_model.py",
+      "algorithm": "sha1",
+      "digest": "3f6d95d611774ab3f7e8c91fddde77009290c1c4",
+      "size": 6606
+    },
+    {
+      "path": "schema.py",
+      "algorithm": "sha1",
+      "digest": "fb909a59b0f82bcb2a07743da8852201305bd0a5",
+      "size": 6104
+    },
+    {
+      "path": "tokenizer.json",
+      "algorithm": "sha256",
+      "digest": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+      "size": 19989325
+    },
+    {
+      "path": "tokenizer_config.json",
+      "algorithm": "sha1",
+      "digest": "875b7b0a3aabbd4e5e2888802dfbd5624a4a2060",
+      "size": 1164
+    }
+  ]
+}

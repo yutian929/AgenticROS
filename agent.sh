@@ -2,8 +2,8 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 case "${1:-}" in
-  agent|viewer|sam3) mode="$1"; shift ;;
-  *) echo 'Usage: bash agent.sh <agent|viewer|sam3> [--domain-id 42] [Codex arguments...]' >&2; exit 1 ;;
+  agent|viewer|sam3|valen) mode="$1"; shift ;;
+  *) echo 'Usage: bash agent.sh <agent|viewer|sam3|valen> [--domain-id 42] [Codex arguments...]' >&2; exit 1 ;;
 esac
 if [[ "$mode" != agent ]]; then
   exec python3 scripts/runtime.py "$mode" "$@"

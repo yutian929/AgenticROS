@@ -14,6 +14,20 @@ spec.loader.exec_module(cleanup)
 
 
 class Cleanup(unittest.TestCase):
+    def test_default_cleanup_keeps_model_images_and_build_cache(self):
+        def docker(*args):
+            if args == ('image', 'ls', '--format', '{{.Repository}}:{{.Tag}}'):
+                return 'agenticros-valen:single\nagenticros-sam3:single\nunrelated:latest'
+            return ''
+        with patch.object(cleanup, 'docker', side_effect=docker) as calls:
+            ordinary = cleanup.inventory()
+            self.assertEqual(ordinary['images'], [])
+            cleanup.clean(ordinary)
+            self.assertFalse(any(call.args[:2] == ('image', 'rm') for call in calls.call_args_list))
+            self.assertFalse(any('prune' in call.args for call in calls.call_args_list))
+            explicit = cleanup.inventory(images=True)
+            self.assertEqual(explicit['images'], ['agenticros-sam3:single', 'agenticros-valen:single'])
+
     def test_disappeared_network_is_success_but_other_failures_propagate(self):
         missing = subprocess.CalledProcessError(1, ['docker'], stderr='Error response from daemon: network old not found')
         with patch.object(cleanup, 'docker', side_effect=missing):

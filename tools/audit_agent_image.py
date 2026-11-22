@@ -22,6 +22,7 @@ def main():
                (p.suffix in ('.py', '.xml', '.action', '.srv') or 'robot_docs' in p.parts)]
     # SAM3 implementation/model stay in the sibling infrastructure image.
     private += list((ROOT/'docker/agent_instance/sam3').glob('*.py'))
+    private += list((ROOT/'docker/agent_instance/valen').glob('*.py'))
     forbidden_hashes = json.loads((ROOT / 'tests/forbidden_sources.json').read_text())
     forbidden_hashes.update({hashlib.sha256(p.read_bytes()).hexdigest(): str(p.relative_to(ROOT))
                              for p in private if p.stat().st_size})
@@ -37,7 +38,7 @@ def main():
                 for member in archive:
                     path = member.name.lstrip('./')
                     assert not path.startswith(('opt/body/', 'var/run/docker.sock', 'opt/driver_ws/')), path
-                    assert not path.startswith(('opt/sam3/', 'opt/sam3-model/', 'opt/inference/', 'models/')), path
+                    assert not path.startswith(('opt/sam3/', 'opt/sam3-model/', 'opt/valen/', 'opt/inference/', 'models/')), path
                     # Original historical paths come from the unchanged fingerprint registry.
                     assert not path.endswith(forbidden_paths + ('/tabletop.xml',
                                                '/agenticros/client.py', '/adapter/body.py')), path

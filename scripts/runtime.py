@@ -167,15 +167,19 @@ def prepare_sam3(config):
             raise ValueError('SAM3 data directories must not be symlinks')
         path.mkdir(parents=True, exist_ok=True)
     prepare_workspace(config)
-    source = ROOT/'docker/agent_instance/sam3/interfaces'
-    target = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/agent/workspace/ros_ws/src/agenticros_perception_interfaces'
+    stage_public_interfaces(config, 'sam3', 'agenticros_perception_interfaces')
+
+
+def stage_public_interfaces(config, service, package):
+    source = ROOT/'docker/agent_instance'/service/'interfaces'
+    target = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/agent/workspace/ros_ws/src'/package
     if any(p.is_symlink() for p in (target, *target.parents)):
         raise ValueError('Public interface destination must not be a symlink')
     if target.exists():
         expected = {p.relative_to(source): p.read_bytes() for p in source.rglob('*') if p.is_file()}
         actual = {p.relative_to(target): p.read_bytes() for p in target.rglob('*') if p.is_file()}
         if any(p.is_symlink() for p in target.rglob('*')) or expected != actual:
-            raise ValueError('Existing perception interfaces differ; preserve and reconcile them explicitly: '+str(target))
+            raise ValueError('Existing '+package+' interfaces differ; preserve and reconcile them explicitly: '+str(target))
     else:
         for path in reversed((target.parent, target.parent.parent)):
             if not path.exists():
@@ -184,6 +188,18 @@ def prepare_sam3(config):
         shutil.copytree(source, target)
         for path in (target, *target.rglob('*')):
             path.chmod(0o2775 if path.is_dir() else 0o664)
+
+
+def prepare_valen(config):
+    """Weights belong to the image; stage only records and public interfaces."""
+    root = runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/valen'
+    for name in ('records',):
+        path = root/name
+        if any(p.is_symlink() for p in (path, *path.parents)):
+            raise ValueError('Valen data directories must not be symlinks')
+        path.mkdir(parents=True, exist_ok=True)
+    prepare_workspace(config)
+    stage_public_interfaces(config, 'valen', 'agenticros_decision_interfaces')
 
 
 def ensure_server(config):
@@ -275,11 +291,12 @@ def main():
     server=sub.add_parser('server')
     server.add_argument('--recreate',action='store_true',help='replace only a stopped Server container, retaining data')
     server.add_argument('--domain-id',type=int)
-    for name in ('agent','login','status','info','stop-server','viewer','stop-viewer','reload-clients','viewer-password','sam3','stop-sam3','sam3-status'):
+    for name in ('agent','login','status','info','stop-server','viewer','stop-viewer','reload-clients','viewer-password','sam3','stop-sam3','sam3-status','valen','stop-valen','valen-status'):
         p=sub.add_parser(name)
         p.add_argument('--domain-id',type=int)
         if name in ('agent','login'): p.add_argument('codex_args',nargs=argparse.REMAINDER)
         if name == 'sam3': p.add_argument('--recreate',action='store_true',help='replace only a stopped SAM3 container, retaining records and weights')
+        if name == 'valen': p.add_argument('--recreate',action='store_true',help='replace only a stopped Valen container, retaining records and weights')
     robot=sub.add_parser('robot')
     robot.add_argument('--robot-id',type=robot_name,help='existing instance ID for stop/recreate; generated on new starts')
     robot.add_argument('--domain-id',type=int)
@@ -312,7 +329,8 @@ def main():
                     'if [ -f /opt/driver_ws/install/setup.bash ]; then source /opt/driver_ws/install/setup.bash; fi; '
                     'exec bash --norc -i'],True)
         return
-    role = ('sam3' if args.command in ('sam3','stop-sam3','sam3-status') else
+    role = ('valen' if args.command in ('valen','stop-valen','valen-status') else
+            'sam3' if args.command in ('sam3','stop-sam3','sam3-status') else
             'viewer' if args.command in ('viewer','stop-viewer','viewer-password','info') else 'agent')
     config=server_config(getattr(args,'domain_id',None), role)
     if args.command=='server' and args.recreate: recreate_stopped(config)
@@ -339,6 +357,19 @@ def main():
         run(config,['stop','sam3'])
     elif args.command=='sam3-status':
         run(config,['exec','-T','sam3','/usr/local/bin/sam3-entrypoint','python3','/opt/sam3/healthcheck.py','--status'])
+    elif args.command=='valen':
+        prepare_valen(config)
+        if args.recreate: recreate_stopped(config, service='valen')
+        ensure_image(config,'valen')
+        run(config,['up','-d','--no-build','--pull','never','--no-recreate','valen'])
+        run(config,['exec','-T','valen','/usr/local/bin/valen-entrypoint','python3',
+                    '/opt/valen/healthcheck.py','--wait','--timeout','900'])
+        print('Valen: /decision/valen/decide (ROS_DOMAIN_ID '+str(config['ROS_DOMAIN_ID'])+')')
+        print('Records: '+str(runtime_dir(config['ROS_DOMAIN_ID'])/'agent_instance/valen/records'))
+    elif args.command=='stop-valen':
+        run(config,['stop','valen'])
+    elif args.command=='valen-status':
+        run(config,['exec','-T','valen','/usr/local/bin/valen-entrypoint','python3','/opt/valen/healthcheck.py','--status'])
     elif args.command=='reload-clients':
         run(config,['exec','-T','server','python3','/opt/instance/runtime.py','clients-reload'])
     elif args.command=='viewer-password':
