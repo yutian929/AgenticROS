@@ -11,24 +11,30 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy
 from std_msgs.msg import String
 from std_srvs.srv import Trigger
 from sensor_msgs.msg import JointState, Image, CameraInfo
-from geometry_msgs.msg import TransformStamped
+from geometry_msgs.msg import TransformStamped, Pose, PoseStamped
 from tf2_ros import TransformBroadcaster
-from quanta_driver_interfaces.action import Actuate, Recover
+from quanta_driver_interfaces.action import Actuate, Recover, MovePose
 from control import ARMS
+from cartesian import Kinematics
 
 
 class Driver(Node):
     def __init__(self, identity, control):
         super().__init__('driver', namespace=identity.namespace)
         self.identity, self.control = identity, control
+        self.control.namespace = identity.namespace
+        if self.control.kinematics is None:
+            self.control.kinematics = Kinematics()
         self.telemetry, self.joints, self.images, self.intrinsics = {}, {}, {}, {}
         self.transforms = TransformBroadcaster(self)
+        self.poses = {}
         self.scanner_state = self.create_publisher(String, 'scanner/state', 10)
         self.actions = []
         group = ReentrantCallbackGroup()
         for arm in ARMS:
             self.telemetry[arm] = self.create_publisher(String, f'{arm}/driver/state', 10)
             self.joints[arm] = self.create_publisher(JointState, f'{arm}/driver/joint_states', 10)
+            self.poses[arm] = self.create_publisher(PoseStamped, f'{arm}/driver/ee_pose', 10)
             self.create_service(Trigger, f'{arm}/driver/status',
                                 lambda req, res, a=arm: self.status(a, res), callback_group=group)
             self.actions.append(ActionServer(
@@ -43,6 +49,13 @@ class Driver(Node):
                 lambda handle, a=arm: self.execute(a, handle, Recover),
                 goal_callback=lambda req, a=arm: GoalResponse.ACCEPT if self.control.reserve_recovery(
                     a, req.session_id, req.failed_goal_id) else GoalResponse.REJECT,
+                handle_accepted_callback=lambda handle, a=arm: self.accepted(a, handle),
+                cancel_callback=lambda handle: CancelResponse.ACCEPT,
+                callback_group=group))
+            self.actions.append(ActionServer(
+                self, MovePose, f'{arm}/driver/move_pose',
+                lambda handle, a=arm: self.execute(a, handle, MovePose),
+                goal_callback=lambda req, a=arm: self.accept_pose(a, req),
                 handle_accepted_callback=lambda handle, a=arm: self.accepted(a, handle),
                 cancel_callback=lambda handle: CancelResponse.ACCEPT,
                 callback_group=group))
@@ -67,8 +80,30 @@ class Driver(Node):
         self.control.accepted(arm, bytes(handle.goal_id.uuid).hex())
         handle.execute()
 
+    def accept_pose(self, arm, request):
+        p, q = request.target.position, request.target.orientation
+        ok = self.control.reserve_pose(arm, request.session_id, request.reference_frame,
+            [p.x,p.y,p.z], [q.x,q.y,q.z,q.w], request.duration)
+        return GoalResponse.ACCEPT if ok else GoalResponse.REJECT
+
+    @staticmethod
+    def pose(data):
+        message = Pose()
+        for key, value in data['position'].items():
+            setattr(message.position, key, float(value))
+        for key, value in data['orientation'].items():
+            setattr(message.orientation, key, float(value))
+        return message
+
     def execute(self, arm, handle, action_type=Actuate):
         gid = bytes(handle.goal_id.uuid).hex()
+        if action_type is MovePose:
+            def interrupted():
+                if handle.is_cancel_requested:
+                    self.control.cancel(arm, gid)
+                    return 'cancelled'
+                return None
+            self.control.plan_pose(arm, gid, interrupted)
         while rclpy.ok():
             if handle.is_cancel_requested:
                 self.control.cancel(arm, gid)
@@ -84,7 +119,13 @@ class Driver(Node):
                 return action_type.Result(receipt_json=json.dumps(dict(**self.identity.identity(), **receipt)))
             if not state['feedback_fresh']:
                 self.control.fail('simulation feedback stale; stop not confirmed')
-            handle.publish_feedback(action_type.Feedback(positions=state['state']['joint_positions']))
+            if action_type is MovePose:
+                if state['state'].get('tcp_pose') is not None:
+                    handle.publish_feedback(MovePose.Feedback(current_pose=self.pose(state['state']['tcp_pose']),
+                        position_error=state.get('position_error', 0.), orientation_error=state.get('orientation_error', 0.),
+                        phase=state['active_phase'] or 'finished'))
+            else:
+                handle.publish_feedback(action_type.Feedback(positions=state['state']['joint_positions']))
             time.sleep(.02)
         self.control.fail('driver shutdown; stop not confirmed')
         handle.abort()
@@ -102,6 +143,12 @@ class Driver(Node):
             msg.position = state['state']['joint_positions']
             msg.velocity = state['state']['joint_velocities']
             self.joints[arm].publish(msg)
+            if state['state'].get('tcp_pose') is not None:
+                pose = PoseStamped()
+                pose.header.stamp = msg.header.stamp
+                pose.header.frame_id = state['state']['pose_frame']
+                pose.pose = self.pose(state['state']['tcp_pose'])
+                self.poses[arm].publish(pose)
 
     def camera(self, name, rgb, calibration, position, quaternion_xyzw):
         k = calibration['k']

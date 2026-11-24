@@ -181,6 +181,10 @@ def main():
                 base_pos, base_quat = robot.get_world_pose()
                 driver.transform('base', base_pos, base_quat[[1,2,3,0]])
                 for arm in ARMS:
+                    arm_base = cache.GetLocalToWorldTransform(stage.GetPrimAtPath('/World/Robot/'+arm+'_arm_base_link'))
+                    arm_quat = arm_base.ExtractRotationQuat()
+                    driver.transform(arm+'/arm_base', arm_base.Transform(Gf.Vec3d(0.,0.,0.)),
+                                     [*arm_quat.GetImaginary(), arm_quat.GetReal()])
                     transform = cache.GetLocalToWorldTransform(stage.GetPrimAtPath('/World/Robot/'+arm+'_arm_gripper_base_link'))
                     position = transform.Transform(Gf.Vec3d(.217, 0., -.01))
                     quat = transform.ExtractRotationQuat()

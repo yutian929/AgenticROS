@@ -35,6 +35,7 @@ def main():
     workspace.mkdir(parents=True)
     workspace.chmod(0o777)
     shutil.copy(ROOT/'tests/quanta_probe.py', workspace/'probe.py')
+    shutil.copy(ROOT/'tests/quanta_pose_probe.py', workspace/'pose_probe.py')
     docs = ROOT/'docker/robot_instances/robot_docs/quanta_x1'
     if not args.host_network:
         run('docker','network','create','--internal',name, stdout=subprocess.DEVNULL)
@@ -94,6 +95,11 @@ def main():
                 'cd /workspace/ros_ws && colcon build --merge-install && source install/setup.bash && python3 /workspace/probe.py',
                 stdout=log,stderr=subprocess.STDOUT,timeout=180)
         assert (workspace/'result.json').is_file()
+        with (root/'pose-probe.log').open('w') as log:
+            run('docker','exec',agent,'bash','-c',
+                'source /opt/ros/humble/setup.bash && source /workspace/ros_ws/install/setup.bash && '
+                'python3 /workspace/pose_probe.py', stdout=log,stderr=subprocess.STDOUT,timeout=300)
+        assert (workspace/'pose-evidence/result.json').is_file()
         if args.contact:
             evidence=root/'contact';evidence.mkdir();evidence.chmod(0o777)
             baseline=json.loads(subprocess.check_output(['docker','exec',robot,'cat','/tmp/quanta-physics.json']))

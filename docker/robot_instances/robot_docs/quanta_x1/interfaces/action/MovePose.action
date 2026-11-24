@@ -1,0 +1,17 @@
+# arm_base: absolute TCP pose in this arm's base frame.
+# tcp: relative transform in the measured TCP frame sampled at goal acceptance.
+# Also accepts the corresponding complete robot/<robot_id>/<arm>/{arm_base,tcp} frame ID.
+string session_id
+string reference_frame
+# Metres, quaternion xyzw. Gripper target is preserved.
+geometry_msgs/Pose target
+# Simulation seconds, 0.1..30. Path is preflighted before any motion.
+float64 duration
+---
+string receipt_json
+---
+# Measured TCP pose in this arm's arm_base frame.
+geometry_msgs/Pose current_pose
+float64 position_error
+float64 orientation_error
+string phase

@@ -50,7 +50,7 @@ class MotionWindow:
 
 
 class Control:
-    def __init__(self, session):
+    def __init__(self, session, kinematics=None):
         self.session = session
         self.lock = threading.RLock()
         self.positions = {arm: [0.] * 7 for arm in ARMS}
@@ -69,6 +69,11 @@ class Control:
         self.fault = None
         self.ready = False
         self.body_state = {}
+        self.kinematics = kinematics
+        self.namespace = ''
+
+    def frame(self, arm, name):
+        return '/'.join(part for part in (self.namespace.strip('/'), arm, name) if part)
 
     def initialize(self, positions, limits):
         with self.lock:
@@ -105,10 +110,70 @@ class Control:
                 failed_goal_id=failed_goal_id)
             return True
 
+    def reserve_pose(self, arm, session, reference_frame, position, orientation, duration):
+        with self.lock:
+            if (not self.available(arm) or session != self.session or self.kinematics is None
+                    or not self.motion[arm].evidence()['settled']
+                    or not math.isfinite(duration) or not .1 <= duration <= 30):
+                return False
+            frame = reference_frame.lstrip('/')
+            for name in ('arm_base', 'tcp'):
+                if frame == self.frame(arm, name):
+                    frame = name
+            origin = list(self.positions[arm])
+            # Retain the commanded grip under load, rather than opening to match
+            # a physically obstructed gripper's measured position.
+            origin[6] = self.targets[arm][6]
+            try:
+                target_pose = self.kinematics.target(arm, origin, position, orientation, frame)
+                if math.sqrt(sum(target_pose[i][3]**2 for i in range(3))) > self.kinematics.reach[arm]:
+                    return False
+            except (ValueError, TypeError, OverflowError):
+                return False
+            self.active[arm] = dict(gid=None, target=None, duration=duration, start=None,
+                phase='reserved', cancel=False, operation='move_pose', origin=origin,
+                target_pose=target_pose, reference_frame=frame, motion_sent=False,
+                sampled_at_unix=self.updated, sampled_at_sim=self.sim_time)
+            return True
+
+    def plan_pose(self, arm, gid, interrupted=lambda: None):
+        with self.lock:
+            goal = self.active[arm]
+            if not goal or goal['gid'] != gid or goal['phase'] != 'planning':
+                return False
+            bounds = [(max(lo, model_lo), min(hi, model_hi)) for (lo,hi),(model_lo,model_hi)
+                      in zip(self.limits[arm][:6], self.kinematics.bounds[arm])]
+        def check():
+            with self.lock:
+                if self.active[arm] is not goal:
+                    return 'goal_no_longer_active'
+                if goal['cancel']:
+                    return 'cancelled'
+                if self.fault or time.time()-self.updated >= 5:
+                    return 'feedback_unavailable'
+            return interrupted()
+        try:
+            path = self.kinematics.plan(arm, goal['origin'], goal['target_pose'],
+                                        goal['duration'], bounds, check)
+            with self.lock:
+                reason = check()
+                if reason:
+                    raise InterruptedError(reason)
+                if max(abs(a-b) for a,b in zip(self.positions[arm][:6], goal['origin'][:6])) > .01:
+                    raise ValueError('pose_state_changed_during_planning')
+                goal.update(path=path, target=list(path[-1]), phase='running')
+            return True
+        except Exception as error:
+            with self.lock:
+                if self.active[arm] is goal:
+                    goal['abort_reason'] = 'cancelled' if str(error) == 'cancelled' else 'planning_failed'
+                    goal['planning_error'] = str(error)
+            return False
+
     def accepted(self, arm, gid):
         with self.lock:
             self.active[arm]['gid'] = gid
-            self.active[arm]['phase'] = 'running'
+            self.active[arm]['phase'] = 'planning' if self.active[arm]['operation'] == 'move_pose' else 'running'
 
     def cancel(self, arm, gid):
         with self.lock:
@@ -125,8 +190,23 @@ class Control:
             stop_evidence=self.motion[arm].evidence(),
             executed='some' if goal['start'] is not None else 'none',
             joint_positions=list(self.positions[arm]), task_success=None)
+        if goal['operation'] == 'move_pose':
+            receipt = self.receipts[arm][goal['gid']]
+            receipt.update(executed='some' if goal['motion_sent'] else 'none',
+                reference_frame=goal['reference_frame'], pose_frame=self.frame(arm, 'arm_base'),
+                start_pose=self.kinematics.describe(arm,goal['origin']),
+                target_pose=self.kinematics.public_pose(goal['target_pose']),
+                sampled_at_unix=goal['sampled_at_unix'], sampled_at_sim=goal['sampled_at_sim'],
+                gripper_target=goal['origin'][6], planning_error=goal.get('planning_error'),
+                position_tolerance=.003, orientation_tolerance=.03)
+            try:
+                receipt['measured_pose'] = self.kinematics.describe(arm, self.positions[arm])
+                receipt['position_error'], receipt['orientation_error'] = self.kinematics.errors(
+                    arm, self.positions[arm], goal['target_pose'])
+            except ValueError:
+                receipt.update(measured_pose=None, position_error=None, orientation_error=None)
         self.recovery[arm] = not stopped or (goal['operation']=='recover' and reason!='recovered')
-        if not stopped and goal['operation']=='actuate':
+        if not stopped and goal['operation']!='recover':
             self.recovery_goal[arm] = goal['gid']
         if not self.recovery[arm]:
             self.recovery_goal[arm] = None
@@ -148,6 +228,9 @@ class Control:
             if not math.isfinite(sim_time) or not all(math.isfinite(x) for a in ARMS for x in [*positions[a], *velocities[a], *self.fingers[a], *self.finger_velocities[a]]):
                 self.fail('nonfinite physics feedback')
                 return {a: list(v) for a, v in self.targets.items()}
+            if sim_time < self.sim_time:
+                self.fail('simulation time moved backwards; stop not confirmed')
+                return {a: list(v) for a, v in self.targets.items()}
             self.positions = {a: list(v) for a, v in positions.items()}
             self.velocities = {a: list(v) for a, v in velocities.items()}
             self.updated, self.sim_time = time.time(), sim_time
@@ -156,8 +239,18 @@ class Control:
                 goal = self.active[arm]
                 if not goal or goal['gid'] is None:
                     continue
+                if goal['phase'] == 'planning':
+                    if goal['cancel'] or goal.get('abort_reason'):
+                        self.targets[arm] = list(positions[arm])
+                        self.targets[arm][6] = goal['origin'][6]
+                        self.motion[arm].reset()
+                        goal.update(phase='stopping', hold_at=sim_time,
+                            reason='cancelled' if goal['cancel'] else goal['abort_reason'])
+                    continue
                 if goal['start'] is None:
-                    goal.update(start=sim_time, origin=list(positions[arm]))
+                    goal['start'] = sim_time
+                    if goal['operation'] != 'move_pose':
+                        goal['origin'] = list(positions[arm])
                     if goal['operation']=='recover':
                         self.motion[arm].reset()
                 elapsed = sim_time - goal['start']
@@ -180,14 +273,25 @@ class Control:
                     continue
                 if goal['cancel'] or elapsed > goal['duration'] + 3.:
                     self.targets[arm] = list(positions[arm])
+                    if goal['operation'] == 'move_pose':
+                        self.targets[arm][6] = goal['origin'][6]
                     self.motion[arm].reset()
                     goal.update(phase='stopping', hold_at=sim_time,
-                                reason='cancelled' if goal['cancel'] else 'target_tolerance_not_reached')
+                                reason='cancelled' if goal['cancel'] else
+                                'pose_tolerance_not_reached' if goal['operation']=='move_pose' else 'target_tolerance_not_reached')
                     continue
                 fraction = min(elapsed / goal['duration'], 1.)
-                self.targets[arm] = [a + fraction * (b-a) for a, b in zip(goal['origin'], goal['target'])]
-                if (elapsed > goal['duration'] and stopped
-                        and max(abs(a-b) for a, b in zip(positions[arm], goal['target'])) < .03):
+                if goal['operation'] == 'move_pose':
+                    index = min(len(goal['path'])-2, int(fraction*(len(goal['path'])-1)))
+                    blend = fraction*(len(goal['path'])-1)-index
+                    self.targets[arm] = [a+blend*(b-a) for a,b in zip(goal['path'][index],goal['path'][index+1])]
+                    goal['motion_sent'] = True
+                    position_error, orientation_error = self.kinematics.errors(arm, positions[arm], goal['target_pose'])
+                    reached = position_error < .003 and orientation_error < .03
+                else:
+                    self.targets[arm] = [a + fraction * (b-a) for a, b in zip(goal['origin'], goal['target'])]
+                    reached = max(abs(a-b) for a,b in zip(positions[arm],goal['target'])) < .03
+                if elapsed > goal['duration'] and stopped and reached:
                     self._finish(arm, 'reached', True)
             return {a: list(v) for a, v in self.targets.items()}
 
@@ -195,10 +299,12 @@ class Control:
         with self.lock:
             active = self.active[arm]
             fresh = time.time() - self.updated < 5
-            return dict(session_id=self.session, arm=arm, reported_at_unix=self.updated,
+            result = dict(session_id=self.session, arm=arm, reported_at_unix=self.updated,
                         simulation_ready=self.ready, feedback_fresh=fresh, fault=self.fault,
                         control_available=self.available(arm), busy=active is not None,
                         active_goal_id=active['gid'] if active else None,
+                        active_phase=active['phase'] if active else None,
+                        active_operation=active['operation'] if active else None,
                         recovery_required=self.recovery[arm], recovery_goal_id=self.recovery_goal[arm],
                         stop_evidence=dict(**self.motion[arm].evidence(),
                             raw_max_speed=max(map(abs, [*self.velocities[arm], *self.finger_velocities[arm]]))),
@@ -212,3 +318,13 @@ class Control:
                                    finger_joint_positions=list(self.fingers[arm]),
                                    finger_joint_velocities=list(self.finger_velocities[arm]),
                                    sim_time=self.sim_time))
+            if self.kinematics is not None:
+                try:
+                    result['state'].update(tcp_pose=self.kinematics.describe(arm,self.positions[arm]),
+                        pose_frame=self.frame(arm,'arm_base'), tcp_frame=self.frame(arm,'tcp'))
+                    if active and active['operation'] == 'move_pose':
+                        result['position_error'], result['orientation_error'] = self.kinematics.errors(
+                            arm, self.positions[arm], active['target_pose'])
+                except ValueError:
+                    result['state']['tcp_pose'] = None
+            return result

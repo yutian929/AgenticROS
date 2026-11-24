@@ -83,6 +83,14 @@ Use the three native camera prims and their authored transforms:
 There is **no synthetic overhead camera** in the robot observation interface.
 The stationary mode anchors the chassis at its initial pose and holds lift/head
 at the upstream home. It exposes arm/gripper actions, not driving/lift/head actions.
+Each arm also exposes `driver/move_pose` with an absolute pose in that arm's
+`arm_base` frame or a relative transform in the TCP frame sampled at acceptance.
+The driver preflights IK, limits and speed for the complete Cartesian path;
+it does not perform collision planning. Raw, pose and recovery actions share
+the same exclusive slot, UUID receipts and measured-stop reconciliation.
+`driver/ee_pose` publishes measured-joint FK in the arm base frame; `/tf`
+also carries the actual arm-base and TCP frames. Public inputs, outputs and
+ROS CLI examples are in `robot_docs/quanta_x1/manual.md`.
 The locally generated ground, simple 0.8 m-high tabletop, interactive scanner,
 and light are our minimal test scene, not an
 X2Real task or calibrated real desk. We do not claim identical task evaluation,
@@ -110,8 +118,21 @@ has no host bind mounts or asset volumes. The real check
 requires native image dimensions and CameraInfo, whole-body home pose, concurrent
 arm actions, both G mimic linkages, old-session rejection, exclusive ownership,
 UUID receipts, cancellation and measured stop, plus Agent mount/image isolation.
+The native CLI pose probe exercises both arms' base-frame targets, tool-axis
+translation and rotation, validates FK against USD-backed public TF in the real
+test, and checks raw/pose exclusion, timeout reconciliation and standard cancel.
 Synthetic tests establish protocol behavior only. Neither check establishes
 autonomous adaptation, grasp/task success, sustained streaming or cross-host LAN.
+
+On 2026-11-24, the unit suite and separate-container native CLI checks passed
+for arm-base and tool-frame pose control. The six pose moves in the Isaac GPU
+check had a maximum position error of 0.75 mm and orientation error below
+0.0015 rad; public FK telemetry matched USD-backed TF. GPU evidence is retained
+under `runs/checks/agenticros-quanta-check-f0783a4d/workspace/pose-evidence/`,
+and synthetic evidence under `runs/checks/agenticros-quanta-check-fb9f5760/`.
+The GPU CLI logs still contain 33 instances of the previously recorded Fast DDS
+`sequence size exceeds remaining buffer` diagnostic; explicit motion, identity,
+timeout reconciliation and measured-stop checks passed.
 
 On 2026-11-22, the unit suite, separate-container synthetic transport check and
 actual GPU check passed locally on RTX 2080 Ti / driver 580.173.02. The bundled
