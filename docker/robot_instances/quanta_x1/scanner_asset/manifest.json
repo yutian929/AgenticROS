@@ -1,0 +1,21 @@
+{
+  "source": "User-supplied barcode_scanner.usdz",
+  "source_sha256": "ce1f31421d39ad8225648e51a6f6f739102558148054943cefb9d37b29599bd4",
+  "units": "meters",
+  "dimensions_m": [
+    0.0926966592669487,
+    0.05901169776916504,
+    0.15850239992141724
+  ],
+  "trigger_anchor_m": [
+    0.008,
+    0.0,
+    0.1
+  ],
+  "source_faces": 50000,
+  "body_faces": 47357,
+  "trigger_faces": 2643,
+  "body_collision_hulls": 22,
+  "mass_kg": 0.18,
+  "notes": "Original visual geometry and texture retained at rest; segmented trigger, collision clearance and spring parameters are simulation adaptations."
+}

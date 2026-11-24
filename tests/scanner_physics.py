@@ -80,6 +80,20 @@ try:
  UsdGeom.Imageable(prim).MakeInvisible()
  advance(60)
  save('trigger_released.png',view)
+ # Release the laboratory clamp and verify the actual right-side lying layout.
+ stage.RemovePrim('/World/FixtureClamp')
+ UsdPhysics.CollisionAPI(prim).CreateCollisionEnabledAttr(False)
+ scanner.body.set_world_pose(position=HOME_POSITION,orientation=HOME_QUAT)
+ scanner.trigger.set_world_pose(position=HOME_POSITION+rotation(HOME_QUAT)@TRIGGER_ANCHOR,orientation=HOME_QUAT)
+ scanner.body.set_linear_velocity(np.zeros(3));scanner.body.set_angular_velocity(np.zeros(3))
+ scanner.trigger.set_linear_velocity(np.zeros(3));scanner.trigger.set_angular_velocity(np.zeros(3))
+ advance(720)
+ body_position,body_quat=scanner.body.get_world_pose()
+ assert np.isfinite(body_position).all() and np.linalg.norm(body_position-HOME_POSITION)<.025,body_position
+ assert .797 < scanner.minimum_height() < .806,scanner.minimum_height()
+ assert abs(rotation(body_quat)[2,1])>.95,body_quat
+ assert scanner.switch.press_count==2 and not scanner.switch.pressed,scanner.switch.status()
+ save('side_lying.png',view)
  (out/'result.json').write_text(json.dumps(dict(result='PASS',scope='mechanical scanner component fixture; not autonomous bimanual task evaluation',switch=scanner.switch.status(),max_trigger_travel_m=max(travel),released_travel_m=scanner.travel),indent=2))
  print('SCANNER_COMPONENT_PASS',flush=True)
 except BaseException:

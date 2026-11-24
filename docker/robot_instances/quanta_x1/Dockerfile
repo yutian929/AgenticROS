@@ -21,6 +21,7 @@ COPY docker/robot_instances/quanta_x1/scanner_device.py docker/robot_instances/q
     docker/robot_instances/quanta_x1/cameras.py docker/robot_instances/quanta_x1/simulation.py \
     docker/robot_instances/quanta_x1/entrypoint.sh docker/robot_instances/quanta_x1/healthcheck.py \
     docker/robot_instances/quanta_x1/UPSTREAM.json docker/robot_instances/quanta_x1/LICENSE.model /opt/body/
+COPY docker/robot_instances/quanta_x1/scanner_asset/scanner.usdc docker/robot_instances/quanta_x1/scanner_asset/albedo.png /opt/body/scanner_asset/
 COPY docker/robot_instances/common/robot_identity.py /opt/body/
 RUN useradd -u 1001 -m body
 ENV HOME=/tmp ROS_LOG_DIR=/tmp/ros_logs ROS_LOCALHOST_ONLY=0 RMW_IMPLEMENTATION=rmw_fastrtps_cpp \
@@ -44,6 +45,7 @@ COPY docker/robot_instances/quanta_x1/scanner_device.py docker/robot_instances/q
     docker/robot_instances/quanta_x1/cameras.py docker/robot_instances/quanta_x1/simulation.py \
     docker/robot_instances/quanta_x1/entrypoint.sh docker/robot_instances/quanta_x1/healthcheck.py \
     docker/robot_instances/quanta_x1/UPSTREAM.json docker/robot_instances/quanta_x1/LICENSE.model /opt/body/
+COPY docker/robot_instances/quanta_x1/scanner_asset/scanner.usdc docker/robot_instances/quanta_x1/scanner_asset/albedo.png /opt/body/scanner_asset/
 COPY docker/robot_instances/common/robot_identity.py /opt/body/
 RUN useradd -u 1001 -m body
 ENV HOME=/tmp ROS_LOG_DIR=/tmp/ros_logs ROS_LOCALHOST_ONLY=0 \

@@ -125,26 +125,53 @@ or sustained-stream operation. Temporary test containers were removed.
 
 ## Mechanical scanner
 
-The scene replaces the cube with procedural scanner geometry modeled from the
-user-provided reference photos: 96 × 68 × 165 mm, rounded black housing, curved
-grip, a dark red front window and orange trigger. Smooth loft meshes provide
-the visible shell; convex hulls provide physical contact. The trigger remains
-a spring-return prismatic joint. It starts lying on its side on the robot's
-right-hand portion of the table, with the grip closer to the robot. Shape curvature is approximate; the 252 g mass,
-6 mm travel and spring settings are simulation choices, not manufacturer data. There is no barcode plaque, reader camera
-or decoding dependency. Physical switch state and press count are exposed through
-`scanner/state`; no software trigger or task-success flag is provided. Scene
-poses and simulator implementation remain outside the Agent.
+The scene uses the user-supplied `barcode_scanner.usdz` at its original scale:
+92.697 × 59.012 × 158.502 mm (depth × width × height). The source, checksum,
+rebuild script and generated asset are in `scanner_asset/`. Its 50,000 textured
+triangles are partitioned into the housing and original orange trigger without
+changing their rest geometry or UVs. The supplied convex collision hulls are
+trimmed around the moving trigger, which has its own convex collider.
+
+The trigger is a spring-return prismatic joint into the grip: 6 mm travel,
+400 N/m stiffness, 3 N·s/m damping; 4 mm held for 30 ms registers a press,
+release below 1.5 mm rearms it. These are simulation choices, not measured
+mechanism specifications. The source's 180 g mass is split into a 168 g body
+and 12 g trigger. It starts lying on its side on the robot's right-hand portion
+of the table, with the grip closer to the robot. No extra indicator or cosmetic
+geometry is added. There is no barcode plaque, reader camera or decoding.
+Physical switch state and press count are exposed through `scanner/state`;
+scene poses and simulator implementation remain outside the Agent.
+
+To rebuild the asset using the existing robot image (CPU only):
+
+```bash
+docker run --rm --user "$(id -u):$(id -g)" --entrypoint /opt/sim/bin/python \
+  -v "$PWD/docker/robot_instances/quanta_x1/scanner_asset:/asset" \
+  agenticros-quanta_x1:single /asset/prepare.py
+docker run --rm --network none --entrypoint /opt/sim/bin/python \
+  -v "$PWD/docker/robot_instances/quanta_x1/scanner_asset:/asset:ro" \
+  -v "$PWD/tests/verify_scanner_asset.py:/test.py:ro" \
+  agenticros-quanta_x1:single /test.py /asset
+```
 
 `python3 tests/check_scanner.py --image agenticros-quanta_x1:scanner-test`
 uses a private clamp and collision-driven pusher to check pressing, holding,
-release and repeat actuation. This is not autonomous robot adaptation or task
+release, repeat actuation and stable side-lying placement. This is not autonomous robot adaptation or task
 evaluation. Evidence is saved under `runs/checks/` separately from Agent workspaces.
 GPU checks refuse to start beside an existing GPU container, require 18 GiB
 available RAM and cap their own container at 16 GiB with no swap. Run only one
 GPU check at a time; do not stop a user's running body without authorization.
 
-On 2026-11-22, the mechanical fixture passed with two physical presses, no repeat
+On 2026-11-23, the imported asset passed CPU checks preserving all 50,000
+textured triangles and original dimensions, the isolated unit suite, and
+separate-container synthetic ROS checks
+(`runs/checks/agenticros-quanta-check-784bb93e/`). The GPU component fixture
+passed two collision-driven presses, hold debounce, release and stable side-lying
+placement: maximum travel 4.828 mm, final released travel 0.0039 mm.
+Images and results: `runs/checks/agenticros-scanner-component-d9528caa/evidence/`.
+This is component validation, not a successful autonomous bimanual grasp/press task.
+
+Historical validation of the previous procedural geometry: on 2026-11-22, the mechanical fixture passed with two physical presses, no repeat
 while held, maximum travel 4.9995 mm and released travel below 0.002 mm. Evidence:
 `runs/checks/agenticros-scanner-component-64676c88/evidence/`.
 The scanner scene also passed separate-container GPU/ROS checks, including the

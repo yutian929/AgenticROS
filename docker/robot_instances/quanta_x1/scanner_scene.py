@@ -1,18 +1,19 @@
-"""Original movable scanner body and spring-return mechanical trigger.
+"""Imported textured scanner body and spring-return mechanical trigger.
 
 Only switch feedback is public; geometry and private poses stay robot-side.
 """
+from pathlib import Path
 import numpy as np
-from pxr import Gf, UsdGeom, UsdPhysics, PhysxSchema
+from pxr import Gf, Usd, UsdGeom, UsdPhysics, PhysxSchema
 from isaacsim.core.prims import SingleRigidPrim
 from scanner_device import MechanicalSwitch
 
 BODY = '/World/Scanner/body'
 TRIGGER = '/World/Scanner/trigger'
-TRIGGER_ANCHOR = np.array([.012, 0., .102])
+TRIGGER_ANCHOR = np.array([.008, 0., .100])
 # Robot faces world -X; its right side is world +Y. Local +Y is up,
 # placing the scanner on its side with the grip nearer the robot.
-HOME_POSITION = np.array([-.55, .27, .837])
+HOME_POSITION = np.array([-.55, .27, .832])
 HOME_QUAT = np.array([.5, .5, -.5, -.5])
 
 
@@ -25,44 +26,6 @@ def cube(stage, path, position, size, color, collision=True):
     if collision:
         UsdPhysics.CollisionAPI.Apply(shape.GetPrim())
     return shape.GetPrim()
-
-
-def loft(stage, path, sections, color, axis='z', power=.65, collision=True):
-    """Smooth closed rounded cross sections, with convex hull collision."""
-    count = 48
-    points = []
-    for coordinate, center, radius_a, radius_b in sections:
-        for angle in np.linspace(0., 2*np.pi, count, endpoint=False):
-            c, t = np.cos(angle), np.sin(angle)
-            a = radius_a*np.sign(c)*abs(c)**power
-            b = radius_b*np.sign(t)*abs(t)**power
-            points.append((center+a,b,coordinate) if axis=='z' else (coordinate,a,center+b))
-    faces = []
-    for row in range(len(sections)-1):
-        for i in range(count):
-            j=(i+1)%count
-            faces.append([row*count+i,row*count+j,(row+1)*count+j,(row+1)*count+i])
-    faces += [list(reversed(range(count))), list(range((len(sections)-1)*count,len(points)))]
-    # x cross sections use y,z; both bases are right handed.
-    vertices=np.array(points)
-    normals=np.zeros_like(vertices)
-    for face in faces:
-        normal=np.cross(vertices[face[1]]-vertices[face[0]],vertices[face[2]]-vertices[face[0]])
-        normal/=max(np.linalg.norm(normal),1.e-12)
-        for vertex in face:normals[vertex]+=normal
-    normals/=np.maximum(np.linalg.norm(normals,axis=1)[:,None],1.e-12)
-    mesh=UsdGeom.Mesh.Define(stage,path)
-    mesh.CreatePointsAttr([Gf.Vec3f(*map(float,v)) for v in points])
-    mesh.CreateFaceVertexCountsAttr([len(face) for face in faces])
-    mesh.CreateFaceVertexIndicesAttr([v for face in faces for v in face])
-    mesh.CreateNormalsAttr([Gf.Vec3f(*map(float,v)) for v in normals])
-    mesh.SetNormalsInterpolation('vertex')
-    mesh.CreateSubdivisionSchemeAttr('none')
-    mesh.CreateDisplayColorAttr([Gf.Vec3f(*color)])
-    if collision:
-        UsdPhysics.CollisionAPI.Apply(mesh.GetPrim())
-        UsdPhysics.MeshCollisionAPI.Apply(mesh.GetPrim()).CreateApproximationAttr('convexHull')
-    return mesh.GetPrim()
 
 
 def rigid(stage, path, position, mass, orientation):
@@ -91,39 +54,12 @@ class ScannerScene:
         stage = world.stage
         self.stage = stage
         UsdGeom.Xform.Define(stage, '/World/Scanner')
-        rigid(stage, BODY, position, .24, orientation)
-        # Photo-inspired proportions: 96 mm depth, 68 mm width, 165 mm height.
-        # Dimensions are supplied by the reference; curvature is an approximation.
-        loft(stage, BODY+'/head', [
-            (-.048,.139,.010,.009),(-.045,.139,.023,.018),
-            (-.038,.140,.031,.023),(-.027,.140,.034,.025),
-            (.018,.140,.033,.024),(.037,.137,.031,.022),
-            (.045,.136,.027,.018),(.0464,.136,.025,.016)],
-            (.022,.025,.029),axis='x')
-        loft(stage, BODY+'/handle', [
-            (0.,-.018,.014,.016),(.005,-.018,.019,.020),
-            (.016,-.020,.020,.020),(.035,-.025,.018,.018),
-            (.065,-.028,.017,.017),(.090,-.025,.018,.017),
-            (.110,-.020,.020,.019),(.125,-.017,.024,.022)],
-            (.018,.020,.024))
-        # Dark rubber lower boot follows the curved grip; no oversized stand.
-        loft(stage, BODY+'/boot', [
-            (.0002,-.018,.0145,.0165),(.005,-.018,.0195,.0205),
-            (.015,-.020,.0205,.0205),(.021,-.021,.0195,.020)],
-            (.009,.011,.013),collision=False)
-        # Recessed dark red optical window is visual only, not a reader.
-        loft(stage, BODY+'/bezel', [(.0463,.136,.0255,.0165),
-            (.0474,.136,.025,.016),(.0477,.136,.0235,.0145)],
-            (.006,.007,.009),axis='x',collision=False)
-        loft(stage, BODY+'/window', [(.0478,.136,.022,.0125),(.048,.136,.022,.0125)],
-            (.16,.009,.012),axis='x',collision=False)
-        cube(stage, BODY+'/indicator', (-.006,0.,.1644), (.013,.006,.0008),(.04,.22,.20),False)
+        # Preserve the supplied USDZ geometry, scale and texture at rest.
+        asset = str(Path(__file__).with_name('scanner_asset')/'scanner.usdc')
+        stage.GetPrimAtPath('/World/Scanner').GetReferences().AddReference(asset)
+        rigid(stage, BODY, position, .168, orientation)
         trigger_position = position + rotation(orientation)@TRIGGER_ANCHOR
         rigid(stage, TRIGGER, trigger_position, .012, orientation)
-        loft(stage, TRIGGER+'/button', [
-            (-.008,0.,.011,.012),(-.004,0.,.014,.017),
-            (.004,0.,.014,.017),(.009,0.,.010,.014)],
-            (1.,.20,.008),axis='x',power=.72)
         joint = UsdPhysics.PrismaticJoint.Define(stage, '/World/Scanner/trigger_joint')
         joint.CreateBody0Rel().SetTargets([BODY])
         joint.CreateBody1Rel().SetTargets([TRIGGER])
@@ -149,18 +85,21 @@ class ScannerScene:
         """Private diagnostic from actual mesh vertices, never public device state."""
         if not hasattr(self, '_vertices'):
             self._vertices = {}
+            cache = UsdGeom.XformCache()
             for path in (BODY, TRIGGER):
                 vertices = []
-                for child in self.stage.GetPrimAtPath(path).GetChildren():
-                    if child.IsA(UsdGeom.Mesh):
-                        points = UsdGeom.Mesh(child).GetPointsAttr().Get()
-                    elif child.IsA(UsdGeom.Cube):
-                        half = UsdGeom.Cube(child).GetSizeAttr().Get()/2
-                        points = [(x,y,z) for x in (-half,half) for y in (-half,half) for z in (-half,half)]
-                    else:
+                root = self.stage.GetPrimAtPath(path)
+                root_inverse = cache.GetLocalToWorldTransform(root).GetInverse()
+                for child in Usd.PrimRange(root):
+                    if not child.IsA(UsdGeom.Mesh):
                         continue
-                    matrix = UsdGeom.Xformable(child).GetLocalTransformation()
-                    vertices.extend(tuple(matrix.Transform(Gf.Vec3d(*map(float,v)))) for v in points)
+                    mesh = UsdGeom.Mesh(child)
+                    if mesh.GetPurposeAttr().Get() == 'guide':
+                        continue
+                    points = np.array(mesh.GetPointsAttr().Get())
+                    indices = np.unique(mesh.GetFaceVertexIndicesAttr().Get())
+                    matrix = cache.GetLocalToWorldTransform(child)*root_inverse
+                    vertices.extend(tuple(matrix.Transform(Gf.Vec3d(*map(float,v)))) for v in points[indices])
                 self._vertices[path] = np.asarray(vertices)
         values = []
         for path, body in ((BODY,self.body),(TRIGGER,self.trigger)):
@@ -181,5 +120,5 @@ class ScannerScene:
         self.ready = True
 
     def render_step(self):
-        color = (.10,.85,.15) if self.switch.pressed else (.12,.25,.10)
-        UsdGeom.Gprim(self.stage.GetPrimAtPath(BODY+'/indicator')).GetDisplayColorAttr().Set([Gf.Vec3f(*color)])
+        # The supplied texture is unchanged; switch feedback is on scanner/state.
+        pass
