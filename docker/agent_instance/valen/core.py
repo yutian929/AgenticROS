@@ -38,12 +38,14 @@ def questions(value):
     for key, question in value.items():
         if not isinstance(key, str) or not key or len(key) > 64 or not isinstance(question, dict):
             raise ValueError('invalid question ID or question object')
-        if set(question) - {'type', 'instructions', 'criteria'}:
+        if set(question) - {'type', 'instructions', 'criteria', 'image'}:
             raise ValueError('unsupported question fields')
         instruction = question.get('instructions')
         if not isinstance(instruction, str) or not instruction.strip() or len(instruction) > 4096:
             raise ValueError('instructions must contain 1..4096 characters')
         kind, criteria = question.get('type'), question.get('criteria')
+        if kind != 'bbox' and 'image' in question:
+            raise ValueError('image index is only supported for bbox')
         if kind == 'choice':
             if not isinstance(criteria, dict) or not 2 <= len(criteria) <= 32:
                 raise ValueError('choice needs 2..32 named options')
@@ -54,12 +56,14 @@ def questions(value):
             if not isinstance(criteria, list) or not 2 <= len(criteria) <= 16:
                 raise ValueError('score needs 2..16 ordered descriptions')
             descriptions = criteria
-        elif kind == 'noul':
+        elif kind in ('noul', 'bbox'):
             if criteria is not None:
-                raise ValueError('put noul criteria in instructions')
+                raise ValueError('put '+kind+' criteria in instructions')
+            if kind == 'bbox' and (type(question.get('image', 0)) is not int or question.get('image', 0) != 0):
+                raise ValueError('bbox image must be 0 for the single input image')
             descriptions = []
         else:
-            raise ValueError('supported types: choice, noul, score')
+            raise ValueError('supported types: choice, noul, score, bbox')
         if any(not isinstance(v, str) or not v.strip() or len(v) > 2048 for v in descriptions):
             raise ValueError('criteria must be nonempty text, at most 2048 characters each')
     return value
@@ -75,6 +79,8 @@ def validate(request, session):
         state = strict_json(request['state_json'])
         qs = questions(strict_json(request['questions_json']))
         topic = request['image_topic']
+        if any(q['type'] == 'bbox' for q in qs.values()) and not topic:
+            raise ValueError('bbox requires image_topic')
         if topic:
             if not topic.startswith('/') or len(topic) > 256:
                 raise ValueError('image_topic must be an absolute ROS topic')
@@ -107,6 +113,20 @@ def validate_answers(answers, qs):
         kind = question['type']
         if kind == 'noul':
             probability(answer.get('noul'))
+            continue
+        if kind == 'bbox':
+            box, point = answer.get('bbox'), answer.get('point')
+            if not isinstance(box, list) or len(box) != 4 or not isinstance(point, list) or len(point) != 2:
+                raise ValueError('bbox requires four coordinates and a two-coordinate point')
+            for coordinate in box + point:
+                probability(coordinate)
+            x1, y1, x2, y2 = box
+            if not (x1 < x2 and y1 < y2):
+                raise ValueError('bbox edges must satisfy x1<x2 and y1<y2')
+            if not all(math.isclose(value, center, abs_tol=1e-4) for value, center in
+                       zip(point, ((x1+x2)/2, (y1+y2)/2))):
+                raise ValueError('bbox point must be the normalized box center')
+            probability(answer.get('confidence'))
             continue
         keys = set(question['criteria']) if kind == 'choice' else {str(i) for i in range(len(question['criteria']))}
         probs = answer.get('probabilities')

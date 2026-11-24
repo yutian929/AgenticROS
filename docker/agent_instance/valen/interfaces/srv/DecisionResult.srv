@@ -1,0 +1,13 @@
+# Current Valen service session and the original Goal UUID (32 hex digits or hyphenated).
+string session_id
+string goal_id
+---
+# Whether a matching active goal or persisted result was found.
+bool success
+# ACCEPTED, WAITING_FOR_IMAGE, QUEUED, RUNNING, SUCCEEDED, CANCELLED, FAILED,
+# UNKNOWN, SESSION_MISMATCH, INVALID_REQUEST, QUERY_FAILED.
+string state
+string message
+# Terminal Decide.Result as JSON; empty for active, unknown or invalid goals.
+# UNKNOWN or SESSION_MISMATCH never proves that a previous goal did not execute.
+string result_json

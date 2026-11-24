@@ -64,7 +64,11 @@ def main():
         image = Path(directory)/'warmup.png'
         Image.new('RGB', (256, 256), (255, 0, 0)).save(image)
         qs = {'color': dict(type='choice', instructions='What is the image color?',
-                            criteria={'red': 'Red', 'blue': 'Blue'})}
+                            criteria={'red': 'Red', 'blue': 'Blue'}),
+              'red': dict(type='noul', instructions='The image is red.'),
+              'quality': dict(type='score', instructions='Rate how much of the image is red.',
+                              criteria=['None', 'All']),
+              'region': dict(type='bbox', instructions='Locate the red region.', image=0)}
         model.predict(model_request({}, qs, image))
         torch.cuda.synchronize()
     emit(dict(state='READY', model=manifest['repo'], revision=manifest['revision'],

@@ -18,6 +18,7 @@ from rosidl_runtime_py.convert import message_to_ordereddict
 from sensor_msgs.msg import Image as RosImage
 from std_srvs.srv import Trigger
 from agenticros_decision_interfaces.action import Decide
+from agenticros_decision_interfaces.srv import DecisionResult
 from core import Backend, Records, RequestError, atomic_json, check_age, validate, validate_answers
 
 ENDPOINT = '/decision/valen'
@@ -58,6 +59,7 @@ class Decision(Node):
         self.recent = deque(maxlen=64)
         self.stopping = threading.Event()
         self.status_service = self.create_service(Trigger, ENDPOINT+'/status', self.status, callback_group=self.group)
+        self.result_service = self.create_service(DecisionResult, ENDPOINT+'/result', self.result, callback_group=self.group)
         self.action = ActionServer(self, Decide, ENDPOINT+'/decide', self.execute,
             goal_callback=self.goal, cancel_callback=lambda _: CancelResponse.ACCEPT,
             handle_accepted_callback=self.accepted, callback_group=self.group, result_timeout=600)
@@ -69,6 +71,34 @@ class Decision(Node):
                         pending=self.pending, action_result_retention_sec=600)
         response.success = data['model_state'] == 'READY'
         response.message = json.dumps(data)
+        return response
+
+    def result(self, request, response):
+        if request.session_id != self.session:
+            response.state, response.message = 'SESSION_MISMATCH', 'service session changed; old execution is not disproved'
+            return response
+        try:
+            key = uuid.UUID(request.goal_id).hex
+        except (ValueError, AttributeError):
+            response.state, response.message = 'INVALID_REQUEST', 'goal_id must be a UUID'
+            return response
+        with self.lock:
+            stage = self.active.get(key)
+        if stage:
+            response.success, response.state = True, stage
+            return response
+        try:
+            path = self.records.root/key/'result.json'
+            if not path.is_file():
+                response.state, response.message = 'UNKNOWN', 'no matching record; do not infer non-execution or replay'
+                return response
+            result = json.loads(path.read_text())
+            response.result_json = json.dumps(result, allow_nan=False)
+            response.success = True
+            response.state = 'SUCCEEDED' if result['success'] else 'CANCELLED' if result['code'] == 'CANCELLED' else 'FAILED'
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            response.success, response.result_json = False, ''
+            response.state, response.message = 'QUERY_FAILED', str(error)
         return response
 
     def goal(self, request):
@@ -96,6 +126,8 @@ class Decision(Node):
 
     def accepted(self, handle):
         # Recording and UUID reservation happen inside execute, before any inference.
+        with self.lock:
+            self.active[uuid.UUID(bytes=bytes(handle.goal_id.uuid)).hex] = 'ACCEPTED'
         handle.execute()
 
     def phase(self, handle, key, stage, start):

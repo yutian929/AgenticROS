@@ -73,6 +73,45 @@ class Contracts(unittest.TestCase):
         with self.assertRaises(ValueError):
             core.validate_answers(answers, qs)
 
+    def test_bbox_requires_current_image_and_single_image_index(self):
+        question = dict(type='bbox', instructions='Locate the cup.', image=0)
+        value = dict(request(), questions_json=json.dumps({'cup': question}))
+        _, qs = core.validate(value, 'session')
+        compiled = worker.model_request({}, qs, Path('/records/input.png'))
+        self.assertEqual(compiled['questions']['cup'], question)
+        for changes in [dict(image_topic=''), dict(session_id='old')]:
+            with self.subTest(changes=changes), self.assertRaises(core.RequestError):
+                core.validate(dict(value, **changes), 'session')
+        for change in [dict(image=1), dict(image=-1), dict(image=True), dict(image=0.),
+                       dict(image='/etc/passwd'), dict(criteria={'x': 'invalid'})]:
+            with self.subTest(change=change), self.assertRaises(core.RequestError):
+                core.validate(dict(value, questions_json=json.dumps({'cup': dict(question, **change)})), 'session')
+
+    def test_bbox_coordinates_and_center_stay_in_the_source_image(self):
+        qs = core.questions({'cup': dict(type='bbox', instructions='Locate the cup.')})
+        answer = dict(type='bbox', bbox=[.1, .2, .7, .8], point=[.4, .5], confidence=.9)
+        core.validate_answers({'cup': answer}, qs)
+        for change in [dict(bbox=[-.1,.2,.7,.8]), dict(bbox=[.1,.2,1.1,.8]),
+                       dict(bbox=[.7,.2,.1,.8]), dict(bbox=[.1,.8,.7,.2]),
+                       dict(bbox=[.1,.2,.1,.8]), dict(bbox=[.1,.2,float('nan'),.8]),
+                       dict(bbox=[True,.2,.7,.8]), dict(bbox=[.1,.2,.7]),
+                       dict(point=[.8,.5]), dict(point=[.4]), dict(point=[float('inf'),.5]),
+                       dict(confidence=-.1), dict(confidence=True), dict(confidence=float('nan'))]:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                core.validate_answers({'cup': dict(answer, **change)}, qs)
+
+    def test_mixed_four_question_types_share_the_same_image(self):
+        qs = core.questions({
+            'color': dict(type='choice', instructions='Color?', criteria={'red':'Red', 'blue':'Blue'}),
+            'visible': dict(type='noul', instructions='A cup is visible.'),
+            'quality': dict(type='score', instructions='Visibility?', criteria=['None', 'Full']),
+            'cup': dict(type='bbox', instructions='Locate the cup.')})
+        core.validate_answers({
+            'color': dict(type='choice', choice='red', confidence=.8, probabilities={'red':.8,'blue':.2}),
+            'visible': dict(type='noul', noul=.9),
+            'quality': dict(type='score', score=.9, confidence=.8, probabilities={'0':.1,'1':.9}),
+            'cup': dict(type='bbox', bbox=[.1,.2,.7,.8], point=[.4,.5], confidence=.9)}, qs)
+
     def test_expired_and_future_observations_are_not_actionable(self):
         for stamp in (0, 100, 10_200_000_000):
             with self.assertRaisesRegex(core.RequestError, 'stamp'):

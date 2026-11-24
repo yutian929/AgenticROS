@@ -2,7 +2,8 @@
 string session_id
 # JSON data only; never interpreted as paths, URLs or native chat messages.
 string state_json
-# Mapping of named choice/noul/score questions. No executable actions.
+# Mapping of named choice/noul/score/bbox questions. No executable actions.
+# bbox requires image_topic, omits criteria and uses image=0 (the single input).
 string questions_json
 # One public RGB topic. Empty for text-only decisions.
 string image_topic
@@ -22,6 +23,8 @@ std_msgs/Header source_header
 string image_topic
 uint32 width
 uint32 height
+# bbox answers contain normalized [x1,y1,x2,y2], center point and confidence.
+# Coordinates refer to source_header and width/height, never a robot frame.
 string answers_json
 string record_id
 ---
