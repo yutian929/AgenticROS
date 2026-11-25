@@ -1,0 +1,67 @@
+<mujoco model="textured_spring_scanner">
+  <asset>
+    <texture name="scanner_albedo" type="2d" file="scanner/albedo.png" />
+    <material name="scanner_plastic" texture="scanner_albedo" texuniform="false" rgba="1 1 1 1" specular="0.25" shininess="0.25" />
+    <mesh name="scanner_body" file="scanner/body.obj" />
+    <mesh name="scanner_trigger" file="scanner/trigger.obj" />
+    <mesh name="scanner_hull_00" file="scanner/hull_00.obj" />
+    <mesh name="scanner_hull_01" file="scanner/hull_01.obj" />
+    <mesh name="scanner_hull_02" file="scanner/hull_02.obj" />
+    <mesh name="scanner_hull_03" file="scanner/hull_03.obj" />
+    <mesh name="scanner_hull_04" file="scanner/hull_04.obj" />
+    <mesh name="scanner_hull_05" file="scanner/hull_05.obj" />
+    <mesh name="scanner_hull_06" file="scanner/hull_06.obj" />
+    <mesh name="scanner_hull_07" file="scanner/hull_07.obj" />
+    <mesh name="scanner_hull_08" file="scanner/hull_08.obj" />
+    <mesh name="scanner_hull_09" file="scanner/hull_09.obj" />
+    <mesh name="scanner_hull_10" file="scanner/hull_10.obj" />
+    <mesh name="scanner_hull_11" file="scanner/hull_11.obj" />
+    <mesh name="scanner_hull_12" file="scanner/hull_12.obj" />
+    <mesh name="scanner_hull_13" file="scanner/hull_13.obj" />
+    <mesh name="scanner_hull_14" file="scanner/hull_14.obj" />
+    <mesh name="scanner_hull_15" file="scanner/hull_15.obj" />
+    <mesh name="scanner_hull_16" file="scanner/hull_16.obj" />
+    <mesh name="scanner_hull_17" file="scanner/hull_17.obj" />
+    <mesh name="scanner_hull_18" file="scanner/hull_18.obj" />
+    <mesh name="scanner_hull_19" file="scanner/hull_19.obj" />
+    <mesh name="scanner_hull_20" file="scanner/hull_20.obj" />
+    <mesh name="scanner_hull_21" file="scanner/hull_21.obj" />
+    <mesh name="scanner_trigger_collision" file="scanner/trigger_collision.obj" />
+  </asset>
+  <worldbody>
+    <body name="scanner" pos=".28 .03 .033" quat=".7071067811865476 .7071067811865476 0 0">
+      <freejoint name="scanner_free" />
+      <geom name="scanner_body_geom" type="mesh" mesh="scanner_body" contype="0" conaffinity="0" mass="0" group="2" material="scanner_plastic" />
+      <geom name="scanner_hull_00_geom" type="mesh" mesh="scanner_hull_00" mass="0.031056750843" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_01_geom" type="mesh" mesh="scanner_hull_01" mass="0.0435877285107" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_02_geom" type="mesh" mesh="scanner_hull_02" mass="0.00775393630375" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_03_geom" type="mesh" mesh="scanner_hull_03" mass="0.0114910386508" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_04_geom" type="mesh" mesh="scanner_hull_04" mass="0.00298295849198" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_05_geom" type="mesh" mesh="scanner_hull_05" mass="0.00264690708613" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_06_geom" type="mesh" mesh="scanner_hull_06" mass="0.00435768409657" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_07_geom" type="mesh" mesh="scanner_hull_07" mass="0.00611722657949" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_08_geom" type="mesh" mesh="scanner_hull_08" mass="0.00947035421441" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_09_geom" type="mesh" mesh="scanner_hull_09" mass="0.00310044235599" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_10_geom" type="mesh" mesh="scanner_hull_10" mass="0.00339405484391" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_11_geom" type="mesh" mesh="scanner_hull_11" mass="5.03571664461e-06" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_12_geom" type="mesh" mesh="scanner_hull_12" mass="0.00101931260788" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_13_geom" type="mesh" mesh="scanner_hull_13" mass="0.00364079366129" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_14_geom" type="mesh" mesh="scanner_hull_14" mass="0.00555565727484" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_15_geom" type="mesh" mesh="scanner_hull_15" mass="0.0024005416729" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_16_geom" type="mesh" mesh="scanner_hull_16" mass="0.00255821845468" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_17_geom" type="mesh" mesh="scanner_hull_17" mass="0.00324193747855" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_18_geom" type="mesh" mesh="scanner_hull_18" mass="0.00355117952755" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_19_geom" type="mesh" mesh="scanner_hull_19" mass="0.00552393140701" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_20_geom" type="mesh" mesh="scanner_hull_20" mass="0.00693308709011" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <geom name="scanner_hull_21_geom" type="mesh" mesh="scanner_hull_21" mass="0.00761122313169" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      <body name="scanner_trigger" pos=".008 0 .1">
+        <joint name="scanner_trigger_slide" type="slide" axis="-1 0 0" limited="true" range="0 .006" stiffness="400" springref="0" damping="3" solreflimit=".004 1" solimplimit=".95 .99 .001" />
+        <geom name="scanner_trigger_geom" type="mesh" mesh="scanner_trigger" contype="0" conaffinity="0" mass="0" group="2" material="scanner_plastic" />
+        <geom name="scanner_trigger_collision_geom" type="mesh" mesh="scanner_trigger_collision" mass="0.012" group="3" rgba="0 0 0 0" condim="4" friction="1 .005 .0005" solref=".01 1" solimp=".95 .99 .001" />
+      </body>
+    </body>
+  </worldbody>
+  <contact>
+    <exclude body1="scanner" body2="scanner_trigger" />
+  </contact>
+</mujoco>

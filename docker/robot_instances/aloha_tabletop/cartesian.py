@@ -46,7 +46,21 @@ def tcp_pose(model, data, arm):
     return position.copy(), rotation.copy()
 
 
-def resolve_target(start, translation, rotation, reference_frame, delta):
+def public_pose(pose):
+    return dict(position=dict(zip(('x', 'y', 'z'), map(float, pose[0]))),
+                orientation=dict(zip(('x', 'y', 'z', 'w'), map(float, matrix_quat(pose[1])))))
+
+
+def arm_base_pose(model, data, arm):
+    body = data.body(arm+'/base_link')
+    return body.xpos.copy(), body.xmat.reshape(3, 3).copy()
+
+
+def relative_pose(pose, reference):
+    return reference[1].T@(pose[0]-reference[0]), reference[1].T@pose[1]
+
+
+def resolve_target(start, translation, rotation, reference_frame, delta, arm_base=None):
     p, r = start
     t = np.asarray(translation, dtype=float)
     if t.shape != (3,) or not np.isfinite(t).all():
@@ -56,7 +70,10 @@ def resolve_target(start, translation, rotation, reference_frame, delta):
         return p+r@t, r@dr
     if reference_frame == 'base':
         return (p+t, dr@r) if delta else (t.copy(), dr)
-    raise ValueError('reference_frame must be base or tcp')
+    if reference_frame == 'arm_base' and arm_base is not None:
+        origin, axes = arm_base
+        return (p+axes@t, axes@dr@axes.T@r) if delta else (origin+axes@t, axes@dr)
+    raise ValueError('reference_frame must be arm_base, base or tcp')
 
 
 def pose_error(actual, target):
@@ -76,6 +93,7 @@ class CartesianPath:
             self.sample_time = float(sim.data.time)
         mujoco.mj_forward(self.model, self.data)
         self.start = tcp_pose(self.model, self.data, sim.arm)
+        self.arm_base = arm_base_pose(self.model, self.data, sim.arm)
         self.qids = sim.qids[:6]
         self.vids = sim.vids[:6]
         self.bounds = sim.limits[:6]

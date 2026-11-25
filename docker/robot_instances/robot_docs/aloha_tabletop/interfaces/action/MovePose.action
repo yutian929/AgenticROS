@@ -1,4 +1,6 @@
-# base: absolute TCP pose. tcp: target relative to TCP sampled at action start.
+# arm_base: absolute TCP pose in this arm's mounting base (same as Quanta).
+# tcp: relative transform in the starting TCP frame. Full scoped frame IDs accepted.
+# base: legacy absolute pose in ALOHA's shared table base.
 string session_id
 string reference_frame
 geometry_msgs/Pose target
@@ -6,7 +8,7 @@ float64 duration
 ---
 string receipt_json
 ---
-# Measured TCP pose in base, metres and quaternion xyzw.
+# Measured TCP pose in this arm's arm_base, metres and quaternion xyzw.
 geometry_msgs/Pose current_pose
 float64 position_error
 float64 orientation_error

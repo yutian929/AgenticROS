@@ -1,4 +1,4 @@
-# Increment about current TCP origin, expressed in base or starting tcp axes.
+# Increment about current TCP origin, expressed in arm_base, base or starting tcp axes.
 string session_id
 string reference_frame
 geometry_msgs/Vector3 translation

@@ -12,8 +12,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--image', default='agenticros-aloha_tabletop:single')
     parser.add_argument('--cartesian', action='store_true', help='test pose/delta actions, frame semantics and cancellation')
+    parser.add_argument('--alignment', action='store_true', help='test shared Quanta naming, frames and recovery fault injection')
     args = parser.parse_args()
-    test = 'aloha_cartesian_integration.py' if args.cartesian else 'aloha_integration.py'
+    if args.cartesian and args.alignment:
+        parser.error('--cartesian and --alignment are separate checks')
+    test = 'aloha_alignment_integration.py' if args.alignment else ('aloha_cartesian_integration.py' if args.cartesian else 'aloha_integration.py')
     name = 'agenticros-aloha-check-' + uuid.uuid4().hex[:8]
     evidence = ROOT / 'runs' / 'checks' / name
     evidence.mkdir(parents=True)

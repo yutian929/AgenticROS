@@ -1,0 +1,152 @@
+{
+  "layout": "parallel_quanta_tabletop",
+  "source": "Quanta EX001 public kinematics and head calibration; stationary tabletop",
+  "source_kinematics_sha256": "3c0a467b63c5dfc183499389e9a833e3c96c6530c32ab2ad47fd9b45890abd81",
+  "source_camera_sha256": "cfc402553af2ee158152bb234d6549e52b4c9b0418bb55b1ee244f0acd3b21e9",
+  "reference_joints": {
+    "lift_joint": 0.379,
+    "head_yaw_joint": 0.0,
+    "head_pitch_joint": -0.2617993877991494
+  },
+  "base_to_table": [
+    [
+      -2.220446049250313e-16,
+      -1.0000000000000002,
+      -0.0,
+      1.9984014443252818e-16
+    ],
+    [
+      1.0000000000000002,
+      -2.220446049250313e-16,
+      0.0,
+      -0.9000000000000002
+    ],
+    [
+      0.0,
+      -0.0,
+      1.0,
+      -0.8
+    ],
+    [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  ],
+  "table": {
+    "width_m": 1.4,
+    "depth_m": 1.0,
+    "top_z_m": 0.0
+  },
+  "arms": {
+    "left": {
+      "position_m": [
+        -0.26600000262260426,
+        -0.7079800046980383,
+        -0.060999985694885295
+      ],
+      "quaternion_wxyz": [
+        0.7071067811865474,
+        0.0,
+        0.0,
+        0.7071067811865477
+      ]
+    },
+    "right": {
+      "position_m": [
+        0.2660000026226046,
+        -0.7079800046980382,
+        -0.060999985694885295
+      ],
+      "quaternion_wxyz": [
+        0.7071067811865474,
+        0.0,
+        0.0,
+        0.7071067811865477
+      ]
+    }
+  },
+  "arm_spacing_m": 0.5320000052452089,
+  "home_joint_positions": [
+    -4.452380940566609e-06,
+    -0.18970944695618902,
+    1.2458661177668222,
+    -5.114823037584833e-06,
+    -1.056149084139735,
+    2.5177745112936335e-06,
+    0.0084
+  ],
+  "home_tcp_in_arm_base": {
+    "position": {
+      "x": 0.3355000147670507,
+      "y": 0.0,
+      "z": 0.171000005453825
+    },
+    "orientation": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.0
+    }
+  },
+  "home_notes": "Native ALOHA IK solution for Quanta zero-arm TCP pose; retain ALOHA finger travel in metres. Verified against the compiled native ALOHA model in layout physics tests.",
+  "main_camera": {
+    "name": "head",
+    "model_camera": "head_cam",
+    "position_m": [
+      1.6810876907037422e-16,
+      -0.7570945897430503,
+      0.4588373144072513
+    ],
+    "quaternion_wxyz": [
+      0.8156336019825754,
+      0.578568774923889,
+      -9.055352045790062e-17,
+      -1.9244859081545604e-17
+    ],
+    "optical_pose": {
+      "position_m": [
+        1.6810876907037422e-16,
+        -0.7570945897430503,
+        0.4588373144072513
+      ],
+      "quaternion_wxyz": [
+        0.5785687749238904,
+        -0.8156336019825744,
+        -1.1687300339083362e-16,
+        1.013377589792255e-16
+      ]
+    },
+    "width": 1280,
+    "height": 720,
+    "k": [
+      720.3193,
+      0.0,
+      640.3909,
+      0.0,
+      719.8599,
+      351.073,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "d": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "distortion_model": "plumb_bob",
+    "source_distortion": [
+      -0.01953918673098087,
+      0.00478989025577903,
+      0.0005033669294789433,
+      -0.00021549213852267712,
+      0.0
+    ],
+    "notes": "Same pose and ideal pinhole intrinsics; Quanta lens distortion is not applied by MuJoCo."
+  },
+  "notes": "Mounts share one forward direction. Native ALOHA links/joints/gains remain unchanged; regenerate adapters because shared-base poses and camera geometry have changed."
+}

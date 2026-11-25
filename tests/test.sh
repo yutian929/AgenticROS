@@ -2,7 +2,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 image_tag=${AGENTICROS_TEST_IMAGE_TAG:-single}
-for test in test_docker_layout test_lan test_viewer test_instance test_connection test_workspace test_agent_rules test_capabilities test_clean_runtime test_ros_client test_migration test_sam3 test_valen test_quanta; do
+for test in test_docker_layout test_lan test_viewer test_instance test_connection test_workspace test_agent_rules test_capabilities test_clean_runtime test_ros_client test_migration test_sam3 test_valen test_quanta test_aloha_scanner test_aloha_control test_aloha_layout; do
   python3 -m unittest discover -s tests -p "$test.py" -v
 done
 # Disposable processes: no driver, no user volumes, no network.
